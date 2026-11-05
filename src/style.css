@@ -1,0 +1,420 @@
+/* Everything sits on a transparent page. Panels look like notes taped to your screen. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  font: 13px/1.35 "Segoe UI", system-ui, sans-serif;
+  color: #26231c;
+}
+
+/* Only used by automated runs, as a stand-in for the desktop. */
+body.fake-desktop { background: #566070; }
+
+body.all-hidden #world, body.all-hidden #notes { visibility: hidden; }
+
+#world {
+  opacity: var(--see, 0.75);
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#notes { position: fixed; inset: 0; pointer-events: none; }
+/* A note of a creature you are not looking after right now waits out of sight. */
+#notes .note.elsewhere { display: none; }
+/* While a box is drawn on the screen, and until its colors are read, the notes step aside. */
+body.notes-away #notes .note { visibility: hidden; }
+
+/* ---------- notes ---------- */
+
+.note {
+  position: absolute;
+  pointer-events: auto;
+  width: 300px;
+  padding: 12px 14px 14px;
+  background: #fff3a8;
+  border-radius: 2px 3px 14px 2px / 2px 2px 8px 3px;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.25), 3px 7px 16px rgb(0 0 0 / 0.38);
+  transform-origin: 50% 0;
+  animation: note-in 0.28s cubic-bezier(0.2, 1.5, 0.4, 1);
+  opacity: var(--see, 0.75);
+  transition: opacity 0.12s;
+}
+/* Solid while you are actually using it, so it stays readable. */
+.note:hover, .note:focus-within { opacity: 1; }
+.note.paper { background: #fbfaf4; background-image: repeating-linear-gradient(transparent 0 23px, #d9e4ef 23px 24px); }
+.note.kraft { background: #d9bd8c; }
+.note.chalk { background: #2c3a31; color: #eef3ea; }
+.note.parch { background: #efe0bd; }
+
+.note::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 84px;
+  height: 22px;
+  margin-left: -42px;
+  background: rgb(255 255 255 / 0.5);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transform: rotate(-1.5deg);
+}
+
+@keyframes note-in {
+  from { transform: translateY(-34px) rotate(-5deg) scale(0.92); opacity: 0; }
+  to { transform: none; }
+}
+
+.note-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  cursor: grab;
+}
+.note-title {
+  flex: 1;
+  font: 700 18px/1.2 "Segoe Print", "Ink Free", "Comic Sans MS", cursive;
+}
+.note-x {
+  border: 0;
+  background: none;
+  padding: 0 3px;
+  font: 700 17px/1 "Segoe Print", cursive;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.note-x:hover { opacity: 1; }
+.note-help { border: 0; background: none; padding: 0 4px; font: 700 15px/1 "Segoe Print", cursive; color: inherit; opacity: 0.5; cursor: pointer; }
+.note-help:hover { opacity: 1; }
+
+.hand { font-family: "Segoe Print", "Ink Free", "Comic Sans MS", cursive; }
+.small { font-size: 11.5px; opacity: 0.78; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.row.nowrap { flex-wrap: nowrap; }
+.grow { flex: 1; min-width: 0; }
+.gap { margin-top: 9px; }
+.center { text-align: center; }
+.nameline { font: 700 19px/1.15 "Segoe Print", cursive; overflow-wrap: anywhere; }
+
+/* ---------- controls ---------- */
+
+.btn {
+  font: 600 12.5px/1.2 "Segoe UI", sans-serif;
+  color: #26231c;
+  padding: 6px 10px;
+  background: rgb(255 255 255 / 0.65);
+  border: 2px solid #26231c;
+  border-radius: 225px 15px 255px 15px / 15px 225px 15px 255px;
+  cursor: pointer;
+  transition: transform 0.08s, background 0.08s;
+}
+.btn:hover:not(:disabled) { background: #fff; transform: translateY(-1px) rotate(-0.6deg); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.big { padding: 8px 12px; font-size: 13.5px; flex: 1 1 40%; }
+.btn.hot { background: #ffb347; }
+.btn.hot:hover:not(:disabled) { background: #ffc873; }
+.chalk .btn { color: #eef3ea; background: rgb(255 255 255 / 0.08); border-color: #eef3ea; }
+.chalk .btn:hover:not(:disabled) { background: rgb(255 255 255 / 0.2); }
+.chalk .btn.hot { background: #d9713a; }
+
+input[type=text], textarea {
+  width: 100%;
+  font: 14px "Segoe UI", sans-serif;
+  padding: 6px 8px;
+  border: 2px solid #26231c;
+  border-radius: 225px 15px 255px 15px / 15px 225px 15px 255px;
+  background: rgb(255 255 255 / 0.8);
+  color: #26231c;
+  user-select: text;
+  outline: none;
+}
+input[type=text]:focus, textarea:focus { background: #fff; }
+textarea { resize: none; height: 54px; border-radius: 6px; font-size: 13px; }
+
+.slider { width: 100%; margin: 4px 0 2px; cursor: pointer; accent-color: #26231c; }
+.toggle { display: flex; align-items: center; gap: 7px; margin-top: 4px; cursor: pointer; }
+.toggle input { margin: 0; cursor: pointer; accent-color: #26231c; }
+
+/* ---------- menu parts ---------- */
+
+.portrait { width: 84px; height: 96px; flex: none; }
+
+.bar { height: 8px; border-radius: 5px; background: rgb(0 0 0 / 0.16); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: #e0683c; border-radius: 5px; }
+.bar.green > i { background: #5aa83f; }
+.bar.blue > i { background: #3f8ec2; }
+
+.stat { display: grid; grid-template-columns: 44px 1fr 38px; gap: 6px; align-items: center; font-size: 11.5px; }
+.stat b { text-align: right; font-weight: 600; }
+.stat small { font-size: 9.5px; font-weight: 400; opacity: 0.65; }
+.stat .bar { position: relative; }
+.stat .bar u { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #26231c; }
+
+.swatches { display: flex; gap: 3px; flex-wrap: wrap; }
+.swatch { width: 19px; height: 19px; border-radius: 4px; border: 1.5px solid #26231c; }
+
+.chips { display: flex; gap: 3px; flex-wrap: wrap; }
+.chip {
+  padding: 1px 7px;
+  font-size: 11px;
+  background: rgb(0 0 0 / 0.08);
+  border-radius: 9px;
+  border-left: 5px solid var(--c, #888);
+}
+
+.callout {
+  margin-top: 8px;
+  padding: 7px 9px;
+  background: #ffcf6e;
+  border: 2px dashed #26231c;
+  border-radius: 8px;
+}
+
+.sect { margin-top: 9px; font: 700 12px "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.62; }
+
+/* ---------- powers ---------- */
+
+.standpic { width: 64px; height: 64px; flex: none; object-fit: contain; }
+
+.chart { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; margin-top: 6px; text-align: center; }
+.chart div { padding: 2px 0; background: rgb(0 0 0 / 0.08); border-radius: 5px; }
+.chart b { display: block; font: 700 16px/1.1 "Segoe Print", cursive; }
+.chart span { font-size: 9.5px; opacity: 0.75; }
+
+.quirks { display: flex; flex-direction: column; gap: 3px; max-height: 214px; margin-top: 6px; overflow-y: auto; }
+.quirk { display: flex; gap: 6px; align-items: center; padding: 3px 5px; background: rgb(255 255 255 / 0.5); border-radius: 5px; }
+.quirk .name { font-weight: 600; }
+.quirk .btn { flex: none; width: 74px; padding: 4px 2px; font-size: 11.5px; }
+
+/* ---------- challenges ---------- */
+
+.monsters { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+.monsters.tall { max-height: 236px; overflow-y: auto; }
+.monster { display: flex; gap: 7px; align-items: center; padding: 3px 5px; background: rgb(255 255 255 / 0.1); border-radius: 5px; }
+.monster.beaten { opacity: 0.6; }
+.monsterpic { width: 34px; height: 34px; flex: none; object-fit: contain; }
+.monster .name { font-weight: 600; }
+.monster .btn { flex: none; width: 66px; padding: 4px 2px; font-size: 11.5px; }
+.warning { margin-top: 3px; color: #ff9c8a; font-weight: 600; font-size: 12px; }
+
+.graves { max-height: 90px; margin-top: 3px; overflow-y: auto; }
+
+/* ---------- training guide ---------- */
+
+.tabs { display: flex; gap: 3px; margin-top: 6px; }
+.tabs .btn { flex: 1; padding: 4px 0; font-size: 11.5px; }
+.ways { display: flex; flex-direction: column; gap: 3px; max-height: 320px; margin-top: 5px; overflow-y: auto; }
+.way { padding: 3px 6px; background: rgb(255 255 255 / 0.5); border-radius: 5px; }
+.way.done { opacity: 0.55; }
+.way .top { display: flex; justify-content: space-between; gap: 6px; font-weight: 600; font-size: 12px; }
+.way .top span { flex: none; font-weight: 400; opacity: 0.7; }
+.ideas { max-height: 116px; margin-top: 3px; overflow-y: auto; }
+.ideas div { margin-bottom: 3px; }
+
+/* ---------- workbench ---------- */
+
+.foodpic { width: 32px; height: 32px; object-fit: contain; flex: none; }
+.foodpic.mini { width: 20px; height: 20px; }
+
+/* ---------- path choice ---------- */
+
+.pathcards { display: flex; gap: 8px; }
+.pathcard {
+  flex: 1;
+  min-width: 0;
+  padding: 9px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  background: rgb(255 255 255 / 0.6);
+  border: 2px solid #26231c;
+  border-radius: 225px 15px 255px 15px / 15px 225px 15px 255px;
+  transition: transform 0.1s;
+}
+.pathcard:hover { transform: translateY(-3px) rotate(-0.8deg); background: #fff; }
+.pathcard h4 { margin: 0 0 3px; font: 700 15px "Segoe Print", cursive; }
+.pathcard p { margin: 0 0 5px; font-size: 12px; }
+
+/* ---------- duels ---------- */
+
+.fourboard { display: grid; grid-template-columns: repeat(7, 34px); gap: 3px; padding: 5px; background: #2d5f8f; border-radius: 8px; width: max-content; margin: 0 auto; }
+.fourcell { width: 34px; height: 34px; border-radius: 50%; background: #dfe9f0; border: 0; padding: 0; cursor: pointer; box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.35); }
+.fourcell.p { background: #d8533e; }
+.fourcell.c { background: #f3c63f; }
+.fourcell.win { outline: 3px solid #fff; }
+
+.piles { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 3px; margin: 8px 0; min-height: 40px; }
+.stick { width: 6px; height: 38px; background: #26231c; border-radius: 3px; transform: rotate(var(--r, 0deg)); }
+
+.lightpair { display: flex; gap: 12px; justify-content: center; align-items: flex-end; }
+.lights { display: grid; gap: 3px; }
+.light { width: 40px; height: 40px; border: 2px solid #26231c; border-radius: 6px; background: #4b4b55; cursor: pointer; padding: 0; }
+.light.on { background: #ffd24a; box-shadow: 0 0 9px #ffd24a; }
+.lights.ai .light { width: 16px; height: 16px; border-width: 1px; border-radius: 3px; cursor: default; }
+
+.runes { display: grid; grid-template-columns: repeat(2, 72px); gap: 7px; justify-content: center; }
+.rune { height: 58px; border: 2px solid #26231c; border-radius: 10px; opacity: 0.5; cursor: pointer; font: 700 23px "Segoe Print", cursive; padding: 0; color: #26231c; }
+.rune.lit { opacity: 1; transform: scale(1.07); box-shadow: 0 0 14px var(--c); }
+
+.says { min-height: 22px; font-family: "Segoe Print", cursive; font-size: 13.5px; text-align: center; }
+
+/* ---------- boards ---------- */
+
+.roster { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; }
+.rosterrow { display: flex; align-items: center; gap: 7px; padding: 3px 5px; background: rgb(0 0 0 / 0.12); border-radius: 6px; }
+.rosterrow canvas { width: 38px; height: 44px; flex: none; }
+.rosterrow .name { font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dropzone { border: 2px dashed currentColor; border-radius: 8px; padding: 8px; text-align: center; opacity: 0.8; }
+.dropzone.over { background: rgb(255 255 255 / 0.2); }
+
+.tribes { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.tribes th { text-align: right; font-weight: 600; opacity: 0.6; padding: 0 4px; }
+.tribes th:first-child, .tribes td:first-child { text-align: left; }
+.tribes td { padding: 1.5px 4px; text-align: right; border-top: 1px solid rgb(0 0 0 / 0.12); }
+.tribes tr.dead td { opacity: 0.4; text-decoration: line-through; }
+.dot { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border: 1px solid #26231c; border-radius: 50%; vertical-align: -1px; }
+
+.chronicle { height: 132px; overflow-y: auto; font-size: 11.5px; line-height: 1.32; padding-right: 3px; }
+.chronicle div { padding: 1.5px 0; border-bottom: 1px dotted rgb(0 0 0 / 0.17); }
+.chronicle .fall, .chronicle .era { font-weight: 700; }
+.chronicle .war { color: #8c2a14; }
+.chronicle .bad { color: #80570c; }
+.chronicle .tech { color: #27518a; }
+.chronicle .t { opacity: 0.5; margin-right: 4px; }
+
+.bouts { max-height: 86px; overflow-y: auto; font-size: 11.5px; }
+
+/* ---------- box picker ---------- */
+
+.picker { position: fixed; inset: 0; z-index: 2147483000; pointer-events: auto; cursor: crosshair; background: rgb(0 0 0 / 0.14); }
+.picker-box { position: absolute; border: 2.5px dashed #fff; outline: 2.5px dashed #17171c; outline-offset: -2.5px; background: rgb(255 255 255 / 0.12); }
+.picker-hint {
+  position: fixed;
+  left: 50%;
+  top: 34px;
+  transform: translateX(-50%) rotate(-0.5deg);
+  padding: 8px 16px;
+  background: #fff3a8;
+  font: 700 15px "Segoe Print", cursive;
+  box-shadow: 3px 6px 13px rgb(0 0 0 / 0.4);
+  pointer-events: auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  cursor: default;
+}
+
+/* ---------- the main menu ---------- */
+
+.meter { display: grid; grid-template-columns: 50px 1fr; gap: 5px; align-items: center; margin-top: 3px; font-size: 11px; }
+.actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 3px; }
+.actions .btn { min-width: 0; padding: 5px 1px; font-size: 11.5px; white-space: nowrap; }
+.menufoot { display: flex; justify-content: space-between; margin-top: 9px; padding-top: 5px; border-top: 1px solid rgb(0 0 0 / 0.16); }
+.footbtn { padding: 1px 3px; border: 0; background: none; font: 11.5px "Segoe UI", sans-serif; color: inherit; opacity: 0.72; cursor: pointer; }
+.footbtn:hover:not(:disabled) { opacity: 1; text-decoration: underline; }
+.footbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ---------- small additions ---------- */
+
+.btn.mini { padding: 2px 7px; font-size: 11px; }
+.way .top .btn.mini { flex: none; font-weight: 600; }
+.way .top .plain { flex: 1; min-width: 0; font-weight: 600; opacity: 1; }
+button.chip { border: 0; border-left: 5px solid var(--c, #888); font: inherit; font-size: 11px; color: inherit; cursor: pointer; }
+button.chip:hover { background: rgb(0 0 0 / 0.16); }
+.swatch.dye { padding: 0; cursor: pointer; }
+.swatch.dye:disabled { opacity: 0.35; cursor: not-allowed; }
+.scrollnote { max-height: min(640px, calc(100vh - 90px)); overflow-y: auto; padding-right: 4px; }
+.scrollnote .quirks { max-height: 190px; }
+.cropgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-top: 4px; }
+.cropgrid .btn { padding: 3px 1px; white-space: nowrap; }
+
+/* A chosen chip, in the breed note. */
+button.chip.on { background: rgb(0 0 0 / 0.26); font-weight: 600; }
+button.chip:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* The next thing to do, in the menu and the guide. */
+.tip { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 7px; font-size: 11.5px; background: rgb(255 255 255 / 0.32); border-left: 4px solid #8a5ad0; border-radius: 4px; }
+/* Four columns of buttons, or three for a short row. */
+.actions.three { grid-template-columns: repeat(3, 1fr); }
+/* Jumps to a part of a long note. */
+.jumpbar { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 5px; }
+.jumpbar button.chip { padding: 1px 7px; }
+.tabs.subtabs { margin-top: 5px; }
+.tabs.subtabs .btn { padding: 2px 8px; font-size: 11px; }
+/* The egg on offer, in the roll note. */
+.eggcard { margin: 6px 0 4px; padding: 6px 9px; background: rgb(0 0 0 / 0.07); border: 2px dashed rgb(0 0 0 / 0.25); border-radius: 10px; }
+.gems { font-size: 12px; white-space: nowrap; }
+
+/* ---------- the loud bits (ui/flair.js). Calm mode in Settings turns these off. ---------- */
+
+/* Words that matter, picked out. */
+.hl { font-weight: 800; }
+.hl.gold { color: #c98a00; }
+.hl.gem { color: #d6338c; }
+.hl.odds { color: #2a7fd4; }
+.hl.rare {
+  background: linear-gradient(90deg, #ff3b30, #ff9500, #ffd60a, #34c759, #0a84ff, #bf5af2, #ff3b30);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow 2.5s linear infinite;
+}
+.note.chalk .hl.gold { color: #ffd24a; }
+.note.chalk .hl.gem { color: #ff8ac8; }
+.note.chalk .hl.odds { color: #8fc8ff; }
+@keyframes rainbow { to { background-position: 200% 0; } }
+
+/* Big bouncing popups at the top of the screen. Clicks pass straight through them. */
+.toasts { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); z-index: 2147483100; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+body.all-hidden .toasts { visibility: hidden; }
+.toast {
+  padding: 8px 20px; border-radius: 14px; border: 3px solid #ffd24a;
+  background: #1d1b2e; color: #fff; font: 900 21px/1.2 "Segoe UI Black", "Arial Black", sans-serif;
+  text-shadow: 2px 2px 0 #000; box-shadow: 0 5px 0 rgb(0 0 0 / 0.55);
+  animation: toastin 0.4s cubic-bezier(.2, 1.6, .4, 1) both, toastbob 1.2s ease-in-out 0.4s infinite alternate;
+  transition: opacity 0.5s, transform 0.5s;
+}
+.toast.good { border-color: #34c759; }
+.toast.bad { border-color: #ff3b30; }
+.toast.info { border-color: #0a84ff; }
+.toast.rare { border-color: #bf5af2; font-size: 25px; }
+.toast .hl.gold { color: #ffd24a; }
+.toast .hl.gem { color: #ff8ac8; }
+.toast .hl.odds { color: #8fc8ff; }
+.toast.out { opacity: 0; transform: translateY(-14px) scale(0.9); }
+@keyframes toastin { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes toastbob { to { transform: translateY(-4px) rotate(-1deg); } }
+
+/* What to press next: it glows, with a bouncing CLICK! on it. */
+.btn.glow { position: relative; animation: glowpulse 0.9s ease-in-out infinite alternate; }
+.btn.glow::after {
+  content: 'CLICK!'; position: absolute; top: -13px; right: -8px; z-index: 2;
+  padding: 1px 5px; border-radius: 7px; background: #ff3b30; color: #fff;
+  font: 900 9.5px/1.3 "Segoe UI Black", "Arial Black", sans-serif; letter-spacing: 0.5px;
+  animation: clickbob 0.5s ease-in-out infinite alternate; pointer-events: none;
+}
+@keyframes glowpulse { from { box-shadow: 0 0 0 0 rgb(255 214 10 / 0.9); } to { box-shadow: 0 0 0 5px rgb(255 214 10 / 0.25), 0 0 14px 4px rgb(255 149 0 / 0.75); } }
+@keyframes clickbob { to { transform: translateY(-3px) scale(1.08); } }
+
+/* Something not tried yet. */
+.btn.isnew, .footbtn.isnew { position: relative; }
+.btn.isnew::before {
+  content: 'NEW!'; position: absolute; top: -10px; left: -6px; z-index: 2;
+  padding: 0 4px; border-radius: 6px; background: #34c759; color: #fff; transform: rotate(-12deg);
+  font: 900 9px/1.4 "Segoe UI Black", "Arial Black", sans-serif; pointer-events: none;
+  animation: clickbob 0.7s ease-in-out infinite alternate;
+}
+.tip.loud { border-left-color: #ff9500; background: rgb(255 214 10 / 0.42); font-weight: 600; animation: tippulse 1.4s ease-in-out infinite alternate; }
+@keyframes tippulse { to { background: rgb(255 214 10 / 0.62); } }

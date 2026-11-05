@@ -1,0 +1,16 @@
+# Your own creatures, saves, settings and graveyard. The game makes a fresh world folder the first
+# time it starts, so anyone who pulls this gets their own egg instead of your creatures.
+/world/
+
+# Each person's world, on its own branch: see "Worlds on their own branches" in the README.
+/worlds/
+/Play *.cmd
+
+# Installed by npm install.
+/node_modules/
+
+# Built by npm run package.
+/dist/
+
+# Half-written saves, if the game ever stops mid-save.
+*.tmp

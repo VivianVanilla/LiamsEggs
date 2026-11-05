@@ -1,0 +1,19 @@
+{
+  "name": "creature",
+  "productName": "Creature",
+  "version": "0.1.0",
+  "description": "A stick creature that lives on your screen. Feed it files, raise it, export it, watch it fight.",
+  "type": "module",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.js\"",
+    "art": "node tools/art-list.js",
+    "looks": "electron tools/build-looks.cjs",
+    "package": "npx @electron/packager . Creature --platform=win32 --arch=x64 --out=dist --overwrite --ignore=^/world --ignore=^/worlds --ignore=\"^/Play \" --ignore=^/test --ignore=^/dist --ignore=^/tools --ignore=creature.creature",
+    "world": "node tools/world.mjs"
+  },
+  "devDependencies": {
+    "electron": "^45.2.2"
+  }
+}
