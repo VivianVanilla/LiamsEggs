@@ -1,0 +1,278 @@
+{
+  "format": "creature/1",
+  "id": "773f28fd60c07f09",
+  "name": "TRUE FORM LIAM",
+  "lastName": "Jogo",
+  "lineage": "flames",
+  "otherLine": "ratio",
+  "traits": [],
+  "parents": [],
+  "bredAt": 0,
+  "household": true,
+  "born": 1793898835766,
+  "lastSeen": 1793914334186,
+  "summary": {
+    "stage": "Scrapper",
+    "job": "Tactician",
+    "finalForm": false,
+    "power": 54,
+    "maxHp": 394,
+    "colors": {
+      "body": "#b6d5ec",
+      "accent": "#519bcd",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "oneForAllLevel": null,
+    "bornWith": []
+  },
+  "stats": {
+    "might": 9,
+    "guard": 10,
+    "speed": 11,
+    "wits": 16,
+    "vigor": 8
+  },
+  "growth": 48.55,
+  "fullness": 0,
+  "essence": {
+    "bone": 3,
+    "sap": 0,
+    "spark": 5,
+    "ink": 0,
+    "ember": 0,
+    "goo": 2
+  },
+  "mutations": [
+    {
+      "id": "secondhead",
+      "from": "8f09ab1ddb6a",
+      "at": 1793898864172
+    },
+    {
+      "id": "skullmask",
+      "from": "2738e703d8b7",
+      "at": 1793898867822
+    },
+    {
+      "id": "jets",
+      "from": "0baaa6577bfc",
+      "at": 1793900553539
+    },
+    {
+      "id": "arcs",
+      "from": "1ec45f0adb83",
+      "at": 1793900868553
+    }
+  ],
+  "palette": {
+    "hues": [
+      {
+        "r": 236,
+        "g": 232,
+        "b": 229,
+        "n": 1.09
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 23,
+        "g": 29,
+        "b": 33,
+        "n": 20.83
+      },
+      {
+        "r": 52,
+        "g": 68,
+        "b": 93,
+        "n": 63.43
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 106.51,
+    "total": 191.86
+  },
+  "training": {
+    "might": 0.7619454545454546,
+    "guard": 0,
+    "speed": 0.9685186568442633,
+    "wits": 1.6500000000000001,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "fighter",
+      "tactician"
+    ],
+    "xp": 120
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": null
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "record": {
+    "mined": 115,
+    "gems": 2,
+    "harvested": 0,
+    "duelsWon": 2,
+    "duelsLost": 3,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 0,
+    "monstersLost": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793914333969,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "goo",
+      "name": "blorp 532.goo",
+      "sha": "c9869a88c98d591e4840ae72e16cc99ad2bdc5f73ddeb9b8a3edb749880c09a7",
+      "size": 1024,
+      "at": 1793898858352,
+      "snippet": "Mutagen Goo for a creature. name: blorp 532 flavor: plain  blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blo"
+    },
+    {
+      "ext": "goo",
+      "name": "blorp 554.goo",
+      "sha": "8f09ab1ddb6a24b1388b53a6b76e6b913f5c35b62edb0d77489adcc49dddadd9",
+      "size": 1024,
+      "at": 1793898864172,
+      "snippet": "Mutagen Goo for a creature. name: blorp 554 flavor: plain  blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blo"
+    },
+    {
+      "ext": "bone",
+      "name": "crunch 772.bone",
+      "sha": "2738e703d8b727a262c17e1b1ae2bbc4e7ceddd472e89ce5ae66b37583ad3ac7",
+      "size": 32768,
+      "at": 1793898867822,
+      "snippet": "Bone Meal for a creature. name: crunch 772 flavor: plain  crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch cr"
+    },
+    {
+      "ext": "spark",
+      "name": "bzzt 569.spark",
+      "sha": "0baaa6577bfce2bdf428b4b188f865a351b5e3bf6c4e3b4020f8998fe2675de9",
+      "size": 32768,
+      "at": 1793900553539,
+      "snippet": "Spark Cell for a creature. name: bzzt 569 flavor: plain  bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzz"
+    },
+    {
+      "ext": "spark",
+      "name": "bzzt 129.spark",
+      "sha": "eb643eca7de799cd84f9fd7081e2d89f787b07fe4288600efda3944cdc092923",
+      "size": 1024,
+      "at": 1793900568280,
+      "snippet": "Spark Cell for a creature. name: bzzt 129 flavor: plain  bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzz"
+    },
+    {
+      "ext": "spark",
+      "name": "bzzt 351.spark",
+      "sha": "1ec45f0adb83c2753ac47847c2b2d6609f108a17a2947f3fe9b73a4e01e462d6",
+      "size": 1024,
+      "at": 1793900868553,
+      "snippet": "Spark Cell for a creature. name: bzzt 351 flavor: plain  bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzz"
+    }
+  ]
+}

@@ -1,0 +1,683 @@
+{
+  "format": "creature/1",
+  "id": "f5e54d1cc5601357",
+  "name": "Jotaro",
+  "lastName": "Gojo",
+  "lineage": "limitless",
+  "otherLine": "ratio",
+  "traits": [],
+  "parents": [
+    {
+      "id": "4169ff3ab9bc2de8",
+      "name": "Villian Gojo"
+    },
+    {
+      "id": "f25bbc2481724c8a",
+      "name": "Liamsaurus Nanami"
+    }
+  ],
+  "bredAt": 0,
+  "household": true,
+  "race": "human",
+  "heritage": null,
+  "pureBlood": false,
+  "born": 1793920083753,
+  "lastSeen": 1793921669763,
+  "summary": {
+    "stage": "Elder",
+    "race": "Human",
+    "job": "Grandmaster",
+    "finalForm": true,
+    "power": 116,
+    "maxHp": 483,
+    "colors": {
+      "body": "#b4d5bf",
+      "accent": "#ff8a3c",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": []
+  },
+  "stats": {
+    "might": 33,
+    "guard": 12,
+    "speed": 27,
+    "wits": 32,
+    "vigor": 12
+  },
+  "growth": 328.65,
+  "fullness": 79,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 16,
+    "ink": 0,
+    "ember": 36,
+    "goo": 0
+  },
+  "mutations": [
+    {
+      "id": "flamehair",
+      "from": "parent",
+      "at": 1793920083753
+    },
+    {
+      "id": "jets",
+      "from": "parent",
+      "at": 1793920083753
+    },
+    {
+      "id": "coillegs",
+      "from": "parent",
+      "at": 1793920083753
+    },
+    {
+      "id": "firetail",
+      "from": "e715bffb7cfa",
+      "at": 1793920368545
+    },
+    {
+      "id": "claws",
+      "from": "4d1904442a6e",
+      "at": 1793920378314
+    },
+    {
+      "id": "smoke",
+      "from": "0dd1ad185956",
+      "at": 1793920396994
+    },
+    {
+      "id": "magma",
+      "from": "1ff52d8c79f6",
+      "at": 1793920423997
+    },
+    {
+      "id": "antennae",
+      "from": "159246f0cc01",
+      "at": 1793920788368
+    }
+  ],
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 0,
+    "total": 0
+  },
+  "training": {
+    "might": 3.12,
+    "guard": 1,
+    "speed": 3,
+    "wits": 9.834,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "fighter",
+      "tactician",
+      "grandmaster"
+    ],
+    "xp": 504.5
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": "#b4d5bf"
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 0,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 1,
+    "duelsLost": 24,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 23,
+    "monstersLost": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793921669466,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "ad8e1adbee7a5fde",
+      "size": 1024,
+      "at": 1793920225141,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "9f7585b1d2a141b0",
+      "size": 1024,
+      "at": 1793920225397,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "2f227f82db768ab7",
+      "size": 1024,
+      "at": 1793920225614,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "b18c389aee975707",
+      "size": 1024,
+      "at": 1793920368314,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "e715bffb7cfa2de6",
+      "size": 1024,
+      "at": 1793920368545,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "f436cf95f1fe8714",
+      "size": 1024,
+      "at": 1793920377779,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "f8386ee8ffd31a85",
+      "size": 1024,
+      "at": 1793920377946,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "b17ee48de7eaaf78",
+      "size": 1024,
+      "at": 1793920378130,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "4d1904442a6e630d",
+      "size": 1024,
+      "at": 1793920378314,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "3fc7e102f6d076c7",
+      "size": 1024,
+      "at": 1793920383139,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "de5a9e06cebde739",
+      "size": 1024,
+      "at": 1793920383306,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "720fde1de880f32a",
+      "size": 1024,
+      "at": 1793920396627,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "1af7bc53ed887478",
+      "size": 1024,
+      "at": 1793920396811,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "0dd1ad185956a8bb",
+      "size": 1024,
+      "at": 1793920396994,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "b666521786505434",
+      "size": 1024,
+      "at": 1793920410443,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "b127676c59d43bd3",
+      "size": 1024,
+      "at": 1793920410612,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "137b2d8479662a2f",
+      "size": 1024,
+      "at": 1793920410787,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "fbf828cfc40d131c",
+      "size": 1024,
+      "at": 1793920423572,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "6dda5c9d1731ed22",
+      "size": 1024,
+      "at": 1793920423780,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "1ff52d8c79f6daf3",
+      "size": 1024,
+      "at": 1793920423997,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "ccce02b766b24af0",
+      "size": 1024,
+      "at": 1793920437764,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "00dad3b43087e4b7",
+      "size": 1024,
+      "at": 1793920437940,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "9967eeb7ed1e9be0",
+      "size": 1024,
+      "at": 1793920438125,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "164decd2207aa691",
+      "size": 1024,
+      "at": 1793920451676,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "2cda13abd4fd797c",
+      "size": 1024,
+      "at": 1793920451885,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "799b22d8b581afd3",
+      "size": 1024,
+      "at": 1793920452093,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "463af31e48ff61a9",
+      "size": 1024,
+      "at": 1793920590017,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "d732d2b029093cbf",
+      "size": 1024,
+      "at": 1793920590177,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "dc8de4c6925b2fbd",
+      "size": 1024,
+      "at": 1793920590433,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "656d1014d4bc7ff7",
+      "size": 1024,
+      "at": 1793920590593,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "eae2ed7660342bfd",
+      "size": 1024,
+      "at": 1793920605002,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "7996886f87319458",
+      "size": 1024,
+      "at": 1793920605185,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "f77423100cea71af",
+      "size": 1024,
+      "at": 1793920605370,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "d709c1096d77bc86",
+      "size": 1024,
+      "at": 1793920605563,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "4aa8a11e3778c625",
+      "size": 1024,
+      "at": 1793920610826,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "1ffc6c8a5b4d1b3d",
+      "size": 1024,
+      "at": 1793920617938,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "3d88177b9a01e6a4",
+      "size": 1024,
+      "at": 1793920618162,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "028e01f73812ed58",
+      "size": 1024,
+      "at": 1793920692172,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "90a754e869b550bb",
+      "size": 1024,
+      "at": 1793920692365,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "93847290ebf4f247",
+      "size": 1024,
+      "at": 1793920692548,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "f3693247638a0a8c",
+      "size": 1024,
+      "at": 1793920708765,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "4ef8d330a28f6ef7",
+      "size": 1024,
+      "at": 1793920708949,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "b4b3122fef4750e0",
+      "size": 1024,
+      "at": 1793920709157,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "f30af2ec77733e43",
+      "size": 1024,
+      "at": 1793920788176,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "159246f0cc01c06b",
+      "size": 1024,
+      "at": 1793920788368,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "467e63548697d5a3",
+      "size": 1024,
+      "at": 1793920789616,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "d80e3ea7d416a5d8",
+      "size": 1024,
+      "at": 1793920806953,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "75184584f42540df",
+      "size": 1024,
+      "at": 1793920807121,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "2604099a5e5cddf9",
+      "size": 1024,
+      "at": 1793920807281,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "3d57ce61e9a2232e",
+      "size": 1024,
+      "at": 1793920978271,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "d0f3291608bfc989",
+      "size": 1024,
+      "at": 1793920979406,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "c5a01878ae2958bf",
+      "size": 1024,
+      "at": 1793920979711,
+      "snippet": ""
+    }
+  ]
+}
