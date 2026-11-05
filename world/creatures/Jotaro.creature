@@ -22,20 +22,20 @@
   "heritage": null,
   "pureBlood": false,
   "born": 1793920083753,
-  "lastSeen": 1793921669763,
+  "lastSeen": 1793922060458,
   "summary": {
     "stage": "Elder",
     "race": "Human",
     "job": "Grandmaster",
     "finalForm": true,
-    "power": 116,
+    "power": 125,
     "maxHp": 483,
     "colors": {
       "body": "#b4d5bf",
       "accent": "#ff8a3c",
       "tinted": true
     },
-    "stand": null,
+    "stand": "Star Platinum",
     "speedster": false,
     "technique": null,
     "secondTechnique": null,
@@ -46,14 +46,14 @@
     "bornWith": []
   },
   "stats": {
-    "might": 33,
+    "might": 35,
     "guard": 12,
-    "speed": 27,
-    "wits": 32,
+    "speed": 36,
+    "wits": 30,
     "vigor": 12
   },
-  "growth": 328.65,
-  "fullness": 79,
+  "growth": 336.73,
+  "fullness": 74.76,
   "essence": {
     "bone": 0,
     "sap": 0,
@@ -185,7 +185,7 @@
   "training": {
     "might": 3.12,
     "guard": 1,
-    "speed": 3,
+    "speed": 7,
     "wits": 9.834,
     "vigor": 0
   },
@@ -195,10 +195,10 @@
       "tactician",
       "grandmaster"
     ],
-    "xp": 504.5
+    "xp": 572.5
   },
   "powers": {
-    "stand": null,
+    "stand": "starplatinum",
     "speedster": false,
     "technique": null,
     "technique2": null,
@@ -207,7 +207,9 @@
   },
   "ofa": null,
   "legendary": null,
-  "trophies": [],
+  "trophies": [
+    "rat"
+  ],
   "dead": null,
   "battle": {
     "stance": "close",
@@ -251,14 +253,14 @@
     "duelsLost": 24,
     "arenaWins": 0,
     "arenaLosses": 0,
-    "monstersBeaten": 23,
+    "monstersBeaten": 31,
     "monstersLost": 0
   },
   "farm": {
     "fields": [],
     "animals": [],
     "store": 0,
-    "lastTick": 1793921669466,
+    "lastTick": 1793922059790,
     "wateredAt": 0,
     "nextId": 1
   },

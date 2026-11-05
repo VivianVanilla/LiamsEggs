@@ -15,7 +15,7 @@
   "heritage": null,
   "pureBlood": false,
   "born": 1793921130662,
-  "lastSeen": 1793921669763,
+  "lastSeen": 1793922060458,
   "summary": {
     "stage": "Hatchling",
     "race": "Human",
@@ -47,8 +47,8 @@
     "wits": 3,
     "vigor": 3
   },
-  "growth": 1.6,
-  "fullness": 74.39,
+  "growth": 2.4,
+  "fullness": 79.16,
   "essence": {
     "bone": 0,
     "sap": 0,
@@ -208,7 +208,7 @@
     "fields": [],
     "animals": [],
     "store": 0,
-    "lastTick": 1793921669466,
+    "lastTick": 1793922059791,
     "wateredAt": 0,
     "nextId": 1
   },
