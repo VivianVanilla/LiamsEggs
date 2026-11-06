@@ -11,10 +11,10 @@ import { EXPANDER_SLOTS, MAX_EXPANDERS } from '../data/items.js';
 import {
   STANDS, STAND_IDS, STAND_WITS, QUIRKS, QUIRK_IDS, SPEEDSTER, SPEEDSTER_SPEED, MAX_HP_GIVEN,
   TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, POWER_SLOTS, POWER_SLOTS_LEGENDARY, POWER_CATEGORIES, LEGENDARY, LEGENDARY_ID, LEGENDARY_ONE_IN,
-  TRAITS, TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, OFA_ID, ofaLevelFor, ofaStats, ofaLimitBonus, OFA_MOVES,
+  TRAITS, BORN_TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, OFA_ID, ofaLevelFor, ofaStats, ofaLimitBonus, OFA_MOVES,
 } from '../data/powers.js';
 import { DEADLY_MONSTERS, TROPHY_POINTS } from '../data/monsters.js';
-import { RACES, DEFAULT_RACE, RACE_PICTURES } from '../data/races.js';
+import { RACES, DEFAULT_RACE, RACE_PICTURES, WILD_RACES, RACE_FULL_SHARE } from '../data/races.js';
 import { FRUITS, FRUIT_VIGOR } from '../data/fruits.js';
 import { STANCES, HURT_PLANS, TARGET_PLANS, defaultBattlePlan } from '../data/battle.js';
 import { CHARMS, CHARM_SLOTS, PAINTS, CROP_IDS, BANK_KEYS, MAX_BANK, familyOfBin } from '../data/crafting.js';
@@ -92,7 +92,7 @@ export function newCreature(name, now = Date.now()) {
     larder: Object.fromEntries(CROP_IDS.map((id) => [id, 0])),
     // Devil Fruits found and not eaten yet. Shared, like the larder, once it is in the household.
     fruits: {},
-    record: { mined: 0, gems: 0, harvested: 0, duelsWon: 0, duelsLost: 0, arenaWins: 0, arenaLosses: 0, monstersBeaten: 0, monstersLost: 0 },
+    record: { mined: 0, gems: 0, harvested: 0, duelsWon: 0, duelsLost: 0, arenaWins: 0, arenaLosses: 0, monstersBeaten: 0, monstersLost: 0, adventureWins: 0, adventureBest: 0, plantsEaten: 0 },
     farm: { fields: [], animals: [], store: 0, lastTick: now, wateredAt: 0, nextId: 1 },
   };
 }
@@ -337,6 +337,31 @@ export function raceMoves(c) {
 
 export const raceSize = (c) => raceParts(c).reduce((m, [id, share]) => m * (1 + ((RACES[id].size ?? 1) - 1) * raceShare(c, share)), 1);
 
+// The races it is enough of to have their passive and specialty: half or more, or pure-blooded.
+const fullRaces = (c) => raceParts(c).filter(([, share]) => c.pureBlood || share >= RACE_FULL_SHARE).map(([id]) => RACES[id]);
+
+// What its races do for it in a fight, all added together.
+export function racePassive(c) {
+  const out = { taken: 0, hp: 0, dodge: 0, crit: 0, speed: 0, reach: 0, poisonproof: false, feast: 0 };
+  for (const race of fullRaces(c)) {
+    for (const [k, v] of Object.entries(race.passive ?? {})) {
+      if (k === 'text') continue;
+      if (k === 'poisonproof') out.poisonproof = out.poisonproof || !!v;
+      else out[k] += v;
+    }
+  }
+  return out;
+}
+
+// What its races do for it at home in the village, all added together.
+export function raceVillage(c) {
+  const out = { work: 0, colors: 0, gems: 0, gemsFlat: 0, food: 0, farm: 0, expedition: 0, expeditionGems: 0, finds: 0 };
+  for (const race of fullRaces(c)) {
+    for (const [k, v] of Object.entries(race.village ?? {})) if (k !== 'text') out[k] += v;
+  }
+  return out;
+}
+
 const SHARE_WORDS = { 0.75: 'Three-quarter', 0.5: 'Half', 0.25: 'Quarter' };
 export function raceName(c) {
   const parts = raceParts(c);
@@ -404,7 +429,7 @@ const eggRoll = (id, question) => makeRng(hashStr(`${id}:${question}`))();
 
 // What it hatched with. The same egg always hatches with the same gifts.
 export function bornWith(id, lineage) {
-  return TRAIT_IDS.filter((t) => (t !== 'sixeyes' || lineage === SIX_EYES_FAMILY) && eggRoll(id, t) < 1 / TRAIT_ODDS[t]);
+  return BORN_TRAIT_IDS.filter((t) => (t !== 'sixeyes' || lineage === SIX_EYES_FAMILY) && eggRoll(id, t) < 1 / TRAIT_ODDS[t]);
 }
 
 export const lineageOf = (c) => c.lineage ?? lineageFromId(c.id);
@@ -420,11 +445,11 @@ export const hasPowerRoom = (c) => powersHeld(c) < powerSlots(c);
 
 // Whether a set of powers has room for this one, under the soul it has.
 function roomFor(powers, legendary, kind) {
-  // Nothing goes with a Devil Fruit, not even with a Legendary mutation.
-  if (powers.fruit) return false;
-  const held = ['stand', 'speedster', 'technique'].filter((k) => powers[k]);
-  if (held.includes(kind)) return false;
   const soul = legendary ? LEGENDARY[legendary] : null;
+  const held = ['stand', 'speedster', 'technique', 'fruit'].filter((k) => powers[k]);
+  if (held.includes(kind)) return false;
+  // A Devil Fruit goes with nothing else, unless its soul makes room for one (Malevolent Soul).
+  if ((kind === 'fruit' || powers.fruit) && held.length && !soul?.fruit) return false;
   if (held.length >= (soul ? POWER_SLOTS_LEGENDARY : POWER_SLOTS)) return false;
   return !(soul?.apart && held.some((k) => POWER_CATEGORIES[k] === POWER_CATEGORIES[kind]));
 }
@@ -467,7 +492,11 @@ export function learnSecondTechnique(c) {
 // A Devil Fruit needs its Vigor, and a creature with no other power at all. It is for good.
 export const fruitProblem = (c) => {
   if (c.powers.fruit) return 'It has already eaten one';
-  if (c.powers.stand || c.powers.speedster || c.powers.technique) return 'It already has a power, and a Devil Fruit can\'t go with any other';
+  if (c.powers.stand || c.powers.speedster || c.powers.technique) {
+    const soul = c.legendary ? LEGENDARY[c.legendary] : null;
+    if (!soul?.fruit) return 'It already has a power, and a Devil Fruit can\'t go with any other';
+    if (!roomFor(c.powers, c.legendary, 'fruit')) return `${soul.name} only makes room for a Devil Fruit beside a Stand`;
+  }
   if (computeStats(c).vigor < FRUIT_VIGOR) return `It needs ${FRUIT_VIGOR} Vigor`;
   return null;
 };
@@ -735,8 +764,8 @@ function sanitizePowers(raw, c) {
   if (typeof raw?.technique === 'string' && Object.hasOwn(TECHNIQUES, raw.technique) && roomFor(powers, legendary, 'technique')) powers.technique = lineage;
   // Only a Cursed Body holds a second, and only the one from the other side of its family.
   if (powers.technique && raw?.technique2 && hasTrait(c, 'cursedbody') && c.otherLine !== lineage) powers.technique2 = c.otherLine;
-  // A Devil Fruit only if it has none of the others.
-  if (typeof raw?.fruit === 'string' && Object.hasOwn(FRUITS, raw.fruit) && !powers.stand && !powers.speedster && !powers.technique) powers.fruit = raw.fruit;
+  // A Devil Fruit only if it has none of the others, or its soul makes room for one.
+  if (typeof raw?.fruit === 'string' && Object.hasOwn(FRUITS, raw.fruit) && roomFor(powers, legendary, 'fruit')) powers.fruit = raw.fruit;
   if (Array.isArray(raw?.quirks)) {
     let given = 0;
     for (const id of raw.quirks) {
@@ -878,7 +907,8 @@ export function wildCreature(seed, level = 1, now = Date.now()) {
   // always the same rival.
   if (level >= 2) {
     const roll = eggRoll(c.id, 'race');
-    c.race = roll < 0.06 ? 'giant' : roll < 0.12 ? 'fishman' : roll < 0.18 ? 'mink' : DEFAULT_RACE;
+    let edge = 0;
+    c.race = Object.entries(WILD_RACES[Math.min(3, level)]).find(([, chance]) => roll < (edge += chance))?.[0] ?? DEFAULT_RACE;
   }
   c.growth = 15 + level * 45 + r() * 20;
   c.fullness = 60;

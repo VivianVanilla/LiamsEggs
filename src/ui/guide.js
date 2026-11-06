@@ -15,8 +15,9 @@ import { PATHS, ROOT_PATHS } from '../data/paths.js';
 import { TRAITS, STAND_WITS, SPEEDSTER_SPEED, TECHNIQUE_MIGHT } from '../data/powers.js';
 import { TEAM_MAX } from '../data/family.js';
 import { FRUIT_VIGOR } from '../data/fruits.js';
+import { buildCodex } from './codex.js';
 
-const PAGES = [['start', 'Start here'], ['stats', 'Stats'], ['chances', 'Chances'], ['breeding', 'Breeding']];
+const PAGES = [['start', 'Start here'], ['codex', 'Codex'], ['stats', 'Stats'], ['chances', 'Chances'], ['breeding', 'Breeding']];
 const SOURCE_LABELS = { start: 'Start', age: 'Age', training: 'Training', mutations: 'Mutations', food: 'Food', colors: 'Colors', job: 'Job', powers: 'Powers', charms: 'Charms', trophies: 'Trophies' };
 
 // page: 'start', 'stats', 'chances' or 'breeding', or a stat, which opens the stats page on it.
@@ -25,10 +26,12 @@ export function openGuide(page = 'start') {
   const state = { page: isStat ? 'stats' : page, stat: isStat ? page : null };
   openNote('guide', {
     title: 'Guide',
-    width: 384,
+    width: state.page === 'codex' ? 440 : 384,
     build(body, note) {
       const c = G.creature;
       if (!c && state.page === 'stats') state.page = 'start';
+      // The Codex has more to show side by side.
+      note.el.style.width = state.page === 'codex' ? '440px' : '384px';
       fill(body, h('div', { class: 'tabs' }, PAGES.filter(([id]) => id !== 'stats' || c).map(([id, label]) => button(label, () => {
         state.page = id;
         note.rebuild();
@@ -36,6 +39,7 @@ export function openGuide(page = 'start') {
       if (state.page === 'stats') buildStats(body, note, c, state);
       else if (state.page === 'chances') buildChances(body, c);
       else if (state.page === 'breeding') buildBreeding(body);
+      else if (state.page === 'codex') buildCodex(body, note, state);
       else buildStart(body, c);
     },
   });

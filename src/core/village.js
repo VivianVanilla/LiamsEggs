@@ -4,7 +4,7 @@
 // (core/house.js).
 
 import { clamp, hashStr, makeRng } from '../lib/util.js';
-import { stageIndex, powerOf, perksOf, fullName, newCreature, isFinalForm } from './creature.js';
+import { stageIndex, powerOf, perksOf, fullName, newCreature, isFinalForm, raceVillage } from './creature.js';
 import { MAX_STORE } from './house.js';
 import { addItem, rollDrops } from './items.js';
 import { PATHS } from '../data/paths.js';
@@ -13,7 +13,7 @@ import { FRUIT_IDS, FRUIT_FROM_HARVEST, FRUIT_FROM_EXPEDITION } from '../data/fr
 import { MAX_ORE } from '../data/forge.js';
 import {
   VILLAGE_WORK, WORK_PER_STAGE, MAX_CARE_BOOST, VILLAGE_CATCHUP_HOURS, LEGENDARY_MINE, EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE,
-  PARTY_GEMS_PER_100,
+  PARTY_GEMS_PER_100, HURRY_PLANTS,
 } from '../data/village.js';
 
 const HOUR = 3600 * 1000;
@@ -41,20 +41,23 @@ function favouriteColor(c) {
 const favouriteCrop = (c) => c.farm.fields[0]?.crop ?? CROP_IDS[hashStr(`${c.id}:crop`) % CROP_IDS.length];
 
 // What one villager brings in each hour, before the nurses' help. One working the Legendary Mine
-// brings up ore and nothing else.
+// brings up ore instead of colors. Its races add their specialties: Humans work harder at anything,
+// Giants dig more, Tontattas farm more, a Fish-man fishes and a Devil makes deals whatever its job.
 export function workOf(c, inMine = false) {
   const kind = inMine ? 'legendary' : workKind(c);
   const w = inMine ? {} : VILLAGE_WORK[kind] ?? VILLAGE_WORK.none;
   const k = stageFactor(c);
+  const race = raceVillage(c);
+  const more = 1 + race.work;
   return {
     kind,
-    colors: (w.colors ?? 0) * k,
+    colors: (w.colors ?? 0) * k * more * (1 + race.colors),
     color: favouriteColor(c),
-    gems: (w.gems ?? 0) * k * (1 + perksOf(c).gemChance * 4),
-    store: (w.store ?? 0) * k,
-    plants: (w.plants ?? 0) * k,
+    gems: ((w.gems ?? 0) * k * (1 + perksOf(c).gemChance * 4) * (1 + race.gems) + race.gemsFlat) * more,
+    store: ((w.store ?? 0) * k * (1 + race.farm) + race.food) * more,
+    plants: (w.plants ?? 0) * k * more * (1 + race.farm),
     crop: favouriteCrop(c),
-    ore: inMine ? LEGENDARY_MINE.ore * k : 0,
+    ore: inMine ? LEGENDARY_MINE.ore * k * more : 0,
     boost: w.boost ?? 0,
   };
 }
@@ -167,17 +170,61 @@ export function expeditionProblem(house, where, party) {
   return null;
 }
 
+// What the races in a party do for its expedition: the best of each, never added up. A Mink gets
+// them home sooner, a Long-arm brings back more gems, a Skypiean finds more.
+export function partyBonus(party) {
+  const races = party.map((p) => raceVillage(p.c));
+  const best = (k) => Math.max(0, ...races.map((r) => r[k]));
+  return { speed: best('expedition'), gems: best('expeditionGems'), finds: best('finds') };
+}
+
 export function startExpedition(house, where, party, now = Date.now()) {
   if (expeditionProblem(house, where, party)) return null;
+  const bonus = partyBonus(party);
   const exp = {
     id: `${now.toString(36)}${house.expeditions.length}`,
     where,
     start: now,
-    end: now + EXPEDITIONS[where].hours * HOUR,
+    end: now + Math.round(EXPEDITIONS[where].hours * HOUR * (1 - bonus.speed)),
     party: party.map((p) => ({ base: p.base, name: fullName(p.c), power: powerOf(p.c) })),
+    bonus: { gems: bonus.gems, finds: bonus.finds },
   };
   house.expeditions.push(exp);
   return exp;
+}
+
+// ---------- hurrying one home ----------
+
+export const larderTotal = (house) => CROP_IDS.reduce((n, id) => n + (house.larder[id] ?? 0), 0);
+// Plants it takes to bring an expedition this much sooner: HURRY_PLANTS for each hour, and its share
+// of that for part of one.
+export const hurryCost = (ms) => Math.ceil((Math.max(0, ms) / HOUR) * HURRY_PLANTS);
+
+// Why this expedition can't be hurried by that much, or null if it can.
+export function hurryProblem(house, exp, ms = HOUR, now = Date.now()) {
+  if (!exp) return 'That expedition is not out';
+  const left = exp.end - now;
+  if (left <= 0) return 'They are already on their way home';
+  const cost = hurryCost(Math.min(ms, left));
+  if (larderTotal(house) < cost) return `It takes ${cost} plants, and the larder has ${larderTotal(house)}`;
+  return null;
+}
+
+// Feeds the party's way home with plants from the larder, the biggest piles first. Never past now.
+export function hurryExpedition(house, id, ms = HOUR, now = Date.now()) {
+  const exp = house.expeditions.find((e) => e.id === id);
+  if (hurryProblem(house, exp, ms, now)) return null;
+  const cut = Math.min(ms, exp.end - now);
+  const cost = hurryCost(cut);
+  let left = cost;
+  for (const crop of CROP_IDS.slice().sort((a, b) => house.larder[b] - house.larder[a])) {
+    const take = Math.min(left, house.larder[crop]);
+    house.larder[crop] -= take;
+    left -= take;
+    if (!left) break;
+  }
+  exp.end -= cut;
+  return { cut, cost };
 }
 
 // What a party brings home: gems, sometimes a creature of another race, now and then loot, and
@@ -186,12 +233,12 @@ export function expeditionHaul(exp) {
   const rng = makeRng(hashStr(`${exp.id}:${exp.start}:haul`));
   const place = EXPEDITIONS[exp.where];
   const power = exp.party.reduce((s, p) => s + p.power, 0);
-  const gems = between(rng, place.gems) + Math.floor((power / 100) * PARTY_GEMS_PER_100);
+  const gems = Math.round((between(rng, place.gems) + Math.floor((power / 100) * PARTY_GEMS_PER_100)) * (1 + (exp.bonus?.gems ?? 0)));
   const roll = rng();
   let find = null;
   let edge = 0;
   for (const [race, chance] of Object.entries(place.finds)) {
-    edge += chance;
+    edge += chance * (1 + (exp.bonus?.finds ?? 0));
     if (roll < edge) {
       find = race;
       break;

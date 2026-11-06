@@ -27,7 +27,7 @@
   },
   "pureBlood": false,
   "born": 1793935251563,
-  "lastSeen": 1793936558476,
+  "lastSeen": 1793947993319,
   "summary": {
     "stage": "Scrapper",
     "race": "Human",
@@ -62,7 +62,7 @@
     "vigor": 8
   },
   "growth": 87.55,
-  "fullness": 57.49,
+  "fullness": 0,
   "essence": {
     "bone": 0,
     "sap": 0,
@@ -227,13 +227,16 @@
     "arenaWins": 0,
     "arenaLosses": 0,
     "monstersBeaten": 0,
-    "monstersLost": 0
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
   },
   "farm": {
     "fields": [],
     "animals": [],
     "store": 0,
-    "lastTick": 1793936558397,
+    "lastTick": 1793947992479,
     "wateredAt": 0,
     "nextId": 1
   },

@@ -12,7 +12,7 @@ import { FOODS } from './data/foods.js';
 import { MUTATIONS } from './data/mutations.js';
 import { STANDS, SPEEDSTER, POWER_MOVES, LEGENDARY } from './data/powers.js';
 import { FRUITS } from './data/fruits.js';
-import { VEIN_CHANCE, VEIN_SECONDS, VEIN_UNITS, VEIN_GEM_CHANCE, GEM_CHANCE, CROPS } from './data/crafting.js';
+import { VEIN_CHANCE, VEIN_SECONDS, VEIN_UNITS, VEIN_GEM_CHANCE, GEM_CHANCE, CROPS, SPOT_MINE } from './data/crafting.js';
 import { nextJob, doJob, eatFromStore, eatPlant } from './sim/farm.js';
 import { isNurse } from './core/family.js';
 import { CARE_HUNGRY, CARE_ROUND, CARE_XP } from './data/family.js';
@@ -272,6 +272,8 @@ export class Pet {
     const stageBefore = stageOf(this.c).name;
     const res = eatPlant(this.c, id);
     if (!res) return 'none left';
+    // Counted toward Gourmet Cells.
+    this.c.record.plantsEaten = (this.c.record.plantsEaten ?? 0) + 1;
     this.cancel();
     this.run(this.digest(res, CROPS[id].family, stageBefore), 'meal');
     return null;
@@ -313,41 +315,37 @@ export class Pet {
 
   // ---------- mining color ----------
 
-  // area: { x, y, w, h, cols, rows, colors }
-  * mineRun(area) {
+  // Mines one spot for a while: SPOT_MINE.seconds of digging, a chunk at a time, out of the colors it
+  // saw there. area: { x, y, w, h, cols, rows, colors }. mineLeft is how long it has to go.
+  * mineSpot(area) {
     this.stopRequested = false;
     const cw = area.w / area.cols;
     const ch = area.h / area.rows;
-    const fromLeft = this.x < area.x + area.w / 2;
-    const fromTop = this.y < area.y + area.h / 2;
     let dug = 0;
     const gemsBefore = this.c.record.gems;
-    this.say('digging', 2);
-
-    outer:
-    for (let r = 0; r < area.rows; r++) {
-      const row = fromTop ? r : area.rows - 1 - r;
-      for (let k = 0; k < area.cols; k++) {
-        const col = (fromLeft !== (r % 2 === 1)) ? k : area.cols - 1 - k;
-        if (this.stopRequested) break outer;
-        if (this.c.fullness < 2) {
-          this.say('too hungry to dig', 3.5, true);
-          break outer;
-        }
-        if (this.myMeals().length) yield* this.serveMeals();
-
-        const color = area.colors[row * area.cols + col];
-        const cx = area.x + col * cw + cw / 2;
-        const cy = area.y + row * ch + ch / 2;
-        const side = this.x <= cx ? -1 : 1;
-        yield* this.walk(cx + side * (cw / 2 + 12), cy + ch / 2 + 4);
-        this.dir = -side;
-        yield* this.wait(1.04 / (1 + perksOf(this.c).mineSpeed));
-        this.bustCell(cx, cy, cw, ch, color);
-        dug++;
-        yield;
+    this.mineLeft = SPOT_MINE.seconds;
+    this.say('this spot is mine now', 2.5);
+    const side = this.x <= area.x + area.w / 2 ? -1 : 1;
+    yield* this.walk(area.x + area.w / 2 + side * (area.w / 2 + 10), area.y + area.h + 4);
+    this.dir = -side;
+    while (this.mineLeft > 0) {
+      if (this.stopRequested) break;
+      if (this.c.fullness < 2) {
+        this.say('too hungry to dig', 3.5, true);
+        break;
       }
+      if (this.myMeals().length) yield* this.serveMeals();
+      const t = SPOT_MINE.digEvery / (1 + perksOf(this.c).mineSpeed);
+      yield* this.wait(t);
+      this.mineLeft -= t;
+      const cell = Math.floor(Math.random() * area.colors.length) % area.colors.length;
+      const cx = area.x + (cell % area.cols) * cw + cw / 2;
+      const cy = area.y + Math.floor(cell / area.cols) * ch + ch / 2;
+      this.bustCell(cx, cy, cw, ch, area.colors[cell]);
+      dug++;
+      yield;
     }
+    this.mineLeft = 0;
     saveCreature(this.c);
     G.onCreatureChanged?.();
     const gems = this.c.record.gems - gemsBefore;

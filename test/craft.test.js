@@ -855,8 +855,9 @@ test('the sheet lists what it has and what each thing does', () => {
   const plain = plainCreature('Empty');
   plain.traits = [];
   const none = buildSheet(plain);
-  assert.equal(none.length, 1, 'an empty creature only has the mutation section');
-  assert.ok(none[0].empty);
+  assert.deepEqual(none.map((s) => s.title).sort(), ['Gifts it can still earn', 'Its race does', 'Mutations (0 of 8)'].sort(),
+    'an empty creature has its mutations, what being Human does, and the gifts it can still earn');
+  assert.ok(none.find((s) => s.title.startsWith('Mutations')).empty);
 });
 
 test('the sheet says when a limit means something adds nothing', () => {

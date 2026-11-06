@@ -1,6 +1,6 @@
-// Adventure: three creatures fight their way through 20 levels, one ring at a time. Nobody can die
-// here: the party fights as copies, so nothing that happens in a level touches the real ones. Pure
-// logic with no DOM, so tests can play whole levels.
+// Adventure: three creatures fight their way through 30 levels in two acts, one ring at a time.
+// Nobody can die here: the party fights as copies, so nothing that happens in a level touches the
+// real ones. Pure logic with no DOM, so tests can play whole levels.
 
 import { clamp, makeRng } from '../lib/util.js';
 import { parseCreature, serializeCreature, wildCreature } from './creature.js';
@@ -10,25 +10,38 @@ import { Bout } from '../sim/arena.js';
 import { deadlyMonsterStats } from '../sim/challenges.js';
 import { DEADLY_MONSTERS } from '../data/monsters.js';
 import { MAX_BANK } from '../data/crafting.js';
-import { MAX_ORE } from '../data/forge.js';
+import { MAX_ORE, WEAPON_IDS } from '../data/forge.js';
 import {
-  ADVENTURE_PARTY, ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_MAX_ENEMIES, ADVENTURE_MORE_EVERY, ADVENTURE_SEASONED, ADVENTURE_TOUGHER, ADVENTURE_GEMS_PER_LEVEL,
-  ADVENTURE_FINISH_GEMS, ADVENTURE_PRIZES, ADVENTURE_REPLAY_ORE, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL,
+  ADVENTURE_PARTY, ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_MAX_ENEMIES, ADVENTURE_MORE_EVERY, ADVENTURE_SEASONED, ADVENTURE_ARMED,
+  ADVENTURE_TOUGHER, ADVENTURE_GEMS_PER_LEVEL, ADVENTURE_FINISH_GEMS, ADVENTURE_PRIZES, ADVENTURE_REPLAY_ORE, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL,
 } from '../data/adventure.js';
 
 export const LEVEL_COUNT = ADVENTURE_LEVELS.length;
 export const levelInfo = (n) => ADVENTURE_LEVELS[n - 1] ?? null;
+// The boss of level n, as { monster, name, power }, or null.
 export const bossOf = (n) => ADVENTURE_BOSSES[n] ?? null;
 
-// Who level n sends: wild fighters, more and more seasoned as it goes, and on a boss level fewer of
-// them behind a deadly monster. The same seed always sends the same ones.
+// The monster itself, as the ring takes it: the Challenges monster under the boss's own name.
+export function bossMonster(n) {
+  const boss = bossOf(n);
+  if (!boss) return null;
+  const def = DEADLY_MONSTERS[boss.monster];
+  return boss.name ? { ...def, name: boss.name } : def;
+}
+
+// Who level n sends: wild fighters, more and more seasoned as it goes, armed in Act 2, and on a boss
+// level fewer of them behind a deadly monster. The same seed always sends the same ones.
 export function levelEnemies(n, seed) {
   const rng = makeRng(seed);
   const boss = bossOf(n);
   const full = Math.min(ADVENTURE_MAX_ENEMIES, 1 + Math.floor(n / ADVENTURE_MORE_EVERY));
   const count = boss ? Math.floor(full / 2) : full;
   const level = n >= ADVENTURE_SEASONED[3] ? 3 : n >= ADVENTURE_SEASONED[2] ? 2 : 1;
-  const fighters = Array.from({ length: count }, () => wildCreature(Math.floor(rng() * 2 ** 31), level));
+  const fighters = Array.from({ length: count }, () => {
+    const c = wildCreature(Math.floor(rng() * 2 ** 31), level);
+    if (n >= ADVENTURE_ARMED) c.weapon = WEAPON_IDS[Math.floor(rng() * WEAPON_IDS.length) % WEAPON_IDS.length];
+    return c;
+  });
   return { fighters, boss };
 }
 
@@ -57,7 +70,12 @@ export function startLevel(n, party, { seed = 1, cx, cy, r, sizeMul } = {}) {
   const ours = party.map((c) => parseCreature(serializeCreature(withoutHouse(c))));
   const bout = new Bout([...ours, ...fighters], { seed, cx, cy, r, sizeMul });
   bout.fighters.forEach((f, i) => { f.team = i < ours.length ? 0 : 1; });
-  if (boss) bout.addMonster(DEADLY_MONSTERS[boss], deadlyMonsterStats(DEADLY_MONSTERS[boss], seed));
+  if (boss) {
+    const def = bossMonster(n);
+    const stats = deadlyMonsterStats(def, seed);
+    const power = boss.power ?? 1;
+    bout.addMonster(def, Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, Math.round(v * power)])));
+  }
   const tough = levelToughness(n);
   bout.fighters.filter((f) => f.team !== 0).forEach((f) => {
     f.maxHp *= tough;
@@ -76,11 +94,12 @@ export const levelWon = (bout) => bout.done && !bout.fighters.some((f) => f.team
 // prizes; every win has a chance of an item.
 export function levelReward(n, best, rng = Math.random) {
   const first = n > best;
-  const reward = { first, gems: 0, ore: 0, items: [] };
+  const reward = { first, gems: 0, ore: 0, items: [], found: null };
   if (first) {
     const prize = ADVENTURE_PRIZES[n] ?? {};
-    reward.gems = n * ADVENTURE_GEMS_PER_LEVEL + (n === LEVEL_COUNT ? ADVENTURE_FINISH_GEMS : 0);
+    reward.gems = n * ADVENTURE_GEMS_PER_LEVEL + (prize.gems ?? 0) + (n === LEVEL_COUNT ? ADVENTURE_FINISH_GEMS : 0);
     reward.ore = prize.ore ?? 0;
+    reward.found = prize.found ?? null;
     Object.entries(prize.items ?? {}).forEach(([id, k]) => { for (let i = 0; i < k; i++) reward.items.push(id); });
   } else if (bossOf(n)) {
     reward.ore = ADVENTURE_REPLAY_ORE;
@@ -90,12 +109,22 @@ export function levelReward(n, best, rng = Math.random) {
   return reward;
 }
 
-// Pays a won level into the household and moves the campaign on.
-export function winLevel(house, n, rng = Math.random) {
+// Pays a won level into the household and moves the campaign on. A creature that wants to join
+// waits in the village, like one an expedition found.
+export function winLevel(house, n, rng = Math.random, now = Date.now()) {
   const reward = levelReward(n, house.adventure.best, rng);
   house.bank.gems = clamp(house.bank.gems + reward.gems, 0, MAX_BANK);
   house.ore = clamp(house.ore + reward.ore, 0, MAX_ORE);
   reward.items.forEach((id) => addItem(house, id));
+  if (reward.found) house.found.push({ race: reward.found, where: null, at: now });
   house.adventure.best = Math.max(house.adventure.best, n);
   return reward;
+}
+
+// The party's real creatures get credit for a win, toward the gifts that are earned in Adventure.
+export function creditParty(party, n) {
+  for (const c of party) {
+    c.record.adventureWins = (c.record.adventureWins ?? 0) + 1;
+    c.record.adventureBest = Math.max(c.record.adventureBest ?? 0, n);
+  }
 }

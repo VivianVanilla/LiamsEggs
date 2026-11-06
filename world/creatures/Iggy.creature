@@ -29,7 +29,7 @@
   },
   "pureBlood": false,
   "born": 1793939894976,
-  "lastSeen": 1793947863638,
+  "lastSeen": 1793948041159,
   "summary": {
     "stage": "Elder",
     "race": "Human",
@@ -65,8 +65,8 @@
     "wits": 20,
     "vigor": 16
   },
-  "growth": 228.48,
-  "fullness": 78.97,
+  "growth": 228.54,
+  "fullness": 76.55,
   "essence": {
     "bone": 5,
     "sap": 5,
@@ -207,7 +207,7 @@
     "line": [
       "nurse"
     ],
-    "xp": 48
+    "xp": 49
   },
   "powers": {
     "stand": null,
@@ -265,13 +265,16 @@
     "arenaWins": 0,
     "arenaLosses": 0,
     "monstersBeaten": 9,
-    "monstersLost": 0
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
   },
   "farm": {
     "fields": [],
     "animals": [],
     "store": 0,
-    "lastTick": 1793947863046,
+    "lastTick": 1793948040532,
     "wateredAt": 0,
     "nextId": 1
   },

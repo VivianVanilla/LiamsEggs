@@ -209,26 +209,3 @@ const challengeRate = (make, id, rounds = 40) => {
 };
 TRAINING_IDS.forEach((id) => console.log(`  ${TRAINING_MONSTERS[id].name.padEnd(18)} ${LADDER.map(([, make]) => challengeRate(make, id)).join('')}`));
 DEADLY_IDS.forEach((id) => console.log(`  ${DEADLY_MONSTERS[id].name.padEnd(18)} ${LADDER.map(([, make]) => challengeRate(make, id)).join('')}`));
-
-// A people led by powers, against the same people without them.
-function worldRate(give, rounds = 12) {
-  let wins = 0;
-  const lengths = [];
-  for (let run = 0; run < rounds; run++) {
-    const a = wildCreature(run * 100, 3);
-    a.powers = NO_POWERS();
-    const b = parseCreature(serializeCreature(a));
-    b.id = `${a.id}b`;
-    give(b);
-    const world = newWorld(run % 2 ? [a, b] : [b, a], { seed: run + 1 });
-    while (!world.ended && world.tick < 30000) tickWorld(world, 1);
-    lengths.push(world.tick);
-    if (world.ended?.winner >= 0 && world.tribes[world.ended.winner].creatureId === b.id) wins++;
-  }
-  lengths.sort((x, y) => x - y);
-  return `${Math.round((100 * wins) / rounds)}% of worlds, median ${((lengths[Math.floor(lengths.length / 2)] * TICK_MS) / 3600000).toFixed(1)} h`;
-}
-console.log('\nSocieties, a people against the same people without powers:');
-console.log(`  Stand                          ${worldRate((c) => { c.powers.stand = 'theworld'; })}`);
-console.log(`  Speedster                      ${worldRate((c) => { c.powers.speedster = true; })}`);
-console.log(`  One For All (-30% HP)          ${worldRate((c) => { c.powers.quirks.push('oneforall'); })}`);

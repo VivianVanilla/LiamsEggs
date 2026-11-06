@@ -155,8 +155,11 @@ export async function openArena({ importPaths = [] } = {}) {
     width: 318,
     corner: 'left',
     onClose: () => {
-      G.bout = null;
-      G.boutHide = new Set();
+      // Only its own fight ends: an Adventure level or a challenge carries on.
+      if (G.bout && !G.bout.adventure && !G.challenge) {
+        G.bout = null;
+        G.boutHide = new Set();
+      }
     },
     build(body, n) {
       if (G.bout) buildBoutView(body, n);

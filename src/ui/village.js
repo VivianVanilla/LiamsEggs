@@ -8,14 +8,16 @@ import { h, fill, button, openNote, getNote } from './notes.js';
 import { parseCreature, fullName, stageOf, powerOf, raceName } from '../core/creature.js';
 import {
   workOf, villageOutput, expeditionProblem, startExpedition, awayBases, takeFound, isLegendaryMiner, mineProblem, joinMine, leaveMine,
+  hurryExpedition, hurryProblem, hurryCost, larderTotal, partyBonus,
 } from '../core/village.js';
 import { RACES } from '../data/races.js';
 import { FRUIT_FROM_EXPEDITION } from '../data/fruits.js';
-import { EXPEDITIONS, EXPEDITION_IDS, PARTY_MAX, EXPEDITIONS_AT_ONCE, PARTY_GEMS_PER_100, LEGENDARY_MINE } from '../data/village.js';
+import { EXPEDITIONS, EXPEDITION_IDS, PARTY_MAX, EXPEDITIONS_AT_ONCE, PARTY_GEMS_PER_100, LEGENDARY_MINE, HURRY_PLANTS } from '../data/village.js';
 import { PIGMENTS, CROPS } from '../data/crafting.js';
 import { ITEMS } from '../data/items.js';
 import { drawPortrait } from '../draw/art.js';
 import { createCreature } from './panels.js';
+import { refreshDock } from './dock.js';
 
 const TABS = [['work', 'Work'], ['mine', 'Legendary Mine'], ['expeditions', 'Expeditions']];
 const pct = (v) => `${Math.round(v * 100)}%`;
@@ -74,6 +76,7 @@ export async function loadVillage() {
   G.village = rows.filter((r) => !G.team.some((m) => m.base === r.base) && !away.has(r.base));
   getNote('village')?.rebuild();
   getNote('creatures')?.rebuild();
+  refreshDock();
   return rows;
 }
 
@@ -213,13 +216,13 @@ function buildExpeditions(page, note) {
   const power = party.reduce((s, r) => s + powerOf(r.c), 0);
   fill(page,
     h('div', { class: 'small' }, `Send up to ${PARTY_MAX} from the village, and up to ${EXPEDITIONS_AT_ONCE} expeditions at once. They are away until they get back, even while the game is closed. They always bring gems, sometimes loot or a creature of another race, and ${fine(FRUIT_FROM_EXPEDITION)} of the time a Devil Fruit.`),
-    G.house.found.length > 0 && h('div', { class: 'sect' }, 'Found on an expedition'),
+    G.house.found.length > 0 && h('div', { class: 'sect' }, 'Waiting for a name'),
     G.house.found.map((found, i) => {
       const input = h('input', { type: 'text', maxLength: 24, placeholder: 'Name it', spellcheck: false, value: spec.names[i] ?? '' });
       input.addEventListener('input', () => { spec.names[i] = input.value; });
       return h('div', { class: 'way' },
         h('div', { class: 'top' }, `A ${RACES[found.race].name}!`),
-        h('div', { class: 'small' }, `${found.where ? `Found ${EXPEDITIONS[found.where].name.toLowerCase()}. ` : ''}${RACES[found.race].blurb}`),
+        h('div', { class: 'small' }, `${found.where ? `Found ${EXPEDITIONS[found.where].name.toLowerCase()}. ` : 'It followed your party home from Adventure. '}${RACES[found.race].blurb}`),
         h('div', { class: 'row', style: 'margin-top:3px' }, input, button('Take it in', async () => {
           const name = input.value.trim();
           if (!name) {
@@ -236,9 +239,17 @@ function buildExpeditions(page, note) {
         }, 'mini hot')));
     }),
     G.house.expeditions.length > 0 && h('div', { class: 'sect' }, 'Out now'),
-    G.house.expeditions.map((e) => h('div', { class: 'way' },
-      h('div', { class: 'top' }, EXPEDITIONS[e.where].name, h('span', null, e.party.map((p) => p.name.split(' ')[0]).join(', '))),
-      expeditionClock(note, e))),
+    G.house.expeditions.length > 0 && h('div', { class: 'small' }, `Hurry one home with plants from the larder: ${HURRY_PLANTS} for every hour taken off. The larder has ${larderTotal(G.house)}.`),
+    G.house.expeditions.map((e) => {
+      const left = e.end - Date.now();
+      const HOUR = 3600 * 1000;
+      return h('div', { class: 'way' },
+        h('div', { class: 'top' }, EXPEDITIONS[e.where].name, h('span', null, e.party.map((p) => p.name.split(' ')[0]).join(', '))),
+        expeditionClock(note, e),
+        left > 0 && h('div', { class: 'row', style: 'margin-top:3px' },
+          button(`1 hour sooner: ${hurryCost(Math.min(HOUR, left))} plants`, () => hurry(note, e, HOUR), 'mini', !!hurryProblem(G.house, e, HOUR)),
+          button(`Home now: ${hurryCost(left)} plants`, () => hurry(note, e, left), 'mini hot', !!hurryProblem(G.house, e, left))));
+    }),
     h('div', { class: 'sect' }, `Who goes (${party.length} of ${PARTY_MAX})`),
     canGo.length === 0
       ? h('div', { class: 'small' }, 'Nobody is at home to send. Creatures out on your screen, or down the Legendary Mine, can\'t go.')
@@ -255,10 +266,13 @@ function buildExpeditions(page, note) {
       const place = EXPEDITIONS[where];
       const problem = expeditionProblem(G.house, where, party);
       const extra = Math.floor((power / 100) * PARTY_GEMS_PER_100);
+      const bonus = partyBonus(party.map((r) => ({ c: r.c })));
+      const perks = [bonus.speed && `back ${pct(bonus.speed)} sooner`, bonus.gems && `${pct(bonus.gems)} more gems`, bonus.finds && `${bonus.finds + 1} times as likely to find someone`].filter(Boolean);
       const finds = Object.entries(place.finds).map(([race, chance]) => `${RACES[race].name} ${fine(chance)}`).join(', ');
       const loot = Object.entries(place.items).map(([id, chance]) => `${ITEMS[id].name} ${fine(chance)}`).join(', ');
       return h('div', { class: 'way' },
-        h('div', { class: 'top' }, place.name, h('span', null, `${place.hours} hour${place.hours === 1 ? '' : 's'}`)),
+        h('div', { class: 'top' }, place.name, h('span', null, `${Math.round(place.hours * (1 - bonus.speed) * 10) / 10} hour${place.hours === 1 && !bonus.speed ? '' : 's'}`)),
+        perks.length > 0 && h('div', { class: 'small good' }, `This party's races: ${perks.join(', ')}.`),
         h('div', { class: 'small' }, rich(`${place.gems[0]} to ${place.gems[1]} gems${extra ? `, plus ${extra} for this party's power` : ''}. Loot: ${loot}. Could find: ${finds}.`)),
         h('div', { class: 'row', style: 'margin-top:3px' }, button('Send them', async () => {
           if (!startExpedition(G.house, where, party, Date.now())) return;
@@ -270,4 +284,15 @@ function buildExpeditions(page, note) {
         }, 'mini hot', !!problem), problem && party.length > 0 && h('span', { class: 'small' }, problem)));
     }),
   );
+}
+
+// Plants from the larder bring a party home sooner.
+async function hurry(note, e, ms) {
+  const res = hurryExpedition(G.house, e.id, ms, Date.now());
+  if (!res) return;
+  await saveHouse();
+  toast(`${res.cost} PLANTS: THE PARTY IS ${Math.round(res.cut / 60000)} MINUTES CLOSER!`, 'good');
+  if (e.end <= Date.now()) G.tickVillage?.();
+  note.rebuild();
+  getNote('menu')?.rebuild();
 }

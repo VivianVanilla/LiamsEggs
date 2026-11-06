@@ -1,30 +1,37 @@
 # Creature
 
-A little stick man that lives on your screen. You name it, feed it files, give it a job, and eventually export its `.creature` file to fight other creatures or found a society on your desktop.
+A little stick man that lives on your screen. You hatch it, feed it files and farmed food, give it a job, and raise a whole village of them: breed them, send them on expeditions, forge them weapons, and take three of them through a 30-level Adventure.
 
 ## Start it
 
-Double-click **Start Creature.cmd**. An egg lands on your screen; name it, and that creates its `.creature` file.
+1. The first time, open a terminal in this folder and run `npm install`, then `npm run exe`. That makes **Creature.exe**.
+2. Double-click **Creature.exe**. An egg lands on your screen; name it, and that creates its `.creature` file.
+3. To keep it on your taskbar: with the game running, right-click **Creature** on the taskbar and choose **Pin to taskbar**. The pinned button starts the game through Creature.exe from then on.
 
-- **Click the creature** (rest the pointer on it for a moment first) to open its menu. Quick clicks pass through it, so it never gets in the way of your work.
-- **The taskbar button** at the bottom of your screen opens the menu, and a second click closes it. Right-click it for Feed, Breed, Your creatures, and Hide or show. You can pin it.
-- **Panels stay open side by side**, like tabs. Open as many as you like; each new one finds its own space, and clicking one brings it to the front.
-- **Up to three creatures can be out at once**, say a miner, a farmer and a nurse. Click one to look after it: the panels are always about the one you last clicked, and each creature keeps its own panels where you left them. **Your creatures** (bottom of the menu) brings them out and puts them away.
-- **Drag it** to carry it somewhere.
+`Creature.exe liam` plays the world in `worlds\liam` (see [Worlds on their own branches](#worlds-on-their-own-branches)).
+
+## Getting around
+
+- **Click a creature** (rest the pointer on it for a moment first) to open its menu. Quick clicks pass through it, so it never gets in the way of your work.
+- **The menu** has two things to do right now, **Snack** and **Mine colors**, and four places for everything else. Each place is one note with index tabs along its top, so the screen never fills up with notes:
+
+  | Place | Tabs |
+  | --- | --- |
+  | **Care** | Feed, Farm, Gear (dye, charms, paint, and the forge) |
+  | **Powers** | Powers, Battle plan, What it has |
+  | **Fight** | Adventure, Challenges, Arena, Duel |
+  | **Home** | Creatures, Nursery, Village |
+
+- **The dock**, down the left of your screen, shows every creature you have. Drag one onto your screen to bring it out, right where you let go. Drop it on one of yours to swap them. Drag one on your screen back onto the dock to put it away. Up to three can be out at once. The `‹` tucks the dock away.
+- **The Codex** (bottom of the menu) is the whole game written down: every race, the job tree with all its branches, every gift, mutation, power, weapon, item and monster, and the Adventure map.
+- **Settings** has the monitor, the size of your creatures, how see-through everything is, quiet and calm modes, and **dark mode**, which turns the notes into night paper. The tray icon has these too.
+- **Rename** is at the bottom of the menu, and on every creature in Home, Creatures. Its `.creature` file is renamed to match.
 - **Ctrl+Alt+H** hides or shows everything instantly. While hidden, every click passes through.
-- **Close game** is in the creature's menu, in Settings, and in the tray.
-- **What it has** (in the menu) lists every mutation, job, power and charm it has, and what each one does to it.
-- **Guide** (in the menu) shows where each of its stats comes from and every way to raise it. Its **Chances** tab lists every chance in the game in one place, like how rare Six Eyes is, read from the same numbers the game uses.
-- **Settings** (in the creature's menu or the tray) picks the monitor, the size of your creature and its animals, how see-through everything is, quiet mode, and whether it stays near the bottom of the screen.
-- The **system tray icon** also has the world and art folders, and Reload art.
-- **If clicks ever stop reaching it**, click its taskbar button. That puts the window back over its monitor and starts the clicking over. It also does this by itself after the screen is unlocked or the PC wakes up, and whenever a monitor comes and goes. Each time is written down in `%APPDATA%\Creature\window-log.txt`.
+- **If clicks ever stop reaching it**, click its taskbar button. That puts the window back over its monitor. It also does this by itself after the screen is unlocked, the PC wakes up, or a monitor comes or goes. Each time is written down in `%APPDATA%\Creature\window-log.txt`.
 
 ## How it grows
 
-1. **Feed it.** Open **Feed** in the menu.
-
-   - **Snacks** are free and always there. They fill it up and help it grow, but never change it.
-   - **Farmed food** is the only food that grows mutations. Dig a field in the **Farm**, choose what it grows, and feed the harvest from Feed:
+1. **Feed it.** Snacks are free and always there; they fill it up and help it grow. **Farmed food** is the only food that grows mutations. Dig a field in Care, Farm, choose what it grows, and feed the harvest from Care, Feed:
 
    | Plant | Grows | Raises |
    | --- | --- | --- |
@@ -35,127 +42,120 @@ Double-click **Start Creature.cmd**. An egg lands on your screen; name it, and t
    | Mind Melon | gems, halos, glyphs | Wits |
    | Mutagen Cap | extra arms, extra legs, a second head | nothing |
 
-   You can also drag a file ending in `.bone`, `.sap`, `.spark`, `.ink`, `.ember` or `.goo` onto it (hold for a moment until it says "drop it here"), and it counts as a snack. Eaten files move to `world/digested`; nothing is deleted, and any other file is refused and left alone.
+   You can also drag a file ending in `.bone`, `.sap`, `.spark`, `.ink`, `.ember` or `.goo` onto it, and it counts as a snack. Eaten files move to `world/digested`; nothing is deleted, and any other file is refused.
 
-2. **Give it a job.** Once it is a Sprout, pick Miner, Farmer, Fighter or Nurse. Each splits twice, into 16 final forms.
-   - **Mine colors:** draw a box on your screen. It digs out the real colors there and wears them. Now and then a bright vein shows up where it digs: rest the mouse on it and click before it fades, for a bonus. What it mines can be spent in the workshop.
-   - **Farm:** draw a field and choose what it grows. It tills, plants and harvests on its own. Harvests go to Feed, and also top up a food store. Small animals add to that store, and watering pushes crops along.
-   - **Puzzle duel:** Four Stones, Stick Pile, Light Race or Echo against it. It gets smarter as its Wits grow.
-   - **Nurse:** looks after whoever else is out. It walks over and snacks any teammate that gets hungry, checks on them now and then, and makes breeding go better while it is out. That care is how it learns its job.
+2. **Give it a job.** Once it is a Sprout, pick Miner, Farmer, Fighter or Nurse. Each splits twice, into 16 final forms. Mining digs real colors off your screen; farming grows food on it; a Nurse looks after whoever else is out.
 
 3. **Export it.** In its final form, Export saves a copy of its `.creature` file to share.
 
-**Your creatures share what they gather.** Every color, bit of dust and gem any of them mines goes into one bank, every plant any of them harvests goes into one larder, and there is one food store that all of them eat from when hungry. So the miner pays for the farmer's charms, and the farmer feeds the miner. What stays each creature's own: its fields and animals, its job, its charms, dye and paint, and its fullness. The first time a creature comes out with savings of its own, they join the shared pool. The pool lives in `world/data/household.json`, never in a `.creature` file, so nothing gets counted twice.
+**Your creatures share what they gather:** one bank of colors, dust and gems, one larder of plants, one food store, and the forge's ore. It lives in `world/data/household.json`, never in a `.creature` file, so nothing is counted twice.
 
 ## Limits
 
-No creature can be great at everything, so you decide what yours is for.
-
-- **Stats:** its best stat can reach **60**, its second **45**, its third **30**, its fourth **18** and its worst **12**. Where a stat ranks can change, and passing another stat takes its place.
-- **Mutations:** it can hold **8**, out of 30. Two from one family teach that family's move.
+- **Stats:** its best stat can reach **60**, its second **45**, its third **30**, its fourth **18** and its worst **12**.
+- **Mutations:** it can hold **8**, or 2 more for each **Limit Expander** it takes (2 at most).
 - **Training:** work and monsters can add up to **+10** to any one stat.
-
-The only way past a stat's limit is a trophy from a fight to the death.
 
 ## Powers
 
-Open **Powers** from the creature's menu. All of these are for good, and they travel with its `.creature` file.
+Open Powers, Powers. Each needs its stat in its top three, and all of them are for good.
 
-**It can have one of these three.** Each needs its stat in its top three, and choosing one takes two presses.
+- **A Stand** (*JoJo's Bizarre Adventure*) at 20 Wits. There are 14, and what it leans on decides which.
+- **Speedster** at 20 Speed: much faster on your screen and in a fight, and much hungrier.
+- **A cursed technique** (*Jujutsu Kaisen*) at 20 Might. Its last name decides which one runs in its family.
+- **A Devil Fruit** (*One Piece*) at 20 Vigor, from the fruits your farms and expeditions find.
 
-- **A Stand** (*JoJo's Bizarre Adventure*) opens at **20 Wits**. There are 14, and you don't pick: whatever it leans on most when it awakens decides which group its Stand comes from, and the creature itself decides which one in that group. The Stand floats behind it on your screen and comes out to fight in the arena. Star Platinum and The World can stop time, and each other's stopped time doesn't hold them.
-- **Speedster** opens at **20 Speed**. It runs much faster on your screen, digs faster, moves and hits faster in the ring, and leaves afterimages. It also gets hungrier. The note shows the exact numbers.
-- **A cursed technique** (*Jujutsu Kaisen*) opens at **20 Might**. You don't pick it: every creature is born with a last name, and its technique runs in that family. A Gojo gets Limitless, a Zenin gets Ten Shadows, a Ryomen gets Shrine, a Kugisaki gets Straw Doll, a Nanami gets Ratio Technique, an Inumaki gets Cursed Speech, a Jogo gets Disaster Flames, and a Todo gets Boogie Woogie. Its melee swings can also land a Black Flash. A bred creature takes whichever parent's last name you choose.
+It can hold one of those. **A Legendary mutation** lets it hold two: **Twin Soul** holds any two of a Stand, speedster powers and a technique; **Malevolent Soul** holds a Stand plus one more, and that one can be a **Devil Fruit**. A fruit goes with nothing else.
 
-**A Legendary mutation lets it have two.** A creature only ever gets one of them, and it doesn't take up one of its 8 mutation places.
+**Quirks** (*My Hero Academia*) are paid for with max HP instead, up to 60%. **One For All** grows as it is passed on.
 
-- **Twin Soul** holds any two, and adds +1 to every stat. One new mutation in 25 comes with it, and The Last Dragon always gives it.
-- **Malevolent Soul** holds a Stand, plus either speedster powers or a cursed technique, but not those two together. It adds +3 Might and +2 Vigor. Any other win to the death has a 15% chance of it.
+## Gifts
 
-**Born with.** Some creatures hatch with a gift. Nobody can buy or train one, but a parent can pass it on. None of them has a picture, since the creature has no face. The Guide's Chances tab lists these odds with the rest.
+**Born with**, from the egg, and passed on by breeding: Six Eyes, Sharingan, Cursed Body, **Titan Shifter** (below half its health it doubles in size and damage), **Saiyan Blood**, **Conqueror's Haki**, **Sun Breathing**, **Nine-Tails Chakra** and **One Punch**.
 
-- **Six Eyes** is only ever born into the Gojo family (1 in 5 of them). With Limitless, Infinity comes up on its own every 4 seconds.
-- **Sharingan** (1 in 12) copies the first move an opponent uses in a fight, a little weaker than the real thing, and keeps it for that fight.
-- **Cursed Body** (1 in 12) can hold two cursed techniques: its own family's, and the one from the other side of its family. Both share one place, so it doesn't need a Legendary mutation for the second. For a bred creature, the other side is the parent whose last name it didn't take.
+**Earned**, by what it does, and kept for good, but never passed on:
 
-**Quirks** (*My Hero Academia*) are separate, and paid for with max HP. Pick from 12, each costing 10% to 35% of its max HP, up to 60% in total. You can't get that health back.
+| Gift | How | What it does |
+| --- | --- | --- |
+| Ultra Instinct | Win 10 Adventure levels | 15% more likely to dodge |
+| Eight Inner Gates | Train three stats to the limit | Below a quarter of its health: 50% more damage, 30% faster |
+| Domain Expansion | Hold a technique and win 3 fights to the death | At 8 seconds, 6 seconds of hits nothing can dodge, 30% harder |
+| Observation Haki | Win 15 arena fights | 10% more dodging and critical hits |
+| Gourmet Cells | Eat 50 farmed plants | Every swing that lands heals 3% of its max HP |
+| Will of D. | Beat Adventure level 20 | 10% harder hits, and shrugs off the first stun |
 
-**One For All** grows. Bought, it starts at level 1. Its holder can **pass it on** from the Powers note: that ends the holder for good (its file goes to the graveyard), and its own power, not counting One For All, is added to a stockpile that the heir carries. The stockpile sets the level, up to **7**. Each level adds Might and Speed, raises its Might limit (and every other level its Speed limit), and makes its smashes hit harder and hurt it more. Level 3 teaches Blackwhip, level 5 Danger Sense, and level 7 United States of Smash. A weak holder adds little, so a line of hatchlings gets nowhere fast; a few strong holders get it to 7. It never passes on by breeding.
+What it has, Gifts it can still earn, shows how far along it is.
 
-Level 3 wild rivals sometimes have powers, so you can see them in the arena before you have your own.
+## Races
 
-In a society, a leader's powers reach its people: a Stand or a Quirk helps them win fights, a speedster settles land faster, and giving up health leaves room for fewer people.
+Every race has stats, a fight move, a passive in every fight, and a specialty at home. A bred baby is half of each parent's races, down to quarters; a race brings its move, passive and specialty at half or more.
 
-## Breeding
+| Race | In a fight | At home | Where from |
+| --- | --- | --- | --- |
+| Human | | Works 25% harder | most eggs |
+| Giant | Takes 15% less damage, and is drawn bigger | Digs 50% more colors | forest and sea expeditions |
+| Fish-man | 12% more max HP | Catches food, whatever its job | coast and sea |
+| Mink | 8% more dodging | Expeditions back 20% sooner | forest and sea |
+| Lunarian | Poison can't touch it | 50% more gems | sea and sky, Adventure level 23 |
+| Tontatta | 15% faster, 5% more dodging, drawn smaller | Farms 50% more | forest |
+| Long-arm | Swings from further away | Expeditions bring 25% more gems | forest |
+| Skypiean | 10% more critical hits | Expeditions twice as likely to find someone | sky island |
+| Devil | Heals whenever a foe goes down | A gem every 4 hours, whatever its job | sea, very rarely, Adventure level 27 |
 
-Open **Breed** from the bottom of the menu, or **Breed two** in Your creatures. Pick two parents: each needs to be a Scrapper or older and at least 40 full. Each spends 30 fullness and rests for 2 hours after. Then choose what the egg gets:
+## The Nursery
 
-- **Last name:** either parent's, which decides its cursed technique. The other parent's family becomes the other side of its family.
-- **Looks like** one parent, and **fights like** one parent.
-- **Passes on:** up to 3 things between them: born-with gifts, mutations, and at most one Quirk (the baby pays that Quirk's max HP too).
+Home, Nursery is where new creatures come from.
 
-Name it and hatch it. Its `.creature` file is made straight away, and it can come out on the screen at once.
+- **Breed:** two parents, Scrappers or older and at least 40 full. Choose its last name, who it looks and fights like, and up to 3 things to pass on: born-with gifts, mutations and one Quirk. There is no waiting between eggs: each parent just spends 30 fullness. A Nurse out on the screen lets one more pass on and saves the parents fullness.
+- **The Mega Breeder** costs 150 gems, once, and lets every egg after it carry 3 more things.
+- **Eggs:** the egg on offer is free; rolling another costs a gem, and Hyper roll keeps rolling until it gets the gifts or family you pick.
+- **Items:** a **Time Chamber Key** grows a creature straight to Grown and fed, ready to breed. A **Limit Expander** makes room for 2 more mutations. Both come from Adventure and expeditions.
 
-**A Nurse out on the screen helps:** one more thing can pass on, and parents rest half as long. A Medic shortens the rest more, and a Midwife's eggs hatch already grown a little.
+## The village
 
-## Battle plan
+Everyone not out on your screen lives in the village and works for the pool you all share, even while the game is closed (up to 8 hours). Home, Village:
 
-Open **Battle plan** from the menu to see every move it knows, what each does and where it came from, and to switch any of them off. You also decide how it behaves:
+- **Work:** Miners dig colors, Farmers grow food, Fighters hunt, Nurses make everyone work harder.
+- **The Legendary Mine:** up to 3 legendary Miners (a Miner in its final form, or one with a Legendary mutation) dig Legendary ore for the forge.
+- **Expeditions:** send up to 3, up to 3 expeditions at once, along the coast, through the forest, across the sea, or up to the sky island. They bring back gems, sometimes loot, a Devil Fruit, or a creature of another race. A clock counts down until they are back, and **200 plants from the larder take an hour off**.
 
-- **How it fights:** Keep close, Mid range (hangs back and throws things), Bounce (in, hit, back up) or Hold ground. Backing away only works if it is faster than its enemy, so Speed decides whether Mid range and Bounce pay off.
-- **When it is hurt:** Keep going, Back off or All out.
-- **Who it goes for:** Nearest, Weakest or Strongest.
+## Adventure
 
-**Try each stance in practice** plays out fights on copies and tells you how each one did. During a fight you can also shout a new stance at it, which lasts for that fight.
+Fight, Adventure: 30 levels in two acts for a party of three, fought in a ring on your screen. Nobody can die. Every fifth level a deadly monster leads the enemy: The Last Dragon ends Act 1 at level 20, and in Act 2 the enemy carries forged weapons, up to The First Dragon at level 30. The first win of each level pays gems, and some pay ore, items, or a rare creature that wants to join you.
 
-## Challenges
+## The forge
 
-Open **Challenges** from the menu to spawn a monster right where your creature is standing. A fight burns some fullness.
+Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blade, Crimson Katana, Thunder Hammer, Venom Fang, Soul Reaper Scythe and Dragonslayer. A weapon goes into the armory everyone shares, and each creature carries one.
 
-- **Training monsters** match its strength and can't kill it. Each win has a 25% chance of +1 to that monster's stat. The Shell Crab is the only fight that trains Guard.
-- **To the death:** ten monsters, from the Pit Rat to The Last Dragon, and **if it loses it dies forever**. Beating one earns a trophy: +3 to a stat and +3 to that stat's limit. The first press shows its odds, played out on copies, and only the second press starts the fight. There is no running.
+## Fighting
 
-A dead creature's file moves to `world/graveyard` as a gravestone, and the game never brings it back, even if the file gets moved back. A fight waits while everything is hidden. Closing the game mid-fight calls it off, so a crash can't kill your creature.
-
-## Workshop
-
-Everything any of your creatures mines lands in one shared bank to spend in the **Workshop**. Dull colors turn into Dust, and gems are banked too. Spending never lowers anyone's stats.
-
-- **Dye** it any color it has mined.
-- **Charms** are crafted once and kept. It can wear two, and they count toward its stat limits.
-- **Paints** change its next fight, then wear off.
-
-
-## Arena and societies
-
-Both open from the creature's menu and take any `.creature` files. Drag them onto the note, use Import, or add a wild rival to test with.
-
-- **Arena:** a free-for-all in a ring on your screen. A fight takes about 30 seconds.
-- **Societies:** each creature founds a people on your screen. The land comes from your screen's colors at that moment: bright areas are farmland, dark areas hold ore, vivid areas hold chroma. They expand, research and slowly fight over it for hours, and carry on while you work.
+- **Battle plan:** every move it knows, which to use, and how it fights, when it is hurt, and who it goes for.
+- **Challenges:** training monsters can't kill it; deadly ones can, forever, and each win is a trophy. A dead creature's file moves to `world/graveyard`.
+- **Arena:** a free-for-all with any `.creature` files.
 
 ## The art
 
-Everything you see is a PNG file in the `art` folder, made by a person. The game never draws pictures of its own: until a file exists you get a plain dashed box with its name.
-
-[art/FILES-TO-DRAW.md](art/FILES-TO-DRAW.md) lists every file, and `npm run art` refreshes it. After adding files, use **Reload art** in the tray menu. Pictures from free libraries are credited in `art/CREDITS.md`. Right now that is [Twemoji](https://github.com/twitter/twemoji), Copyright 2019 Twitter, Inc and other contributors, licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/), and the stick man himself, the public-domain [AIGA sign figure](https://commons.wikimedia.org/wiki/File:Aiga_toiletsq_men.svg) designed in 1974 by Roger Cook and Don Shanosky.
-
-`npm run looks` builds any missing body, mutation, job, Stand, Quirk, technique, crafting and monster pictures by placing those library pictures on a transparent canvas; nothing is drawn. It leaves files that already exist alone, so your own drawings are safe. `npm run looks -- --all` rebuilds every one of them, including over your drawings.
-
-Stands, Quirks and cursed techniques only borrow their names and powers from the shows. None of the pictures come from them: a Stand is the same sign figure in its own color, holding library pictures. To draw your own, save over `stands/<name>.png`. Monsters come from the same library, and unlike your creature, they do have faces.
-
-The creature is one still picture stacked from layers: mutations and Quirks behind, the body, mutations and Quirks in front, its current job. A Stand is a second still picture that floats behind it. They slide and flip but never animate, and a speedster's afterimages are faded copies of the same picture. The colors it mines are tinted over the body, so draw the body pale. The only things the code draws itself are plain game marks: text, health bars, border lines, the arena ring, the buttons and puzzle boards in the note panels, and squares showing colors actually mined from your screen, including veins. Stopped time also turns whoever is caught in it grey.
+Everything you see is a PNG file in the `art` folder. The game never draws pictures of its own: until a file exists you get a plain dashed box with its name. [art/FILES-TO-DRAW.md](art/FILES-TO-DRAW.md) lists every file, and `npm run art` refreshes it. `npm run looks` builds missing pictures from free libraries (credited in `art/CREDITS.md`), and leaves your own drawings alone.
 
 ## Your screen and your files
 
-- Screen colors are read only when you mine and when you found a world. Each read is shrunk to a small grid of average colors, and only those colors are kept. No screenshot is saved or sent anywhere.
+- Screen colors are read only when you mine. Each read is shrunk to a small grid of average colors; no screenshot is saved or sent anywhere.
 - The game makes no network connections.
-- Everything lives in the `world` folder: `creatures`, `digested`, `graveyard`, `data` (settings, the shared bank and store, arena history, the society).
-- `.creature` files are plain text you can open and read. Imported ones are treated as untrusted and cleaned before use.
+- Everything lives in the `world` folder: `creatures`, `digested`, `graveyard` and `data` (settings, the shared household, arena history).
+- `.creature` files are plain text. Imported ones are treated as untrusted and cleaned before use.
 
-## For #tinkererssss 
+## Worlds on their own branches
+
+Each person's creatures can live on a git branch of their own, so pulling game updates never touches anyone's world:
+
+- `npm run world -- new <name>` makes `worlds/<name>` on branch `world-<name>`, and a `Play <name>.cmd` to double-click.
+- `npm run world -- save <name>` commits it, and `npm run world -- push <name>` sends it to GitHub.
+
+## For tinkerers
 
 - `npm test` runs the game logic tests.
-- `node_modules\electron\dist\electron.exe test\e2e.cjs <folder>` plays the whole game in a hidden window and saves screenshots to that folder. Run it with `ELECTRON_RUN_AS_NODE` unset.
-- `node tools/balance.js` reports fight fairness, how long societies last, and how much each power is worth.
+- `node_modules\electron\dist\electron.exe test\e2e.cjs <folder>` plays the whole game in a hidden window and saves screenshots there. Run it with `ELECTRON_RUN_AS_NODE` unset.
+- `node tools/balance.js` reports fight fairness, what every power, gift and weapon is worth, and how hard each Adventure level is.
+- `npm run exe` rebuilds Creature.exe from `tools/launcher/Creature.cs` with the C# compiler that comes with Windows.
 - `npm run package` builds a standalone `dist/Creature-win32-x64` folder you can zip and give to a friend.
-- Set `CREATURE_SPEED=20` to speed up crops, hunger and societies while testing.
+- Set `CREATURE_SPEED=20` to speed up crops and hunger while testing.

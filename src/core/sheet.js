@@ -7,11 +7,12 @@ import { MUTATIONS, MAX_MUTATIONS, FAMILY_ABILITY } from '../data/mutations.js';
 import { ABILITIES } from '../data/paths.js';
 import { FOODS } from '../data/foods.js';
 import {
-  STANDS, QUIRKS, SPEEDSTER, TECHNIQUES, LEGENDARY, MAX_HP_GIVEN, BLACK_FLASH, TRAITS, OFA_ID, OFA_LEVEL_AT, OFA_MAX_LEVEL, OFA_MOVES,
+  STANDS, QUIRKS, SPEEDSTER, TECHNIQUES, LEGENDARY, MAX_HP_GIVEN, BLACK_FLASH, TRAITS, EARN_RULES, OFA_ID, OFA_LEVEL_AT, OFA_MAX_LEVEL, OFA_MOVES,
   ofaStats, ofaLimitBonus, tuneMove,
 } from '../data/powers.js';
 import { FRUITS } from '../data/fruits.js';
-import { RACES, DEFAULT_RACE } from '../data/races.js';
+import { RACES, DEFAULT_RACE, RACE_FULL_SHARE } from '../data/races.js';
+import { stillToEarn } from './earned.js';
 import { DEADLY_MONSTERS, TROPHY_POINTS } from '../data/monsters.js';
 import { CHARMS, PAINTS, CHARM_SLOTS } from '../data/crafting.js';
 
@@ -187,10 +188,31 @@ export function buildSheet(c) {
       : RACES[parts[0][0]].blurb;
     sections.unshift({ title: 'Race', rows: [row(c, raceName(c), raceStats(c), `${detail}${moves.length ? ` Teaches ${moves.join(' and ')}.` : ''}`)] });
   }
-  if (c.traits.length) {
+  // What its races do, in a fight and at home: every race it is half or more of.
+  const raceRows = parts.filter(([, share]) => c.pureBlood || share >= RACE_FULL_SHARE).flatMap(([id]) => [
+    RACES[id].passive && { name: `${RACES[id].name}, in a fight`, effect: '', detail: RACES[id].passive.text, limited: '' },
+    RACES[id].village && { name: `${RACES[id].name}, at home`, effect: '', detail: RACES[id].village.text, limited: '' },
+  ]).filter(Boolean);
+  if (raceRows.length) sections.unshift({ title: 'Its race does', rows: raceRows });
+  const earned = c.traits.filter((id) => TRAITS[id].earned);
+  const born = c.traits.filter((id) => !TRAITS[id].earned);
+  const toEarn = stillToEarn(c);
+  if (toEarn.length) {
+    sections.push({
+      title: 'Gifts it can still earn',
+      rows: toEarn.map((e) => ({ name: TRAITS[e.id].name, effect: `${e.have} of ${e.need}`, detail: `${e.how} ${TRAITS[e.id].blurb}`, limited: '' })),
+    });
+  }
+  if (earned.length) {
+    sections.unshift({
+      title: 'Earned',
+      rows: earned.map((id) => ({ name: TRAITS[id].name, effect: '', detail: `${TRAITS[id].blurb} It earned this: ${EARN_RULES[id].how.charAt(0).toLowerCase()}${EARN_RULES[id].how.slice(1)}`, limited: '' })),
+    });
+  }
+  if (born.length) {
     sections.unshift({
       title: 'Born with',
-      rows: c.traits.map((id) => ({
+      rows: born.map((id) => ({
         name: TRAITS[id].name,
         effect: '',
         detail: `${TRAITS[id].blurb}${id === 'sixeyes' && !hasLimitless(c) ? ' It has no Limitless yet, so this does nothing for now.' : ''}`,

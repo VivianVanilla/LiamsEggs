@@ -71,7 +71,7 @@ function noRoomLine(c, kind) {
   if (hasRoomFor(c, kind)) return false;
   const soul = c.legendary ? LEGENDARY[c.legendary] : null;
   let text = 'It already has its one.';
-  if (c.powers.fruit) text = `It ate the ${FRUITS[c.powers.fruit].name}, and nothing else goes with a Devil Fruit.`;
+  if (c.powers.fruit && !soul?.fruit) text = `It ate the ${FRUITS[c.powers.fruit].name}, and nothing else goes with a Devil Fruit${soul ? '' : ', unless a Malevolent Soul makes room for a Stand'}.`;
   else if (soul) text = powersHeld(c) >= powerSlots(c) ? 'It already holds two.' : `A ${soul.name} can't hold this alongside what it already has.`;
   return h('div', { class: 'small', style: 'font-weight:600' }, text);
 }

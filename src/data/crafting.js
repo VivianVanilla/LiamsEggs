@@ -77,6 +77,9 @@ export const WATER_EVERY_MS = 10 * 60 * 1000;
 // ---------- mining: a vein sometimes shows up where it digs ----------
 // Rest the mouse on one and click before it fades.
 
+// Mining one spot: it digs there for this many seconds, one chunk every so often (faster with a
+// Miner's speed), out of a square this many pixels across, read as cells by cells of color.
+export const SPOT_MINE = { seconds: 300, digEvery: 2.4, size: 72, cells: 3 };
 export const VEIN_CHANCE = 0.12;
 // A bright chunk has this chance of being a gem, plus whatever its job adds.
 export const GEM_CHANCE = 0.05;
