@@ -1,0 +1,246 @@
+{
+  "format": "creature/1",
+  "id": "273f90e5eb4e238e",
+  "name": "Narusasuke",
+  "lastName": "Kugisaki",
+  "lineage": "strawdoll",
+  "otherLine": "shrine",
+  "traits": [
+    "sharingan",
+    "ninetails"
+  ],
+  "parents": [],
+  "bredAt": 1793939894976,
+  "household": true,
+  "race": "human",
+  "heritage": null,
+  "pureBlood": false,
+  "born": 1793937236170,
+  "lastSeen": 1793944170768,
+  "summary": {
+    "stage": "Grown",
+    "race": "Human",
+    "job": "Nurse",
+    "finalForm": false,
+    "power": 50,
+    "maxHp": 432,
+    "colors": {
+      "body": "#fbf1e7",
+      "accent": "#ff8a3c",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [
+      "Sharingan",
+      "Nine-Tails Chakra"
+    ],
+    "weapon": null
+  },
+  "stats": {
+    "might": 10,
+    "guard": 10,
+    "speed": 10,
+    "wits": 10,
+    "vigor": 10
+  },
+  "growth": 116.24,
+  "fullness": 72.29,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 0,
+    "ink": 0,
+    "ember": 2,
+    "goo": 0
+  },
+  "mutations": [
+    {
+      "id": "smoke",
+      "from": "3311a365dcb8",
+      "at": 1793939621067
+    }
+  ],
+  "expanders": 0,
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 11.95,
+    "total": 11.95
+  },
+  "training": {
+    "might": 0,
+    "guard": 1,
+    "speed": 0.06708740056845627,
+    "wits": 0.528,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "nurse"
+    ],
+    "xp": 79
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": null
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "weapon": null,
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 8,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 0,
+    "duelsLost": 3,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 1,
+    "monstersLost": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793944170430,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "4659ef84a7880e49",
+      "size": 1024,
+      "at": 1793939615949,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "3311a365dcb8a654",
+      "size": 1024,
+      "at": 1793939621067,
+      "snippet": ""
+    }
+  ]
+}

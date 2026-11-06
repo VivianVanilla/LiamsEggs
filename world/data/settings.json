@@ -1,0 +1,15 @@
+{
+  "quiet": false,
+  "bottomOnly": false,
+  "calm": false,
+  "dark": true,
+  "scale": 1,
+  "opacity": 0.9,
+  "team": [
+    "Flygon",
+    "Lillonia",
+    "Iggy"
+  ],
+  "display": 3105943893,
+  "active": "Iggy"
+}

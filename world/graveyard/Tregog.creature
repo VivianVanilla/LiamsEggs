@@ -1,0 +1,579 @@
+{
+  "format": "creature/1",
+  "id": "0580d042f2c0b78a",
+  "name": "Tregog",
+  "lastName": "Zenin",
+  "lineage": "tenshadows",
+  "otherLine": "limitless",
+  "traits": [
+    "cursedbody",
+    "sunbreathing"
+  ],
+  "parents": [
+    {
+      "id": "577b7f8d84df81b8",
+      "name": "Tanjiro Gojo"
+    },
+    {
+      "id": "fa2be4bc255b076f",
+      "name": "Lillonia Zenin"
+    }
+  ],
+  "bredAt": 0,
+  "household": true,
+  "race": "human",
+  "heritage": {
+    "human": 1
+  },
+  "pureBlood": false,
+  "born": 1793936535900,
+  "lastSeen": 1793939122548,
+  "summary": {
+    "stage": "Elder",
+    "race": "Human",
+    "job": "Warlord",
+    "finalForm": true,
+    "power": 151,
+    "maxHp": 752,
+    "colors": {
+      "body": "#f6df38",
+      "accent": "#6fe7ff",
+      "tinted": true
+    },
+    "stand": "Magician's Red",
+    "speedster": false,
+    "technique": "Ten Shadows",
+    "secondTechnique": "Limitless",
+    "legendary": "Malevolent Soul",
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [
+      "Cursed Body",
+      "Sun Breathing"
+    ],
+    "weapon": "Starforged Blade"
+  },
+  "stats": {
+    "might": 45,
+    "guard": 18,
+    "speed": 33,
+    "wits": 31,
+    "vigor": 24
+  },
+  "growth": 266.27,
+  "fullness": 69.03,
+  "essence": {
+    "bone": 0,
+    "sap": 5,
+    "spark": 17,
+    "ink": 0,
+    "ember": 10,
+    "goo": 2
+  },
+  "mutations": [
+    {
+      "id": "smoke",
+      "from": "parent",
+      "at": 1793936535900
+    },
+    {
+      "id": "flamehair",
+      "from": "84c5e4f03c7b",
+      "at": 1793936750178
+    },
+    {
+      "id": "zaptail",
+      "from": "3e1306e296ff",
+      "at": 1793936800113
+    },
+    {
+      "id": "arcs",
+      "from": "f9587522cb73",
+      "at": 1793937516071
+    },
+    {
+      "id": "jets",
+      "from": "70fdc8e58190",
+      "at": 1793937541544
+    },
+    {
+      "id": "roots",
+      "from": "c0f33c9a541e",
+      "at": 1793937815812
+    },
+    {
+      "id": "vines",
+      "from": "632b8ab97484",
+      "at": 1793937833165
+    },
+    {
+      "id": "claws",
+      "from": "c24f997b5673",
+      "at": 1793937847667
+    },
+    {
+      "id": "coillegs",
+      "from": "31eb0d4d3616",
+      "at": 1793938534332
+    },
+    {
+      "id": "blobbelly",
+      "from": "1be8acca673d",
+      "at": 1793938924876
+    }
+  ],
+  "expanders": 2,
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 0,
+    "total": 0
+  },
+  "training": {
+    "might": 3.275,
+    "guard": 0,
+    "speed": 5,
+    "wits": 13.045999999999998,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "fighter",
+      "berserker",
+      "warlord"
+    ],
+    "xp": 1119.25
+  },
+  "powers": {
+    "stand": "magiciansred",
+    "speedster": false,
+    "technique": "tenshadows",
+    "technique2": "limitless",
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": "malevolentsoul",
+  "trophies": [
+    "rat",
+    "scorpion",
+    "spider",
+    "serpent",
+    "eagle",
+    "tortoise",
+    "squid",
+    "mammoth",
+    "rex"
+  ],
+  "dead": {
+    "at": 1793939126738,
+    "by": "The Last Dragon"
+  },
+  "battle": {
+    "stance": "mid",
+    "hurt": "fight",
+    "target": "strong",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": "#f6df38"
+  },
+  "gear": {
+    "owned": [
+      "ruby",
+      "sapphire"
+    ],
+    "worn": [
+      "ruby",
+      "sapphire"
+    ]
+  },
+  "weapon": "starblade",
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 0,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 3,
+    "duelsLost": 25,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 33,
+    "monstersLost": 1
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793939125938,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "f806ccef8e99d2a2",
+      "size": 1024,
+      "at": 1793936610851,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "e51053d0682414a1",
+      "size": 1024,
+      "at": 1793936749652,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "dd7cd110bffd618d",
+      "size": 1024,
+      "at": 1793936749831,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "5a69c9c181a796b0",
+      "size": 1024,
+      "at": 1793936749998,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "84c5e4f03c7b304d",
+      "size": 1024,
+      "at": 1793936750178,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "2715ee3db647c324",
+      "size": 1024,
+      "at": 1793936783536,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "d82101e057f37041",
+      "size": 1024,
+      "at": 1793936799900,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "3e1306e296ff9d93",
+      "size": 1024,
+      "at": 1793936800113,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "aefe473435557f55",
+      "size": 1024,
+      "at": 1793936801432,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "19191738debffa15",
+      "size": 1024,
+      "at": 1793937515849,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "f9587522cb733899",
+      "size": 1024,
+      "at": 1793937516071,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "679a0a95473608f2",
+      "size": 1024,
+      "at": 1793937525859,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "5f00259cede140ff",
+      "size": 1024,
+      "at": 1793937526069,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "9ffefe593ff2c56a",
+      "size": 1024,
+      "at": 1793937526287,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "70fdc8e58190808e",
+      "size": 1024,
+      "at": 1793937541544,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "a6ccdb6da4cb21fa",
+      "size": 1024,
+      "at": 1793937542892,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "f3a03fab31f355fc",
+      "size": 1024,
+      "at": 1793937815630,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "c0f33c9a541eee85",
+      "size": 1024,
+      "at": 1793937815812,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "8ba69a204584d467",
+      "size": 1024,
+      "at": 1793937818014,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "b62ec4bb9f419d74",
+      "size": 1024,
+      "at": 1793937818498,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "632b8ab974840f2a",
+      "size": 1024,
+      "at": 1793937833165,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "5fa0aa42797dde51",
+      "size": 1024,
+      "at": 1793937835893,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "e7c82d48ca12617b",
+      "size": 1024,
+      "at": 1793937839607,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "4f9991720fb324e1",
+      "size": 1024,
+      "at": 1793937847447,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "c24f997b567367d8",
+      "size": 1024,
+      "at": 1793937847667,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "a33ddcc8bc994177",
+      "size": 1024,
+      "at": 1793938490905,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "ba7d07fb5a7d1850",
+      "size": 1024,
+      "at": 1793938534076,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "31eb0d4d3616eb82",
+      "size": 1024,
+      "at": 1793938534332,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "0578fc5ab7a3cdbd",
+      "size": 1024,
+      "at": 1793938536453,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "06988f9b263cf380",
+      "size": 1024,
+      "at": 1793938553384,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "9e2ee2529a47c271",
+      "size": 1024,
+      "at": 1793938553587,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "0146e0d6a754f741",
+      "size": 1024,
+      "at": 1793938553753,
+      "snippet": ""
+    },
+    {
+      "ext": "goo",
+      "name": "Mutagen Cap",
+      "sha": "4002eb1fad4803ee",
+      "size": 1024,
+      "at": 1793938907143,
+      "snippet": ""
+    },
+    {
+      "ext": "goo",
+      "name": "Mutagen Cap",
+      "sha": "1be8acca673dd713",
+      "size": 1024,
+      "at": 1793938924876,
+      "snippet": ""
+    }
+  ]
+}

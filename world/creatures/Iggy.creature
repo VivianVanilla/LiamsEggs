@@ -1,0 +1,496 @@
+{
+  "format": "creature/1",
+  "id": "20b6fb925cc85403",
+  "name": "Iggy",
+  "lastName": "Todo",
+  "lineage": "boogie",
+  "otherLine": "strawdoll",
+  "traits": [
+    "cursedbody",
+    "saiyan",
+    "sharingan",
+    "ninetails"
+  ],
+  "parents": [
+    {
+      "id": "12a683c89e78a37c",
+      "name": "Goku Todo"
+    },
+    {
+      "id": "273f90e5eb4e238e",
+      "name": "Narusasuke Kugisaki"
+    }
+  ],
+  "bredAt": 0,
+  "household": true,
+  "race": "human",
+  "heritage": {
+    "human": 1
+  },
+  "pureBlood": false,
+  "born": 1793939894976,
+  "lastSeen": 1793947863638,
+  "summary": {
+    "stage": "Elder",
+    "race": "Human",
+    "job": "Nurse",
+    "finalForm": false,
+    "power": 85,
+    "maxHp": 560,
+    "colors": {
+      "body": "#def6f8",
+      "accent": "#ff8a3c",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [
+      "Cursed Body",
+      "Saiyan Blood",
+      "Sharingan",
+      "Nine-Tails Chakra"
+    ],
+    "weapon": null
+  },
+  "stats": {
+    "might": 20,
+    "guard": 12,
+    "speed": 17,
+    "wits": 20,
+    "vigor": 16
+  },
+  "growth": 228.48,
+  "fullness": 78.97,
+  "essence": {
+    "bone": 5,
+    "sap": 5,
+    "spark": 6,
+    "ink": 0,
+    "ember": 11,
+    "goo": 0
+  },
+  "mutations": [
+    {
+      "id": "clubtail",
+      "from": "595b29344723",
+      "at": 1793943904146
+    },
+    {
+      "id": "vines",
+      "from": "395538da1c97",
+      "at": 1793943915304
+    },
+    {
+      "id": "leafcrown",
+      "from": "284ff3a01ac1",
+      "at": 1793943933314
+    },
+    {
+      "id": "skullmask",
+      "from": "d978daa39717",
+      "at": 1793946532735
+    },
+    {
+      "id": "coillegs",
+      "from": "d7917fbd3763",
+      "at": 1793946539586
+    },
+    {
+      "id": "arcs",
+      "from": "510c0bd9603e",
+      "at": 1793946557802
+    },
+    {
+      "id": "firetail",
+      "from": "291400084fc2",
+      "at": 1793946567901
+    },
+    {
+      "id": "smoke",
+      "from": "8608e38aa110",
+      "at": 1793946580932
+    }
+  ],
+  "expanders": 0,
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 93.92,
+    "total": 93.92
+  },
+  "training": {
+    "might": 1.72,
+    "guard": 0,
+    "speed": 0.5230141132687655,
+    "wits": 7.216000000000004,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "nurse"
+    ],
+    "xp": 48
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": "#def6f8"
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "weapon": null,
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 62,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 6,
+    "duelsLost": 41,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 9,
+    "monstersLost": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793947863046,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "9268ab01d00a9e34",
+      "size": 1024,
+      "at": 1793943875160,
+      "snippet": ""
+    },
+    {
+      "ext": "bone",
+      "name": "Stone Bean",
+      "sha": "4c8d3212ef9c1307",
+      "size": 1024,
+      "at": 1793943903946,
+      "snippet": ""
+    },
+    {
+      "ext": "bone",
+      "name": "Stone Bean",
+      "sha": "595b293447239f09",
+      "size": 1024,
+      "at": 1793943904146,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "bc4f66994ff5d064",
+      "size": 1024,
+      "at": 1793943915089,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "395538da1c973c2b",
+      "size": 1024,
+      "at": 1793943915304,
+      "snippet": ""
+    },
+    {
+      "ext": "bone",
+      "name": "Stone Bean",
+      "sha": "8e85e5392e177600",
+      "size": 1024,
+      "at": 1793943917353,
+      "snippet": ""
+    },
+    {
+      "ext": "bone",
+      "name": "Stone Bean",
+      "sha": "5e5a6b9e8fc07fb3",
+      "size": 1024,
+      "at": 1793943917614,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "f4ec148df923cbac",
+      "size": 1024,
+      "at": 1793943932895,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "9025c3caed9ce5ef",
+      "size": 1024,
+      "at": 1793943933111,
+      "snippet": ""
+    },
+    {
+      "ext": "sap",
+      "name": "Heart Beet",
+      "sha": "284ff3a01ac18981",
+      "size": 1024,
+      "at": 1793943933314,
+      "snippet": ""
+    },
+    {
+      "ext": "bone",
+      "name": "Stone Bean",
+      "sha": "d978daa39717e8f4",
+      "size": 1024,
+      "at": 1793946532735,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "d7917fbd3763c236",
+      "size": 1024,
+      "at": 1793946539586,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "368d679fddee0b88",
+      "size": 1024,
+      "at": 1793946541203,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "19104ee8ae2a0593",
+      "size": 1024,
+      "at": 1793946557033,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "510c0bd9603e7f86",
+      "size": 1024,
+      "at": 1793946557802,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "7b6a610208d0a85d",
+      "size": 1024,
+      "at": 1793946567683,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "291400084fc25fd3",
+      "size": 1024,
+      "at": 1793946567901,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "0e9ea004766f9963",
+      "size": 1024,
+      "at": 1793946569209,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "b0bf84efa0c274e0",
+      "size": 1024,
+      "at": 1793946569449,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "048570b31f389044",
+      "size": 1024,
+      "at": 1793946580067,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "8608e38aa110603d",
+      "size": 1024,
+      "at": 1793946580932,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "cf010253a8aee2c8",
+      "size": 1024,
+      "at": 1793946582929,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "336e236fc749d584",
+      "size": 1024,
+      "at": 1793946726478,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "14217c54595485db",
+      "size": 1024,
+      "at": 1793946727042,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "445f347f9e00b678",
+      "size": 1024,
+      "at": 1793946727444,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "55ccb9e9db4d1bbe",
+      "size": 1024,
+      "at": 1793946727821,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "e094db98fe6384ef",
+      "size": 1024,
+      "at": 1793946935802,
+      "snippet": ""
+    }
+  ]
+}
