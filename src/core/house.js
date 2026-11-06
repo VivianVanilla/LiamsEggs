@@ -43,10 +43,11 @@ export const emptyHouse = () => ({
   // The ids of the legendary Miners working the Legendary Mine.
   mine: [],
   megaBreeder: false,
-  // The Bloodline Altar, the races sacrificed on it, and the race the Nursery's next egg hatches as.
+  // The Bloodline Altar, and the races sacrificed on it.
   altar: false,
   altarRaces: [],
-  eggRace: null,
+  // Creatures a Bizarre expedition took, still to be moved to the graveyard.
+  lost: [],
   // The best Adventure level beaten, and the ids of the party last sent.
   adventure: { best: 0, party: [] },
 });
@@ -88,7 +89,10 @@ export function sanitizeHouse(raw) {
   house.altarRaces = house.altar && Array.isArray(raw?.altarRaces)
     ? [...new Set(raw.altarRaces)].filter((id) => typeof id === 'string' && Object.hasOwn(RACES, id) && id !== DEFAULT_RACE && id !== 'halfdevil')
     : [];
-  house.eggRace = house.altarRaces.includes(raw?.eggRace) ? raw.eggRace : null;
+  house.lost = (Array.isArray(raw?.lost) ? raw.lost : [])
+    .filter((l) => l && typeof l.base === 'string')
+    .slice(0, 30)
+    .map((l) => ({ base: safeStr(l.base, 40), by: safeStr(l.by, 60) }));
   house.adventure.best = Math.floor(clamp(num(raw?.adventure?.best), 0, ADVENTURE_LEVELS.length));
   house.adventure.party = creatureIds(raw?.adventure?.party, ADVENTURE_PARTY);
   return house;

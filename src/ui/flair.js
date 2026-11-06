@@ -77,8 +77,6 @@ export function newBadge(el, key) {
   return el;
 }
 
-// Makes a button glow with a bouncing CLICK! on it.
-export function glow(el) {
-  if (el && !calm()) el.classList.add('glow');
-  return el;
-}
+// Buttons used to glow with a bouncing CLICK! on them. Not any more: this is kept so the places
+// that asked for it still work.
+export const glow = (el) => el;

@@ -476,8 +476,8 @@ async function run() {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   };
   const powersNote = `[...document.querySelectorAll('.note')].find((n) => n.textContent.includes('powers'))`;
-  // The files it ate are random, so one could have grown a Legendary mutation by luck.
-  await js(`(() => { window.__game.G.creature.legendary = null; return true; })()`);
+  // Start from no Legendary mutation, whatever happened before.
+  await js(`(() => { window.__game.G.creature.souls = []; return true; })()`);
   const button = (label) => `[...${powersNote}.querySelectorAll('button')].find((b) => b.textContent === ${JSON.stringify(label)})`;
   await js(`(async () => { const { openMenu } = await import('./ui/panels.js'); openMenu(); })()`);
   await sleep(150);
@@ -551,7 +551,7 @@ async function run() {
   ok('a locked one stays locked', await js(`window.__game.G.creature.powers.speedster === false`));
   await js(`(async () => {
     const { G } = window.__game;
-    G.creature.legendary = 'twinsoul';
+    G.creature.souls = ['twinsoul'];
     const { getNote } = await import('./ui/notes.js');
     getNote('powers').rebuild();
     return true;
@@ -1665,9 +1665,19 @@ async function run() {
   await shot('43-altar');
   await clickText('.note', 'Eggs');
   await sleep(150);
-  ok('the Eggs tab can pick the race', await js(`${rollNote}.textContent.includes('Hatches as')`));
-  await js(`[...${rollNote}.querySelectorAll('button.chip')].find((b) => b.textContent === 'Lunarian').click()`);
-  ok('and remembers it', await waitFor(`window.__game.G.house.eggRace === 'lunarian'`));
+  ok('the Eggs tab shows the race the egg hatches as', await js(`${rollNote}.textContent.includes('Hatches as')`));
+  // Nobody picks the race: roll until the egg on offer turns out to be a whole Lunarian.
+  await js(`(async () => {
+    const { G } = window.__game;
+    const { eggFromId } = await import('./core/roll.js');
+    let i = 0;
+    while (eggFromId(\`e2e\${String(i).padStart(13, '0')}\`, G.house.altarRaces).heritage?.lunarian !== 1) i += 1;
+    G.house.egg = { id: \`e2e\${String(i).padStart(13, '0')}\` };
+    return true;
+  })()`);
+  await clickText('.note', 'Eggs');
+  await sleep(150);
+  ok('and says so', await js(`${rollNote}.textContent.includes('Hatches as: Lunarian')`));
   await js(`(() => { const i = ${rollNote}.querySelector('input'); i.value = 'Luna'; i.dispatchEvent(new Event('input')); return true; })()`);
   await clickText('.note', 'Keep it');
   ok('the egg hatches as a Lunarian, wings and all', await waitFor(`window.__game.G.team.some((m) => m.c.name === 'Luna' && m.c.race === 'lunarian')`));

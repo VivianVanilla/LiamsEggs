@@ -13,7 +13,7 @@ import { FRUIT_IDS, FRUIT_FROM_HARVEST, FRUIT_FROM_EXPEDITION } from '../data/fr
 import { MAX_ORE } from '../data/forge.js';
 import {
   VILLAGE_WORK, WORK_PER_STAGE, MAX_CARE_BOOST, VILLAGE_CATCHUP_HOURS, LEGENDARY_MINE, EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE,
-  PARTY_GEMS_PER_100, HURRY_PLANTS,
+  PARTY_GEMS_PER_100, HURRY_PLANTS, EXPEDITION_DANGER,
 } from '../data/village.js';
 
 const HOUR = 3600 * 1000;
@@ -124,7 +124,7 @@ export function runVillage(house, list, hours, rng = Math.random) {
 // ---------- the Legendary Mine ----------
 
 // A Miner in its final form, or a Miner with a Legendary mutation.
-export const isLegendaryMiner = (c) => !c.dead && workKind(c) === 'mine' && (isFinalForm(c) || !!c.legendary);
+export const isLegendaryMiner = (c) => !c.dead && workKind(c) === 'mine' && (isFinalForm(c) || c.souls.length > 0);
 
 // Why this one can't start working the Legendary Mine, or null if it can.
 export function mineProblem(house, c) {
@@ -227,6 +227,20 @@ export function hurryExpedition(house, id, ms = HOUR, now = Date.now()) {
   return { cut, cost };
 }
 
+// The chance one who goes there doesn't come back, by its power when it set off. Only the Bizarre
+// expeditions have any.
+export function deathChance(where, power) {
+  const danger = EXPEDITIONS[where]?.danger ?? 0;
+  if (!danger) return 0;
+  return Math.max(EXPEDITION_DANGER.least, danger * (1 - Math.max(0, power) / EXPEDITION_DANGER.safePower));
+}
+
+// Who doesn't come back. The same expedition always ends the same way.
+export function expeditionFate(exp) {
+  const rng = makeRng(hashStr(`${exp.id}:${exp.start}:fate`));
+  return exp.party.filter((p) => rng() < deathChance(exp.where, p.power));
+}
+
 // What a party brings home: gems, sometimes a creature of another race, now and then loot, and
 // very rarely a Devil Fruit. The same expedition always brings back the same thing.
 export function expeditionHaul(exp) {
@@ -250,18 +264,23 @@ export function expeditionHaul(exp) {
 }
 
 // Brings home every expedition that is due. Gems, fruits and loot go straight into the pool; a
-// creature they found waits in house.found until you name it.
+// creature they found waits in house.found until you name it. Anyone a Bizarre expedition took goes
+// into house.lost, for the game to move to the graveyard; if it took everyone, nothing comes home.
 export function finishExpeditions(house, now = Date.now()) {
   const done = house.expeditions.filter((e) => e.end <= now);
   if (!done.length) return [];
   house.expeditions = house.expeditions.filter((e) => e.end > now);
   return done.map((exp) => {
+    const lost = expeditionFate(exp);
+    const by = `lost ${EXPEDITIONS[exp.where].name.toLowerCase()}`;
+    house.lost = [...(house.lost ?? []), ...lost.map((p) => ({ base: p.base, by }))];
+    if (lost.length && lost.length === exp.party.length) return { exp, gems: 0, find: null, fruit: null, items: [], lost, allLost: true };
     const haul = expeditionHaul(exp);
     house.bank.gems = clamp(house.bank.gems + haul.gems, 0, MAX_BANK);
     if (haul.fruit) addFruit(house, haul.fruit);
     haul.items.forEach((id) => addItem(house, id));
     if (haul.find) house.found.push({ race: haul.find, where: exp.where, at: now });
-    return { exp, ...haul };
+    return { exp, ...haul, lost, allLost: false };
   });
 }
 

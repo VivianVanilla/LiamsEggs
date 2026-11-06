@@ -4,15 +4,15 @@
 
 import { toast, rich } from './flair.js';
 import { G, api, saveHouse } from '../state.js';
-import { h, fill, button, openNote, getNote } from './notes.js';
+import { h, fill, button, openNote, getNote, folds } from './notes.js';
 import { parseCreature, fullName, stageOf, powerOf, raceName } from '../core/creature.js';
 import {
   workOf, villageOutput, expeditionProblem, startExpedition, awayBases, takeFound, isLegendaryMiner, mineProblem, joinMine, leaveMine,
-  hurryExpedition, hurryProblem, hurryCost, larderTotal, partyBonus,
+  hurryExpedition, hurryProblem, hurryCost, larderTotal, partyBonus, deathChance,
 } from '../core/village.js';
 import { RACES } from '../data/races.js';
 import { FRUIT_FROM_EXPEDITION } from '../data/fruits.js';
-import { EXPEDITIONS, EXPEDITION_IDS, PARTY_MAX, EXPEDITIONS_AT_ONCE, PARTY_GEMS_PER_100, LEGENDARY_MINE, HURRY_PLANTS } from '../data/village.js';
+import { EXPEDITIONS, EXPEDITION_IDS, EXPEDITION_KINDS, PARTY_MAX, EXPEDITIONS_AT_ONCE, PARTY_GEMS_PER_100, LEGENDARY_MINE, HURRY_PLANTS } from '../data/village.js';
 import { PIGMENTS, CROPS } from '../data/crafting.js';
 import { ITEMS } from '../data/items.js';
 import { drawPortrait } from '../draw/art.js';
@@ -238,18 +238,25 @@ function buildExpeditions(page, note) {
           await loadVillage();
         }, 'mini hot')));
     }),
-    G.house.expeditions.length > 0 && h('div', { class: 'sect' }, 'Out now'),
-    G.house.expeditions.length > 0 && h('div', { class: 'small' }, `Hurry one home with plants from the larder: ${HURRY_PLANTS} for every hour taken off. The larder has ${larderTotal(G.house)}.`),
-    G.house.expeditions.map((e) => {
-      const left = e.end - Date.now();
-      const HOUR = 3600 * 1000;
-      return h('div', { class: 'way' },
-        h('div', { class: 'top' }, EXPEDITIONS[e.where].name, h('span', null, e.party.map((p) => p.name.split(' ')[0]).join(', '))),
-        expeditionClock(note, e),
-        left > 0 && h('div', { class: 'row', style: 'margin-top:3px' },
-          button(`1 hour sooner: ${hurryCost(Math.min(HOUR, left))} plants`, () => hurry(note, e, HOUR), 'mini', !!hurryProblem(G.house, e, HOUR)),
-          button(`Home now: ${hurryCost(left)} plants`, () => hurry(note, e, left), 'mini hot', !!hurryProblem(G.house, e, left))));
-    }),
+    // Out now, and the two kinds of place, fold: only one of them is open at a time.
+    G.house.expeditions.length > 0 && folds(note, 'exp', [{
+      id: 'out',
+      title: 'Out now',
+      tag: `${G.house.expeditions.length} away`,
+      build: () => [
+        h('div', { class: 'small' }, `Hurry one home with plants from the larder: ${HURRY_PLANTS} for every hour taken off. The larder has ${larderTotal(G.house)}.`),
+        G.house.expeditions.map((e) => {
+          const left = e.end - Date.now();
+          const HOUR = 3600 * 1000;
+          return h('div', { class: 'way', style: 'margin-top:3px' },
+            h('div', { class: 'top' }, EXPEDITIONS[e.where].name, h('span', null, e.party.map((p) => p.name.split(' ')[0]).join(', '))),
+            expeditionClock(note, e),
+            left > 0 && h('div', { class: 'row', style: 'margin-top:3px' },
+              button(`1 hour sooner: ${hurryCost(Math.min(HOUR, left))} plants`, () => hurry(note, e, HOUR), 'mini', !!hurryProblem(G.house, e, HOUR)),
+              button(`Home now: ${hurryCost(left)} plants`, () => hurry(note, e, left), 'mini hot', !!hurryProblem(G.house, e, left))));
+        }),
+      ],
+    }]),
     h('div', { class: 'sect' }, `Who goes (${party.length} of ${PARTY_MAX})`),
     canGo.length === 0
       ? h('div', { class: 'small' }, 'Nobody is at home to send. Creatures out on your screen, or down the Legendary Mine, can\'t go.')
@@ -261,29 +268,64 @@ function buildExpeditions(page, note) {
           note.rebuild();
         },
       }, `${r.c.name} (${stageOf(r.c).name}, ${powerOf(r.c)})`))),
-    h('div', { class: 'sect' }, 'Where to'),
-    EXPEDITION_IDS.map((where) => {
-      const place = EXPEDITIONS[where];
-      const problem = expeditionProblem(G.house, where, party);
-      const extra = Math.floor((power / 100) * PARTY_GEMS_PER_100);
-      const bonus = partyBonus(party.map((r) => ({ c: r.c })));
-      const perks = [bonus.speed && `back ${pct(bonus.speed)} sooner`, bonus.gems && `${pct(bonus.gems)} more gems`, bonus.finds && `${bonus.finds + 1} times as likely to find someone`].filter(Boolean);
-      const finds = Object.entries(place.finds).map(([race, chance]) => `${RACES[race].name} ${fine(chance)}`).join(', ');
-      const loot = Object.entries(place.items).map(([id, chance]) => `${ITEMS[id].name} ${fine(chance)}`).join(', ');
-      return h('div', { class: 'way' },
-        h('div', { class: 'top' }, place.name, h('span', null, `${Math.round(place.hours * (1 - bonus.speed) * 10) / 10} hour${place.hours === 1 && !bonus.speed ? '' : 's'}`)),
-        perks.length > 0 && h('div', { class: 'small good' }, `This party's races: ${perks.join(', ')}.`),
-        h('div', { class: 'small' }, rich(`${place.gems[0]} to ${place.gems[1]} gems${extra ? `, plus ${extra} for this party's power` : ''}. Loot: ${loot}. Could find: ${finds}.`)),
-        h('div', { class: 'row', style: 'margin-top:3px' }, button('Send them', async () => {
-          if (!startExpedition(G.house, where, party, Date.now())) return;
-          spec.party = [];
-          toast(`EXPEDITION SENT: ${place.name.toUpperCase()}! BACK IN ${timeLeft(place.hours * 3600000).toUpperCase()}`, 'info');
-          await saveHouse();
-          await loadVillage();
-          getNote('menu')?.rebuild();
-        }, 'mini hot', !!problem), problem && party.length > 0 && h('span', { class: 'small' }, problem)));
-    }),
+    folds(note, 'exp', Object.entries(EXPEDITION_KINDS).map(([kind, title]) => {
+      const places = EXPEDITION_IDS.filter((where) => EXPEDITIONS[where].kind === kind);
+      return {
+        id: kind,
+        title,
+        tag: `${places.length} places${kind === 'bizarre' ? ', can kill' : ''}`,
+        build: () => [
+          kind === 'bizarre' && h('div', { class: 'warning' }, 'These can kill whoever goes. The stronger it is, the likelier it comes back.'),
+          places.map((where) => wayCard(where, party, power, spec)),
+        ],
+      };
+    })),
   );
+}
+
+// The first press only asks; the second sends them. Moving away calls it off.
+function riskButton(label, onSure, cls, disabled) {
+  let armed = false;
+  const el = button(label, () => {
+    if (!armed) {
+      armed = true;
+      el.textContent = 'Risk it?';
+      el.classList.add('hot');
+      return;
+    }
+    onSure();
+  }, cls, disabled);
+  el.addEventListener('mouseleave', () => {
+    armed = false;
+    el.textContent = label;
+  });
+  return el;
+}
+
+// One place an expedition can go, and what this party would bring back, or risk.
+function wayCard(where, party, power, spec) {
+  const place = EXPEDITIONS[where];
+  const problem = expeditionProblem(G.house, where, party);
+  const extra = Math.floor((power / 100) * PARTY_GEMS_PER_100);
+  const bonus = partyBonus(party.map((r) => ({ c: r.c })));
+  const perks = [bonus.speed && `back ${pct(bonus.speed)} sooner`, bonus.gems && `${pct(bonus.gems)} more gems`, bonus.finds && `${bonus.finds + 1} times as likely to find someone`].filter(Boolean);
+  const finds = Object.entries(place.finds).map(([race, chance]) => `${RACES[race].name} ${fine(chance)}`).join(', ');
+  const loot = Object.entries(place.items).map(([id, chance]) => `${ITEMS[id].name} ${fine(chance)}`).join(', ');
+  return h('div', { class: 'way' },
+    h('div', { class: 'top' }, place.name, h('span', null, `${Math.round(place.hours * (1 - bonus.speed) * 10) / 10} hour${place.hours === 1 && !bonus.speed ? '' : 's'}`)),
+    perks.length > 0 && h('div', { class: 'small good' }, `This party's races: ${perks.join(', ')}.`),
+    h('div', { class: 'small' }, rich(`${place.gems[0]} to ${place.gems[1]} gems${extra ? `, plus ${extra} for this party's power` : ''}. Loot: ${loot}. Could find: ${finds}.`)),
+    place.danger > 0 && h('div', { class: 'small warning' }, party.length
+      ? `Chance each one doesn't come back: ${party.map((r) => `${r.c.name} ${pct(deathChance(where, powerOf(r.c)))}`).join(', ')}. If none of them do, nothing they found does either.`
+      : `Up to ${pct(place.danger)} chance each one doesn't come back, less the stronger it is. If none of them do, nothing they found does either.`),
+    h('div', { class: 'row', style: 'margin-top:3px' }, (place.danger > 0 ? riskButton : button)('Send them', async () => {
+      if (!startExpedition(G.house, where, party, Date.now())) return;
+      spec.party = [];
+      toast(`EXPEDITION SENT: ${place.name.toUpperCase()}! BACK IN ${timeLeft(place.hours * 3600000).toUpperCase()}`, 'info');
+      await saveHouse();
+      await loadVillage();
+      getNote('menu')?.rebuild();
+    }, 'mini hot', !!problem), problem && party.length > 0 && h('span', { class: 'small' }, problem)));
 }
 
 // Plants from the larder bring a party home sooner.

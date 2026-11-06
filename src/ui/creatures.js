@@ -7,7 +7,7 @@ import { h, fill, button, sureButton, openNote, getNote } from './notes.js';
 import { parseCreature, fullName, stageOf, stageIndex, pathTitle, powerOf, raceName, cleanName } from '../core/creature.js';
 import { awayBases } from '../core/village.js';
 import { breedProblem } from '../core/family.js';
-import { TRAITS } from '../data/powers.js';
+import { TRAITS, TRAIT_IDS, LEGENDARY } from '../data/powers.js';
 import { WEAPONS } from '../data/forge.js';
 import { TEAM_MAX } from '../data/family.js';
 import { EXPEDITIONS } from '../data/village.js';
@@ -17,7 +17,11 @@ import { openMenu } from './panels.js';
 
 const PLACES = { out: 'On screen', home: 'Village', mine: 'Mine', away: 'Away' };
 const FILTERS = [['all', 'All'], ['out', 'On screen'], ['home', 'Village'], ['away', 'Away'], ['breed', 'Can breed']];
-const SORTS = [['power', 'Strongest'], ['name', 'Name'], ['stage', 'Oldest'], ['newest', 'Newest']];
+const SORTS = [['power', 'Strongest'], ['name', 'Name'], ['stage', 'Oldest'], ['newest', 'Newest'], ['race', 'Race'], ['gifts', 'Most gifts'], ['souls', 'Legendary mutations']];
+// Sorting by one gift or one Legendary mutation puts everyone who has it first. Only the ones some
+// creature of yours has are offered, so the list stays short.
+const giftSort = (id) => `gift:${id}`;
+const soulSort = (id) => `soul:${id}`;
 
 // Where one creature is right now.
 function placeOf(row) {
@@ -90,13 +94,34 @@ export async function openCreatures() {
 }
 
 function sorted(rows, sort) {
-  const by = {
+  const has = (list, id) => (r) => (list(r.c).includes(id) ? 1 : 0);
+  const first = (score) => (a, b) => score(b) - score(a);
+  let by = {
     power: (a, b) => powerOf(b.c) - powerOf(a.c),
     name: (a, b) => a.c.name.localeCompare(b.c.name),
     stage: (a, b) => b.c.growth - a.c.growth,
     newest: (a, b) => b.c.born - a.c.born,
-  }[sort] ?? (() => 0);
-  return rows.slice().sort((a, b) => by(a, b) || a.c.name.localeCompare(b.c.name));
+    race: (a, b) => raceName(a.c).localeCompare(raceName(b.c)),
+    gifts: first((r) => r.c.traits.length),
+    souls: first((r) => r.c.souls.length),
+  }[sort];
+  if (sort.startsWith('gift:')) by = first(has((c) => c.traits, sort.slice(5)));
+  if (sort.startsWith('soul:')) by = first(has((c) => c.souls, sort.slice(5)));
+  by = by ?? (() => 0);
+  // Within a group, the strongest first.
+  return rows.slice().sort((a, b) => by(a, b) || powerOf(b.c) - powerOf(a.c) || a.c.name.localeCompare(b.c.name));
+}
+
+// The gifts and Legendary mutations some creature of yours has, to sort by.
+function sortOptions(rows, sort) {
+  const option = (id, label) => h('option', { value: id, selected: sort === id }, label);
+  const gifts = TRAIT_IDS.filter((id) => rows.some((r) => r.c.traits.includes(id)));
+  const souls = Object.keys(LEGENDARY).filter((id) => rows.some((r) => r.c.souls.includes(id)));
+  return [
+    SORTS.map(([id, label]) => option(id, label)),
+    gifts.length > 0 && h('optgroup', { label: 'Has this gift first' }, gifts.map((id) => option(giftSort(id), TRAITS[id].name))),
+    souls.length > 0 && h('optgroup', { label: 'Has this Legendary mutation first' }, souls.map((id) => option(soulSort(id), LEGENDARY[id].name))),
+  ];
 }
 
 function buildRoster(body, note) {
@@ -125,7 +150,7 @@ function buildRoster(body, note) {
     again?.focus();
     again?.setSelectionRange(at, at);
   });
-  const sortBox = h('select', { onchange: (e) => { spec.sort = e.target.value; note.rebuild(); } }, SORTS.map(([id, label]) => h('option', { value: id, selected: spec.sort === id }, label)));
+  const sortBox = h('select', { onchange: (e) => { spec.sort = e.target.value; note.rebuild(); } }, sortOptions(rows, spec.sort));
   fill(body,
     h('div', { class: 'purse' },
       h('span', null, h('b', null, rows.length), rows.length === 1 ? ' creature' : ' creatures'),

@@ -1,6 +1,6 @@
 # Creature
 
-A little stick man that lives on your screen. You hatch it, feed it files and farmed food, give it a job, and raise a whole village of them: breed them, send them on expeditions, forge them weapons, and take three of them through a 30-level Adventure.
+A little stick man that lives on your screen. You hatch it, feed it files and farmed food, give it a job, and raise a whole village of them: breed them, send them on expeditions, forge them weapons, and take three of them through a 50-level Adventure.
 
 ## Start it
 
@@ -65,7 +65,7 @@ Open Powers, Powers. Each needs its stat in its top three, and all of them are f
 - **A cursed technique** (*Jujutsu Kaisen*) at 20 Might. Its last name decides which one runs in its family.
 - **A Devil Fruit** (*One Piece*) at 20 Vigor, from the fruits your farms and expeditions find.
 
-It can hold one of those. **A Legendary mutation** changes that, and it holds one at a time. The only way to get one is to beat the monster that gives it in Challenges; if it wins another, you choose which to keep.
+It can hold one of those. **A Legendary mutation** changes that. The only way to get one is to beat the monster that gives it in Challenges. A creature holds one, and each **Legendary Expander** (from Bizarre expeditions) makes room for one more, up to 3: their stats and fight bonuses add up, and its powers fit if any one of them could hold them all. With no room left, a new one is yours to swap in or turn down.
 - **Twin Soul** (The Last Dragon): any two of a Stand, speedster powers and a technique.
 - **Malevolent Soul** (Old Rex): a Stand plus one more, and that one can be a **Devil Fruit**.
 - **Iron Soul** (The Iron Rhino): still one power, but takes 20% less damage and has 15% more max HP.
@@ -79,7 +79,7 @@ Without one, a fruit goes with nothing else.
 
 ## Gifts
 
-**Born with**, from the egg, and passed on by breeding: Six Eyes, Sharingan, Cursed Body, **Titan Shifter** (below half its health it doubles in size and damage), **Saiyan Blood**, **Conqueror's Haki**, **Sun Breathing**, **Nine-Tails Chakra** and **One Punch**.
+**Born with**, from the egg, and passed on by breeding: Six Eyes, Sharingan, Cursed Body, **Titan Shifter** (below half its health it doubles in size and damage), **Saiyan Blood**, **Conqueror's Haki**, **Sun Breathing**, **Nine-Tails Chakra**, **One Punch**, **Void Aura** (10% more damage from everything) and **Philosopher's Heart** (one move you pick in the battle plan comes back 60% sooner).
 
 **Awakened by breeding**: never from an egg. A bred baby can wake up with one when its parents qualify, and from then on it passes on like a born-with gift. **Rinnegan** (both parents have Sharingan; brings the Almighty Push move), **Demon Slayer Mark** (a parent has Sun Breathing; more damage and speed all fight), **Ackerman Blood** (both parents have won a fight to the death; some swings land twice) and **Scarlet Eyes** (both parents share a last name; moves come back sooner). The Nursery shows the chance before you hatch, and Guide, Chances lists them all.
 
@@ -111,6 +111,12 @@ Every race has stats, a fight move, a passive in every fight, and a specialty at
 | Long-arm | Swings from further away | Expeditions bring 25% more gems | forest |
 | Skypiean | 10% more critical hits | Expeditions twice as likely to find someone | sky island |
 | Devil | Heals whenever a foe goes down | A gem every 4 hours, whatever its job | sea, very rarely, Adventure level 27 |
+| Vampire | 15% more max HP, poison-proof, heals whenever a foe goes down. Pale, with drops of blood | A gem every 2 hours, whatever its job | stone ruins (Bizarre) |
+| Pillar Man | Takes 20% less damage, 15% more max HP, drawn bigger, a pillar behind it | Digs 75% more colors | stone ruins, rarely |
+| Dragon | 10% less damage, 10% more critical hits, further reach. Green scales, red wings | Twice as many gems | rift in the sky, rarely |
+| Cursed Alien | 12% more dodging and 12% more critical hits. Green, with a flying saucer | Expeditions three times as likely to find someone | rift in the sky |
+
+The last four are the strongest, and only come from Bizarre expeditions. Like every race, they mix: a baby can be half or a quarter of one.
 
 ## The Nursery
 
@@ -118,9 +124,9 @@ Home, Nursery is where new creatures come from.
 
 - **Breed:** two parents, Scrappers or older and at least 40 full. Choose its last name, who it looks and fights like, and up to 3 things to pass on: born-with gifts, mutations and one Quirk. There is no waiting between eggs: each parent just spends 30 fullness. A Nurse out on the screen lets one more pass on and saves the parents fullness.
 - **The Mega Breeder** costs 150 gems, once, and lets every egg after it carry 3 more things.
-- **The Bloodline Altar**, in the Altar tab, is bought once with gems. Sacrifice a creature on it (gone forever) and every race it is at least half of becomes a race the Eggs tab can hatch.
+- **The Bloodline Altar**, in the Altar tab, is bought once with gems. Sacrifice a creature on it (gone forever) and every race it is at least half of joins the altar: a half-and-half creature adds both, a quarter isn't enough. You don't pick an egg's race: each egg has a 30% chance of being one of the altar's races, whole, half or a quarter, and the Eggs tab shows it before you keep it.
 - **Eggs:** the egg on offer is free; rolling another costs a gem, and Hyper roll keeps rolling until it gets the gifts or family you pick.
-- **Items:** a **Time Chamber Key** grows a creature straight to Grown and fed, ready to breed. A **Limit Expander** makes room for 2 more mutations. Both come from Adventure and expeditions.
+- **Items:** a **Time Chamber Key** grows a creature straight to Grown and fed, ready to breed. A **Limit Expander** makes room for 2 more mutations. Both come from Adventure and expeditions. A **Legendary Expander** makes room for one more Legendary mutation (3 at most), and only comes from Bizarre expeditions.
 
 ## The village
 
@@ -128,7 +134,7 @@ Everyone not out on your screen lives in the village and works for the pool you 
 
 - **Work:** Miners dig colors, Farmers grow food, Fighters hunt, Nurses make everyone work harder.
 - **The Legendary Mine:** up to 3 legendary Miners (a Miner in its final form, or one with a Legendary mutation) dig Legendary ore for the forge.
-- **Expeditions:** send up to 3, up to 3 expeditions at once, along the coast, through the forest, across the sea, or up to the sky island. They bring back gems, sometimes loot, a Devil Fruit, or a creature of another race. A clock counts down until they are back, and **200 plants from the larder take an hour off**.
+- **Expeditions:** send up to 3, up to 3 expeditions at once. **Sea expeditions** go along the coast, through the forest, across the sea, or up to the sky island. **Bizarre expeditions** go into the stone ruins or through the rift in the sky: they can kill whoever goes (the stronger it is, the likelier it comes back, and if nobody does, nothing they found does either), but they are the only place the four strongest races and Legendary Expanders come from. Expeditions bring back gems, sometimes loot, a Devil Fruit, or a creature of another race. A clock counts down until they are back, and **200 plants from the larder take an hour off**.
 
 ## Adventure
 
@@ -143,7 +149,7 @@ Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blad
 - **Battle plan:** every move it knows, which to use, and how it fights, when it is hurt, and who it goes for.
 - **Challenges:** training monsters can't kill it; deadly ones can, forever, and each win is a trophy. A dead creature's file moves to `world/graveyard`. Old Rex also gives a Malevolent Soul, and The Last Dragon a Twin Soul.
 - **Legendary road:** four more monsters to the death. No trophies: each gives one Legendary mutation and nothing else.
-- **Ultimate monsters:** five more, just as deadly, once it has won any 2 on the Legendary road. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time.
+- **Ultimate road:** five more, just as deadly, once it has won any 2 on the Legendary road. They open in a note of their own, beside Challenges. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time.
 - **Arena:** a free-for-all with any `.creature` files.
 
 ## The art

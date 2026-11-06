@@ -11,7 +11,7 @@ import {
 import { breed, awakenChances, bredRuleMet, bredRuleText, altarProblem, buyAltar, sacrificeProblem, sacrifice, altarRacesOf, eggRaces } from '../src/core/family.js';
 import { ultimatesOpen, canBeReborn, takeable, rebornProblem, beReborn, rebornLosses } from '../src/core/reborn.js';
 import { emptyHouse, sanitizeHouse, joinHouse } from '../src/core/house.js';
-import { eggFromId, hatchEgg, matchChance } from '../src/core/roll.js';
+import { eggFromId, eggHeritage, hatchEgg, matchChance } from '../src/core/roll.js';
 import { chanceSections } from '../src/core/odds.js';
 import { fightProblem, settleChallenge, startChallenge, wonChallenge } from '../src/sim/challenges.js';
 import { Bout, finishBout } from '../src/sim/arena.js';
@@ -242,7 +242,7 @@ test('being reborn: it absorbs another, takes up to two of its gifts, and starts
   const c = everyTrophy(grown('Phoenix', 21));
   c.traits = ['haki'];
   c.powers = { stand: 'theworld', speedster: false, technique: null, technique2: null, fruit: null, quirks: ['hardening'] };
-  c.legendary = LEGENDARY_ID;
+  c.souls = [LEGENDARY_ID];
   c.mutations = [{ id: 'horns', from: 'x', at: 1 }];
   c.path = { line: ['fighter'], xp: 999 };
   c.weapon = 'dragonslayer';
@@ -274,7 +274,7 @@ test('being reborn: it absorbs another, takes up to two of its gifts, and starts
   assert.deepEqual(c.trophies, []);
   assert.deepEqual(c.legendWins, [], 'and the Legendary road starts over too');
   assert.deepEqual(c.path, { line: [], xp: 0 });
-  assert.equal(c.legendary, null);
+  assert.deepEqual(c.souls, []);
   assert.equal(c.powers.stand, null);
   assert.deepEqual(c.powers.quirks, []);
   assert.deepEqual(c.gear, { owned: [], worn: [] });
@@ -345,19 +345,32 @@ test('the Bloodline Altar: bought once, and a sacrifice lets eggs hatch as its r
   another.race = 'lunarian';
   assert.match(sacrificeProblem(house, another), /already/, 'a race only needs one sacrifice');
 
-  // The egg on offer hatches as the race picked, and that choice survives the household file.
-  house.eggRace = 'lunarian';
+  // Nobody picks: each egg has its chance of an altar race, whole, half or a quarter, and the egg
+  // says which before it hatches. It survives the household file.
   const back = sanitizeHouse(JSON.parse(JSON.stringify(house)));
   assert.equal(back.altar, true);
   assert.deepEqual(back.altarRaces, ['lunarian']);
-  assert.equal(back.eggRace, 'lunarian');
-  const baby = hatchEgg(eggFromId('abc123'), 'Baby', 1, back.eggRace);
+  assert.equal(eggHeritage('abc123', []), null, 'no altar races: always Human');
+  const ids = Array.from({ length: 4000 }, (_, i) => `egg${i}`);
+  const eggs = ids.map((id) => eggFromId(id, back.altarRaces));
+  const raced = eggs.filter((e) => e.heritage);
+  assert.ok(Math.abs(raced.length / eggs.length - ALTAR.eggChance) < 0.03, `${raced.length} of ${eggs.length}`);
+  ALTAR.eggShares.forEach(([share, p]) => {
+    const n = raced.filter((e) => e.heritage.lunarian === share).length;
+    assert.ok(Math.abs(n / raced.length - p) < 0.05, `${share}: ${n} of ${raced.length}`);
+  });
+  const whole = eggs.find((e) => e.heritage?.lunarian === 1);
+  const baby = hatchEgg(whole, 'Baby', 1);
   assert.equal(baby.race, 'lunarian');
   assert.deepEqual(raceBackPictures(baby), ['lunarian']);
+  const half = hatchEgg(eggs.find((e) => e.heritage?.lunarian === 0.5), 'Half', 1);
+  assert.equal(half.race, 'lunarian');
+  assert.deepEqual(half.heritage, { lunarian: 0.5, human: 0.5 });
+  assert.equal(hatchEgg(eggs.find((e) => !e.heritage), 'Plain', 1).race, 'human');
+  assert.deepEqual(eggFromId(whole.id, back.altarRaces), whole, 'the same egg is always the same');
   // A hand-edited file can't claim races it never sacrificed for.
-  const evil = sanitizeHouse({ altar: false, altarRaces: ['devil'], eggRace: 'devil' });
+  const evil = sanitizeHouse({ altar: false, altarRaces: ['devil'] });
   assert.deepEqual(evil.altarRaces, []);
-  assert.equal(evil.eggRace, null);
   assert.deepEqual(sanitizeHouse({ altar: true, altarRaces: ['human', 'halfdevil', '__proto__', 'giant', 'giant'] }).altarRaces, ['giant']);
 });
 

@@ -1,7 +1,7 @@
 // In plain words: what each move does, and what everything a creature has is doing to it.
 // No DOM here, so tests can read it. Used by the battle plan note and the "what it has" note.
 
-import { rawStats, statLimits, pathNodes, movesOf, hpGivenUp, ofaLevel, hasTrait, raceName, raceParts, raceStats, raceMoves, mutationCap, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
+import { rawStats, statLimits, pathNodes, movesOf, hpGivenUp, ofaLevel, hasTrait, raceName, raceParts, raceStats, raceMoves, mutationCap, soulCap, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
 import { WEAPONS } from '../data/forge.js';
 import { MUTATIONS, MAX_MUTATIONS, FAMILY_ABILITY } from '../data/mutations.js';
 import { ABILITIES } from '../data/paths.js';
@@ -105,7 +105,7 @@ export function moveList(c) {
   const tuning = tuningOf(c);
   return movesOf(c).filter((m) => Object.hasOwn(ABILITIES, m.id)).map((m) => {
     const def = tuneMove(m.id, ABILITIES[m.id], tuning);
-    return { id: m.id, name: def.name, from: m.from, what: describeMove(def), range: moveRange(def), rangeWord: RANGE_WORDS[moveRange(def)], on: !c.battle.off.includes(m.id) };
+    return { id: m.id, name: def.name, from: m.from, what: describeMove(def), range: moveRange(def), rangeWord: RANGE_WORDS[moveRange(def)], on: !c.battle.off.includes(m.id), cd: def.cd ?? 0 };
   });
 }
 
@@ -221,9 +221,15 @@ export function buildSheet(c) {
       })),
     });
   }
-  if (c.legendary) {
-    const l = LEGENDARY[c.legendary];
-    sections.unshift({ title: 'Legendary mutation', rows: [row(c, l.name, l.stats, `${l.blurb}${l.passive ? ` In a fight: ${l.passive.text}` : ''}`)] });
+  if (c.souls.length) {
+    sections.unshift({
+      title: `Legendary mutations (${c.souls.length} of ${soulCap(c)})`,
+      note: c.souls.length > 1 ? 'Their stats and fight bonuses add up. Its powers fit if any one of them could hold them all.' : '',
+      rows: c.souls.map((id) => {
+        const l = LEGENDARY[id];
+        return row(c, l.name, l.stats, `${l.blurb}${l.passive ? ` In a fight: ${l.passive.text}` : ''}`);
+      }),
+    });
   }
   if (powerRows.length) {
     const given = hpGivenUp(c);

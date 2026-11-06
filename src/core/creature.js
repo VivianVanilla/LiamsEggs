@@ -7,7 +7,7 @@ import { FOODS, FOOD_ORDER, SNACK, nutritionOf, essenceOf, fillOf } from '../dat
 import { MUTATIONS, MUTATION_THRESHOLDS, MAX_MUTATIONS, familyMutations, FAMILY_ABILITY } from '../data/mutations.js';
 import { PATHS, ROOT_PATHS, TIER_XP, ABILITIES } from '../data/paths.js';
 import { WEAPONS } from '../data/forge.js';
-import { EXPANDER_SLOTS, MAX_EXPANDERS } from '../data/items.js';
+import { EXPANDER_SLOTS, MAX_EXPANDERS, MAX_SOUL_EXPANDERS } from '../data/items.js';
 import {
   STANDS, STAND_IDS, STAND_WITS, QUIRKS, QUIRK_IDS, SPEEDSTER, SPEEDSTER_SPEED, MAX_HP_GIVEN,
   TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, POWER_SLOTS, POWER_SLOTS_LEGENDARY, POWER_CATEGORIES, LEGENDARY,
@@ -68,7 +68,9 @@ export function newCreature(name, now = Date.now()) {
     training: Object.fromEntries(STAT_KEYS.map((k) => [k, 0])),
     path: { line: [], xp: 0 },
     powers: { stand: null, speedster: false, technique: null, technique2: null, fruit: null, quirks: [] },
-    legendary: null,
+    // Its Legendary mutations, the oldest first. It holds one, and more with Legendary Expanders.
+    souls: [],
+    soulExpanders: 0,
     // Its family. The last name decides its cursed technique; the other side matters to a Cursed Body.
     lineage,
     otherLine: otherLineFromId(id, lineage),
@@ -304,7 +306,7 @@ function powerDefs(c) {
   const { stand, speedster, technique, technique2, fruit, quirks } = c.powers;
   const level = ofaLevel(c);
   return [
-    stand && STANDS[stand], speedster && SPEEDSTER, technique && TECHNIQUES[technique], technique2 && TECHNIQUES[technique2], fruit && FRUITS[fruit], c.legendary && LEGENDARY[c.legendary],
+    stand && STANDS[stand], speedster && SPEEDSTER, technique && TECHNIQUES[technique], technique2 && TECHNIQUES[technique2], fruit && FRUITS[fruit], ...c.souls.map((id) => LEGENDARY[id]),
     ...quirks.map((id) => (id === OFA_ID ? { ...QUIRKS[id], stats: ofaStats(level) } : QUIRKS[id])),
   ].filter(Boolean);
 }
@@ -355,10 +357,10 @@ export function racePassive(c) {
   return out;
 }
 
-// Its races and its Legendary mutation, together: everything that works in every fight.
+// Its races and its Legendary mutations, together: everything that works in every fight.
 export function fightPassive(c) {
   const out = racePassive(c);
-  if (c.legendary) addPassive(out, LEGENDARY[c.legendary].passive);
+  c.souls.forEach((id) => addPassive(out, LEGENDARY[id].passive));
   return out;
 }
 
@@ -382,15 +384,13 @@ export function raceName(c) {
 }
 
 // The race pictures it wears: every race it is at least half of.
-export function racePictures(c) {
-  return raceParts(c)
-    .filter(([id, share]) => c.pureBlood || share >= 0.5)
-    .map(([id, share]) => (id === 'devil' && share < 1 && !c.pureBlood ? 'halfdevil' : id))
-    .filter((id) => RACE_PICTURES.includes(id));
-}
+const racesShown = (c) => raceParts(c)
+  .filter(([id, share]) => c.pureBlood || share >= 0.5)
+  .map(([id, share]) => (id === 'devil' && share < 1 && !c.pureBlood ? 'halfdevil' : id));
+export const racePictures = (c) => racesShown(c).filter((id) => RACE_PICTURES.includes(id));
 
-// The ones of those with a picture behind the body too, like a Lunarian's wings.
-export const raceBackPictures = (c) => racePictures(c).filter((id) => RACE_BACKS.includes(id));
+// The races it shows with a picture behind the body, like a Lunarian's wings or a Pillar Man's pillar.
+export const raceBackPictures = (c) => racesShown(c).filter((id) => RACE_BACKS.includes(id));
 
 // One For All's level, from its stockpile. 0 if it doesn't hold it.
 export const ofaLevel = (c) => (c.powers.quirks.includes(OFA_ID) ? ofaLevelFor(c.ofa?.stockpile ?? 0) : 0);
@@ -437,7 +437,7 @@ export function otherLineFromId(id, lineage) {
 // A number from 0 to 1 that is always the same for this egg and this question. The raw hash gets
 // mixed first: its low bits alone line up between questions, which once meant some families could
 // never hatch with some gifts, and Sharingan and Cursed Body never came together.
-const eggRoll = (id, question) => makeRng(hashStr(`${id}:${question}`))();
+export const eggRoll = (id, question) => makeRng(hashStr(`${id}:${question}`))();
 
 // What it hatched with. The same egg always hatches with the same gifts.
 export function bornWith(id, lineage) {
@@ -453,34 +453,42 @@ export const hasTrait = (c, id) => (c.traits ?? []).includes(id);
 // A Stand, speedster powers and a cursed technique share these places. A Devil Fruit takes them all.
 const POWER_KINDS = ['stand', 'speedster', 'technique', 'fruit'];
 export const powersHeld = (c) => [c.powers.stand, c.powers.speedster, c.powers.technique, c.powers.fruit].filter(Boolean).length;
-const soulSlots = (legendary) => (legendary ? LEGENDARY[legendary].slots ?? POWER_SLOTS_LEGENDARY : POWER_SLOTS);
-export const powerSlots = (c) => soulSlots(c.legendary);
-export const hasPowerRoom = (c) => powersHeld(c) < powerSlots(c);
+const soulSlots = (soul) => (soul ? LEGENDARY[soul].slots ?? POWER_SLOTS_LEGENDARY : POWER_SLOTS);
 
-// Whether a set of powers has room for this one, under the soul it has.
-function roomFor(powers, legendary, kind) {
-  const soul = legendary ? LEGENDARY[legendary] : null;
-  const held = POWER_KINDS.filter((k) => powers[k]);
-  if (held.includes(kind)) return false;
-  if (kind === 'stand' && soul?.noStand) return false;
-  // A Devil Fruit goes with nothing else, unless its soul makes room for one (`fruit`).
-  if ((kind === 'fruit' || powers.fruit) && held.length && !soul?.fruit) return false;
-  if (held.length >= soulSlots(legendary)) return false;
-  if (soul?.besideFruit && held.length && kind !== 'fruit' && !powers.fruit) return false;
-  return !(soul?.apart && held.some((k) => POWER_CATEGORIES[k] === POWER_CATEGORIES[kind]));
-}
+// How many Legendary mutations it can hold: one, and one more for each Legendary Expander.
+export const soulCap = (c) => 1 + Math.min(MAX_SOUL_EXPANDERS, c.soulExpanders ?? 0);
 
-export const hasRoomFor = (c, kind) => roomFor(c.powers, c.legendary, kind);
-
-// Whether everything it holds now would still fit under that Legendary mutation.
-export function fitsSoul(c, legendary) {
-  const built = {};
-  for (const kind of POWER_KINDS.filter((k) => c.powers[k])) {
-    if (!roomFor(built, legendary, kind)) return false;
-    built[kind] = c.powers[kind];
-  }
+// Whether one soul (or none) can hold this set of powers.
+function setFits(kinds, soulId) {
+  const soul = soulId ? LEGENDARY[soulId] : null;
+  if (kinds.length > soulSlots(soulId)) return false;
+  if (soul?.noStand && kinds.includes('stand')) return false;
+  // A Devil Fruit goes with nothing else, unless the soul makes room for one (`fruit`).
+  const fruit = kinds.includes('fruit');
+  if (fruit && kinds.length > 1 && !soul?.fruit) return false;
+  if (soul?.besideFruit && kinds.length > 1 && !fruit) return false;
+  if (soul?.apart && new Set(kinds.map((k) => POWER_CATEGORIES[k])).size < kinds.length) return false;
   return true;
 }
+
+// With more than one Legendary mutation, its powers fit if any one of them could hold them all.
+// Their stats and what they do in a fight all add up; only the room for powers doesn't.
+const fitsAny = (kinds, souls) => (souls.length ? souls : [null]).some((s) => setFits(kinds, s));
+const heldKinds = (powers) => POWER_KINDS.filter((k) => powers[k]);
+
+export const powerSlots = (c) => Math.max(...(c.souls.length ? c.souls : [null]).map(soulSlots));
+export const hasPowerRoom = (c) => powersHeld(c) < powerSlots(c);
+
+// Whether a set of powers has room for this one, under the souls it has.
+function roomFor(powers, souls, kind) {
+  const held = heldKinds(powers);
+  return !held.includes(kind) && fitsAny([...held, kind], souls);
+}
+
+export const hasRoomFor = (c, kind) => roomFor(c.powers, c.souls, kind);
+
+// Whether everything it holds now would still fit under these Legendary mutations.
+export const fitsSouls = (c, souls) => fitsAny(heldKinds(c.powers), souls);
 
 export const canAwakenStand = (c) => hasRoomFor(c, 'stand') && computeStats(c).wits >= STAND_WITS;
 export const canBecomeSpeedster = (c) => hasRoomFor(c, 'speedster') && computeStats(c).speed >= SPEEDSTER_SPEED;
@@ -519,9 +527,11 @@ export function learnSecondTechnique(c) {
 export const fruitProblem = (c) => {
   if (c.powers.fruit) return 'It has already eaten one';
   if (c.powers.stand || c.powers.speedster || c.powers.technique) {
-    const soul = c.legendary ? LEGENDARY[c.legendary] : null;
-    if (!soul?.fruit) return 'It already has a power, and a Devil Fruit can\'t go with any other';
-    if (!roomFor(c.powers, c.legendary, 'fruit')) return soul.apart ? `${soul.name} only makes room for a Devil Fruit beside a Stand` : `${soul.name} has no room left for a Devil Fruit`;
+    if (!c.souls.some((id) => LEGENDARY[id].fruit)) return 'It already has a power, and a Devil Fruit can\'t go with any other';
+    if (!roomFor(c.powers, c.souls, 'fruit')) {
+      const only = c.souls.length === 1 ? LEGENDARY[c.souls[0]] : null;
+      return only?.apart ? `${only.name} only makes room for a Devil Fruit beside a Stand` : 'None of its Legendary mutations has room for a Devil Fruit beside what it holds';
+    }
   }
   if (computeStats(c).vigor < FRUIT_VIGOR) return `It needs ${FRUIT_VIGOR} Vigor`;
   return null;
@@ -714,7 +724,10 @@ export function sanitizeCreature(raw, now = Date.now()) {
   }
   c.path.line = validLine(raw.path?.line);
   c.path.xp = safeNum(raw.path?.xp, 0, 100000);
-  c.legendary = typeof raw.legendary === 'string' && Object.hasOwn(LEGENDARY, raw.legendary) ? raw.legendary : null;
+  c.soulExpanders = Math.floor(safeNum(raw.soulExpanders, 0, MAX_SOUL_EXPANDERS));
+  // Saves from before a creature could hold more than one say `legendary` instead.
+  const souls = Array.isArray(raw.souls) ? raw.souls : typeof raw.legendary === 'string' ? [raw.legendary] : [];
+  c.souls = [...new Set(souls)].filter((id) => typeof id === 'string' && Object.hasOwn(LEGENDARY, id)).slice(0, soulCap(c));
   c.bredAt = safeNum(raw.bredAt, 0, now);
   c.household = raw.household === true;
   c.race = typeof raw.race === 'string' && Object.hasOwn(RACES, raw.race) ? raw.race : DEFAULT_RACE;
@@ -732,7 +745,7 @@ export function sanitizeCreature(raw, now = Date.now()) {
     ? [...new Set(raw.trophies)].filter((id) => typeof id === 'string' && Object.hasOwn(DEADLY_MONSTERS, id) && DEADLY_MONSTERS[id].trophy)
     : [];
   c.legendWins = Array.isArray(raw.legendWins) ? [...new Set(raw.legendWins)].filter((id) => LEGEND_IDS.includes(id)) : [];
-  c.soulOffer = typeof raw.soulOffer === 'string' && Object.hasOwn(LEGENDARY, raw.soulOffer) && raw.soulOffer !== c.legendary ? raw.soulOffer : null;
+  c.soulOffer = typeof raw.soulOffer === 'string' && Object.hasOwn(LEGENDARY, raw.soulOffer) && !c.souls.includes(raw.soulOffer) ? raw.soulOffer : null;
   c.rebirths = Array.isArray(raw.rebirths)
     ? raw.rebirths.slice(-MAX_REBIRTHS).filter((r) => r && typeof r === 'object').map((r) => ({
       at: safeNum(r.at, 0, now),
@@ -767,6 +780,7 @@ function sanitizeBattle(raw) {
   plan.hurt = pick(HURT_PLANS, raw?.hurt, plan.hurt);
   plan.target = pick(TARGET_PLANS, raw?.target, plan.target);
   if (Array.isArray(raw?.off)) plan.off = [...new Set(raw.off)].filter((id) => typeof id === 'string' && Object.hasOwn(ABILITIES, id));
+  plan.heart = typeof raw?.heart === 'string' && Object.hasOwn(ABILITIES, raw.heart) ? raw.heart : null;
   return plan;
 }
 
@@ -791,17 +805,17 @@ function bankFromHistory(c) {
 
 // Files saved before powers existed simply come back with none.
 function sanitizePowers(raw, c) {
-  const { legendary, lineage } = c;
+  const { souls, lineage } = c;
   const powers = { stand: null, speedster: false, technique: null, technique2: null, fruit: null, quirks: [] };
   // A file can't hold more of these than its soul allows.
-  if (typeof raw?.stand === 'string' && Object.hasOwn(STANDS, raw.stand) && roomFor(powers, legendary, 'stand')) powers.stand = raw.stand;
-  if (raw?.speedster === true && roomFor(powers, legendary, 'speedster')) powers.speedster = true;
+  if (typeof raw?.stand === 'string' && Object.hasOwn(STANDS, raw.stand) && roomFor(powers, souls, 'stand')) powers.stand = raw.stand;
+  if (raw?.speedster === true && roomFor(powers, souls, 'speedster')) powers.speedster = true;
   // Whatever a file claims, the only technique it can have is the one its family has.
-  if (typeof raw?.technique === 'string' && Object.hasOwn(TECHNIQUES, raw.technique) && roomFor(powers, legendary, 'technique')) powers.technique = lineage;
+  if (typeof raw?.technique === 'string' && Object.hasOwn(TECHNIQUES, raw.technique) && roomFor(powers, souls, 'technique')) powers.technique = lineage;
   // Only a Cursed Body holds a second, and only the one from the other side of its family.
   if (powers.technique && raw?.technique2 && hasTrait(c, 'cursedbody') && c.otherLine !== lineage) powers.technique2 = c.otherLine;
   // A Devil Fruit only if it has none of the others, or its soul makes room for one.
-  if (typeof raw?.fruit === 'string' && Object.hasOwn(FRUITS, raw.fruit) && roomFor(powers, legendary, 'fruit')) powers.fruit = raw.fruit;
+  if (typeof raw?.fruit === 'string' && Object.hasOwn(FRUITS, raw.fruit) && roomFor(powers, souls, 'fruit')) powers.fruit = raw.fruit;
   if (Array.isArray(raw?.quirks)) {
     let given = 0;
     for (const id of raw.quirks) {
@@ -886,7 +900,7 @@ export function serializeCreature(c) {
       speedster: c.powers.speedster,
       technique: c.powers.technique ? TECHNIQUES[c.powers.technique].name : null,
       secondTechnique: c.powers.technique2 ? TECHNIQUES[c.powers.technique2].name : null,
-      legendary: c.legendary ? LEGENDARY[c.legendary].name : null,
+      legendary: c.souls.length ? c.souls.map((id) => LEGENDARY[id].name) : null,
       quirks: c.powers.quirks.map((id) => QUIRKS[id].name),
       devilFruit: c.powers.fruit ? FRUITS[c.powers.fruit].name : null,
       oneForAllLevel: ofaLevel(c) || null,
@@ -909,7 +923,8 @@ export function serializeCreature(c) {
     path: c.path,
     powers: c.powers,
     ofa: c.ofa,
-    legendary: c.legendary,
+    souls: c.souls,
+    soulExpanders: c.soulExpanders ?? 0,
     trophies: c.trophies,
     legendWins: c.legendWins ?? [],
     soulOffer: c.soulOffer ?? null,

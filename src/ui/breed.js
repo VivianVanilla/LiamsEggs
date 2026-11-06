@@ -4,7 +4,7 @@
 import { toast, rich } from './flair.js';
 import { G, api, saveCreature, saveHouse, memberOf, creatureText } from '../state.js';
 import { h, fill, button } from './notes.js';
-import { parseCreature, fullName, lastName, lineageOf, otherLineOf, creatureColors, addActivityXp, pathTitle, raceName, STAGES } from '../core/creature.js';
+import { parseCreature, fullName, lastName, lineageOf, otherLineOf, creatureColors, addActivityXp, pathTitle, raceName, stageOf, STAGES } from '../core/creature.js';
 import { breedProblem, breedCost, giftsOf, giftLimit, breed, nurseHelp, mixHeritage, mainRace, awakenChances } from '../core/family.js';
 import { awayBases } from '../core/village.js';
 import { itemCount, itemProblem, useItem } from '../core/items.js';
@@ -79,24 +79,62 @@ function either(note, key, labelOf) {
 
 const parents = (note) => note.spec.breed.picked.map((base) => note.spec.breed.rows.find((r) => r.base === base)?.c);
 
+// One step of the Nursery, in a card of its own: a number, a title, and a summary on the right.
+export function stepCard(num, title, tag, ...kids) {
+  return h('div', { class: 'ncard' },
+    h('div', { class: 'ncard-head' },
+      num != null && h('span', { class: 'ncard-num' }, String(num)),
+      h('span', { class: 'ncard-title' }, title),
+      tag != null && tag !== false && h('span', { class: 'ncard-tag' }, tag)),
+    kids);
+}
+
+// How many places are filled, as dots.
+const pips = (n, of) => h('span', { class: 'pips', title: `${n} of ${of}` }, Array.from({ length: of }, (_, i) => h('i', { class: `pip${i < n ? ' on' : ''}` })));
+
+const sublabel = (text) => h('div', { class: 'sublabel' }, text);
+
+// The two parents side by side. Clicking one puts it back.
+function parentSlots(note, a, b) {
+  const st = note.spec.breed;
+  const slot = (c, base) => {
+    if (!c) return h('div', { class: 'parentslot empty' }, h('span', { class: 'small' }, 'Pick a parent below'));
+    const canvas = h('canvas');
+    note.refs.portraits.push({ canvas, c });
+    return h('button', {
+      class: 'parentslot',
+      title: 'Put it back',
+      onclick: () => {
+        st.picked = st.picked.filter((x) => x !== base);
+        st.choice = freshChoice();
+        st.message = '';
+        note.rebuild();
+      },
+    }, canvas, h('span', { class: 'pname' }, c.name), h('span', { class: 'small' }, `${stageOf(c).name}, ${raceName(c)}`));
+  };
+  return h('div', { class: 'parents' }, slot(a, st.picked[0]), h('span', { class: 'parentplus' }, '+'), slot(b, st.picked[1]));
+}
+
 function buildPicker(page, note) {
   const st = note.spec.breed;
   const { rows, picked, choice } = st;
   const help = breedHelp();
   const keys = itemCount(G.house, 'chamber');
-  fill(page,
-    h('div', { class: 'small' }, `Pick two parents: ${STAGES[BREED_STAGE].name}s or older, at least ${BREED_FULLNESS} full. Each spends ${breedCost(help)} fullness, and they can go again as soon as they are fed.`),
+  const [a, b] = parents(note);
+  fill(page, stepCard(1, 'Parents', `${[a, b].filter(Boolean).length} of 2`,
+    parentSlots(note, a, b),
+    h('div', { class: 'small', style: 'margin-top:5px' }, `${STAGES[BREED_STAGE].name}s or older, at least ${BREED_FULLNESS} full. Each spends ${breedCost(help)} fullness, and can go again as soon as it is fed.`),
     help.nurse
-      ? h('div', { class: 'small', style: 'font-weight:600' }, nurseLine(help))
+      ? h('div', { class: 'small good' }, nurseLine(help))
       : h('div', { class: 'small' }, 'A Nurse out on the screen helps: more can pass on, parents spend less, and eggs hatch bigger.'),
-    h('div', { class: 'roster', style: 'max-height:160px;margin-top:5px' }, rows.map((row) => {
+    h('div', { class: 'roster', style: 'max-height:150px;margin-top:5px' }, rows.map((row) => {
       const canvas = h('canvas');
       note.refs.portraits.push({ canvas, c: row.c });
       const on = picked.includes(row.base);
       const problem = parentProblem(row);
       // Too young? A Time Chamber Key fixes that on the spot.
       const young = keys > 0 && problem && !itemProblem(G.house, 'chamber', row.c) && /has to be a/.test(problem);
-      return h('div', { class: 'rosterrow' },
+      return h('div', { class: `rosterrow${on ? ' picked' : ''}` },
         canvas,
         h('div', { class: 'grow', style: 'min-width:0' },
           h('div', { class: 'name' }, fullName(row.c)),
@@ -110,16 +148,14 @@ function buildPicker(page, note) {
           note.rebuild();
         }, 'mini'),
         button(on ? 'Parent' : 'Pick', () => {
-          st.picked = on ? picked.filter((b) => b !== row.base) : [...picked.slice(-1), row.base];
+          st.picked = on ? picked.filter((x) => x !== row.base) : [...picked.slice(-1), row.base];
           st.choice = freshChoice();
           st.message = '';
           note.rebuild();
         }, on ? 'mini hot' : 'mini'));
-    })),
-  );
-  const [a, b] = parents(note);
+    }))));
   if (!a || !b) {
-    fill(page, h('div', { class: 'small', style: 'margin-top:6px' }, rows.length < 2 ? 'You need two creatures. Hatch one in the Eggs tab.' : 'Pick one more.'));
+    if (rows.length < 2) fill(page, h('div', { class: 'small', style: 'margin-top:6px' }, 'You need two creatures. Hatch one in the Eggs tab.'));
     return;
   }
   const [rowA, rowB] = picked.map((base) => rows.find((r) => r.base === base));
@@ -136,41 +172,43 @@ function buildPicker(page, note) {
   const family = (p) => `${lastName(p)} (${TECHNIQUES[lineageOf(p)].name})`;
   const look = (p) => creatureColors(p).body;
   fill(page,
-    h('div', { class: 'sect' }, 'Last name'),
-    either(note, 'family', family),
-    h('div', { class: 'small' }, 'Its last name decides its cursed technique. The other parent\'s family becomes the other side of its family, which only a Cursed Body can use.'),
-    h('div', { class: 'sect' }, 'Race'),
-    h('div', { class: 'small' }, rich(`It will be ${babyRace}: half of each parent's races, down to quarters.${Object.keys(heritage).length > 1 ? ` 1 in ${Math.round(1 / PURE_BLOOD_CHANCE)} is born a Pure-blood, with every race at full power.` : ''}`)),
-    h('div', { class: 'sect' }, 'Looks like'),
-    either(note, 'look', (p) => `${p.name}`),
-    h('div', { class: 'swatches', style: 'margin-top:3px' }, [a, b].map((p) => h('div', { class: 'swatch', title: p.name, style: `background:${look(p)}` }))),
-    h('div', { class: 'sect' }, 'Fights like'),
-    either(note, 'style', (p) => `${p.name}: ${STANCES[p.battle.stance].name}`),
-    h('div', { class: 'sect' }, `Passes on: ${choice.gifts.length} of ${limit}${help.mega ? ' (Mega Breeder)' : ''}`),
-    gifts.length === 0
-      ? h('div', { class: 'small' }, 'Neither has a gift, a mutation or a Quirk to pass on yet.')
-      : h('div', { class: 'chips' }, gifts.map((g) => {
-        const on = choice.gifts.includes(g.key);
-        const blocked = !on && (choice.gifts.length >= limit || (g.kind === 'quirk' && quirkTaken));
-        return h('button', {
-          class: `chip${on ? ' on' : ''}`,
-          style: g.kind === 'trait' ? `--c:${TRAITS[g.id].color}` : '',
-          title: g.what,
-          disabled: blocked,
-          onclick: () => {
-            choice.gifts = on ? choice.gifts.filter((k) => k !== g.key) : [...choice.gifts, g.key];
-            note.rebuild();
-          },
-        }, `${g.name} (${nameOf(g.from)})`);
+    stepCard(2, 'The baby', babyRace,
+      sublabel('Last name'),
+      either(note, 'family', family),
+      h('div', { class: 'small' }, 'Decides its cursed technique. The other parent\'s family becomes the other side of its family, which only a Cursed Body can use.'),
+      sublabel('Looks like'),
+      h('div', { class: 'row nowrap' },
+        either(note, 'look', (p) => `${p.name}`),
+        h('div', { class: 'swatches' }, [a, b].map((p) => h('div', { class: 'swatch', title: p.name, style: `background:${look(p)}` })))),
+      sublabel('Fights like'),
+      either(note, 'style', (p) => `${p.name}: ${STANCES[p.battle.stance].name}`),
+      sublabel('Race'),
+      h('div', { class: 'small' }, rich(`${babyRace}: half of each parent's races, down to quarters.${Object.keys(heritage).length > 1 ? ` 1 in ${Math.round(1 / PURE_BLOOD_CHANCE)} is born a Pure-blood, with every race at full power.` : ''}`))),
+    stepCard(3, 'Passes on', h('span', null, pips(choice.gifts.length, limit), ` ${choice.gifts.length} of ${limit}${help.mega ? ', Mega' : ''}`),
+      gifts.length === 0
+        ? h('div', { class: 'small' }, 'Neither has a gift, a mutation or a Quirk to pass on yet.')
+        : h('div', { class: 'chips' }, gifts.map((g) => {
+          const on = choice.gifts.includes(g.key);
+          const blocked = !on && (choice.gifts.length >= limit || (g.kind === 'quirk' && quirkTaken));
+          return h('button', {
+            class: `chip${on ? ' on' : ''}`,
+            style: g.kind === 'trait' ? `--c:${TRAITS[g.id].color}` : '',
+            title: g.what,
+            disabled: blocked,
+            onclick: () => {
+              choice.gifts = on ? choice.gifts.filter((k) => k !== g.key) : [...choice.gifts, g.key];
+              note.rebuild();
+            },
+          }, `${g.name} (${nameOf(g.from)})`);
+        })),
+      choice.gifts.length > 0 && h('div', { class: 'ways', style: 'max-height:120px;margin-top:4px' }, choice.gifts.map((k) => {
+        const g = gifts.find((x) => x.key === k);
+        return g && h('div', { class: 'small' }, h('b', null, `${g.name}: `), g.what);
       })),
-    choice.gifts.length > 0 && h('div', { class: 'ways', style: 'max-height:120px;margin-top:4px' }, choice.gifts.map((k) => {
-      const g = gifts.find((x) => x.key === k);
-      return g && h('div', { class: 'small' }, h('b', null, `${g.name}: `), g.what);
-    })),
-    !help.mega && gifts.length > limit && h('div', { class: 'small', style: 'margin-top:3px' }, `More to pass on than fits. The Mega Breeder, at the top of this note, lets ${MEGA_BREEDER.gifts} more through.`),
-    awakenRows(a, b, choice),
+      !help.mega && gifts.length > limit && h('div', { class: 'small', style: 'margin-top:3px' }, `More to pass on than fits. The Mega Breeder, at the top of this note, lets ${MEGA_BREEDER.gifts} more through.`),
+      awakenRows(a, b, choice)),
     (st.message || problem) && h('div', { class: 'warning' }, st.message || problem),
-    h('div', { class: 'row gap' }, input, button('Hatch the egg', () => hatch(note, input), 'big hot', !!problem)),
+    h('div', { class: 'hatchbar' }, input, button('Hatch the egg', () => hatch(note, input), 'big hot', !!problem)),
   );
 }
 
@@ -180,7 +218,7 @@ function awakenRows(a, b, choice) {
   const could = awakenChances(a, b, passing);
   if (!could.length) return null;
   return [
-    h('div', { class: 'sect' }, 'Could awaken'),
+    sublabel('Could awaken'),
     could.map(({ id, oneIn }) => h('div', { class: 'small', style: 'margin-top:2px' },
       h('b', { style: `color:${TRAITS[id].color}` }, `${TRAITS[id].name}, 1 in ${oneIn}: `), TRAITS[id].blurb)),
   ];
@@ -244,11 +282,13 @@ function buildResult(page, note) {
   const portrait = h('canvas', { class: 'portrait' });
   note.refs.portraits.push({ canvas: portrait, c });
   const keyLeft = itemCount(G.house, 'chamber');
+  const gifts = [...c.traits.map((id) => [id, false]), ...(st.result.awakened ?? []).filter((id) => !c.traits.includes(id)).map((id) => [id, true])];
   fill(page,
-    h('div', { class: 'row nowrap' }, portrait, h('div', { class: 'grow' },
+    h('div', { class: 'eggshow' }, portrait, h('div', { class: 'eggfacts' },
       h('div', { class: 'nameline' }, `${fullName(c)} hatched!`),
-      h('div', { class: 'small' }, `Child of ${c.parents.map((p) => p.name).join(' and ')}.`))),
-    lines.map((t) => h('div', { class: 'small', style: 'margin-top:2px' }, t)),
+      h('div', { class: 'small' }, `Child of ${c.parents.map((p) => p.name).join(' and ')}. ${raceName(c)}.`),
+      gifts.length > 0 && h('div', { class: 'chips' }, gifts.map(([id, woke]) => h('span', { class: 'pchip', style: `--c:${TRAITS[id].color}`, title: TRAITS[id].blurb }, woke ? `${TRAITS[id].name}, awakened!` : TRAITS[id].name))))),
+    lines.filter((t) => !t.startsWith('Born with') && !t.startsWith('Awakened')).map((t) => h('div', { class: 'small', style: 'margin-top:2px' }, t)),
     h('div', { class: 'row gap' },
       !out && button('Bring it out', async () => {
         await G.bringOut(base, c);

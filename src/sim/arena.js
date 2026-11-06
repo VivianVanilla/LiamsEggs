@@ -7,7 +7,7 @@ import { tuningOf } from '../core/sheet.js';
 import { ABILITIES } from '../data/paths.js';
 import {
   STANDS, SPEEDSTER, BLACK_FLASH, SHARINGAN_COPY, tuneMove, TRAITS, TITAN, SAIYAN, HAKI, SUN_BREATHING, NINE_TAILS, ONE_PUNCH,
-  ULTRA_DODGE, EIGHT_GATES, DOMAIN, OBSERVATION, GOURMET_HEAL, WILL_DAMAGE, SLAYER_MARK, ACKERMAN, SCARLET_EYES,
+  ULTRA_DODGE, EIGHT_GATES, DOMAIN, OBSERVATION, GOURMET_HEAL, WILL_DAMAGE, SLAYER_MARK, ACKERMAN, SCARLET_EYES, VOID_AURA, PHILOSOPHER_HEART,
 } from '../data/powers.js';
 import { WEAPONS } from '../data/forge.js';
 import { prepEffects } from '../core/craft.js';
@@ -27,7 +27,7 @@ const SUDDEN_DEATH_AT = 60;
 const MAX_TIME = 150;
 
 // What a set of stats means in a fight, for creatures and monsters alike.
-function combatNumbers(s) {
+export function combatNumbers(s) {
   return {
     atk: 4.5 + s.might * 1.1,
     def: s.guard,
@@ -76,9 +76,12 @@ export class Bout {
     const s = computeStats(c);
     const stage = stageOf(c);
     const tuning = tuningOf(c);
+    // A Philosopher's Heart speeds up the one move picked for it in the battle plan.
+    const heart = hasTrait(c, 'philosopher') ? c.battle.heart : null;
+    const quicker = (id, def) => (id === heart && def.cd ? { ...def, cd: def.cd * (1 - PHILOSOPHER_HEART) } : def);
     const abilities = abilitiesOf(c)
       .filter((id) => !c.battle.off.includes(id))
-      .map((id) => (Object.hasOwn(ABILITIES, id) ? { id, def: tuneMove(id, ABILITIES[id], tuning), cd: 1.5 + this.rand() * 3 } : null))
+      .map((id) => (Object.hasOwn(ABILITIES, id) ? { id, def: quicker(id, tuneMove(id, ABILITIES[id], tuning)), cd: 1.5 + this.rand() * 3 } : null))
       .filter(Boolean);
     const prep = prepEffects(c);
     // What its races and its Legendary mutation do in a fight, and its earned gifts that just change its numbers.
@@ -129,7 +132,7 @@ export class Bout {
       reach: passive.reach * this.sizeMul,
       poisonproof: passive.poisonproof,
       feast: passive.feast,
-      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit,
+      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit * (hasTrait(c, 'voidaura') ? 1 + VOID_AURA : 1),
       moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move) * (1 + passive.speed) * markSpeed,
       attackEvery: (base.attackEvery * (fast ? SPEEDSTER.arenaAttack : 1)) / (1 + prep.attack) / markSpeed,
       // Nothing dodges everything.

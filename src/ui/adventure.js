@@ -1,11 +1,11 @@
-// Adventure: pick three of your creatures and fight your way through 30 levels in two acts, one
-// ring at a time on your screen. Every fifth level a deadly monster leads the enemy, and in Act 2 the
-// enemy carries forged weapons. Nobody can die here: the party fights as copies. Every win counts
+// Adventure: pick three of your creatures and fight your way through 50 levels in four acts, one
+// ring at a time on your screen. Every fifth level a deadly monster leads the enemy. From Act 2 the
+// enemy carries forged weapons, from Act 3 Legendary mutations. Nobody can die here: the party fights as copies. Every win counts
 // toward the gifts earned in Adventure.
 
 import { toast } from './flair.js';
 import { G, saveHouse } from '../state.js';
-import { h, fill, button, openNote, getNote } from './notes.js';
+import { h, fill, button, openNote, getNote, folds } from './notes.js';
 import { fullName, stageOf, powerOf } from '../core/creature.js';
 import { awayBases } from '../core/village.js';
 import {
@@ -14,7 +14,7 @@ import {
 import { earnTraits } from '../core/earned.js';
 import { saveAnywhere } from './breed.js';
 import { RACES } from '../data/races.js';
-import { ADVENTURE_ARMED } from '../data/adventure.js';
+import { ADVENTURE_ACTS } from '../data/adventure.js';
 import {
   ADVENTURE_PARTY, ADVENTURE_PRIZES, ADVENTURE_GEMS_PER_LEVEL, ADVENTURE_FINISH_GEMS, ADVENTURE_REPLAY_ORE, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL,
 } from '../data/adventure.js';
@@ -74,36 +74,62 @@ function rewardText(n, best) {
 }
 
 function buildAdventure(body, note) {
-  const { spec } = note;
   const adv = G.house.adventure;
-  const run = G.adventureRun;
-  const fighting = !!G.bout?.adventure;
   fill(body,
     h('div', { class: 'small' }, `A campaign of ${LEVEL_COUNT} levels, fought in a ring on your screen. Take up to ${ADVENTURE_PARTY} creatures. Nobody can die here, and every level beaten opens the next.`),
     h('div', { class: 'purse' },
       h('span', null, 'Best: ', h('b', null, adv.best ? `level ${adv.best}` : 'none yet')),
       h('span', null, h('b', null, Math.floor(G.house.bank.gems)), ' gems'),
       h('span', null, h('b', null, Math.floor(G.house.ore)), ' ore')),
-    h('div', { class: 'levels' }, Array.from({ length: LEVEL_COUNT }, (_, i) => {
-      const n = i + 1;
-      const act = (n === 1 || n === ADVENTURE_ARMED) && h('div', { class: 'acthead' }, n === 1 ? 'Act 1: the road to the dragon' : 'Act 2: past the end of the map. The enemy is armed.');
-      const locked = !!levelProblem(adv, n);
-      const cls = ['lvl', n <= adv.best && 'beaten', n === adv.best + 1 && 'next', bossOf(n) && 'boss', n === spec.picked && 'picked'].filter(Boolean).join(' ');
-      const stone = h('button', {
-        class: cls,
-        disabled: locked,
-        title: `${n}. ${levelInfo(n).name}${bossOf(n) ? `: ${bossMonster(n).name}` : ''}`,
-        onclick: () => {
-          spec.picked = n;
-          spec.message = '';
-          note.rebuild();
-        },
-      }, String(n), bossOf(n) && h('small', null, 'BOSS'));
-      return [act, stone];
-    })),
+    actFolds(note),
   );
 
   // The level picked, and what it holds.
+  levelDetails(body, note);
+}
+
+// The levels, one act at a time.
+function actFolds(note) {
+  const { spec } = note;
+  const adv = G.house.adventure;
+  const stone = (n) => {
+    const locked = !!levelProblem(adv, n);
+    const cls = ['lvl', n <= adv.best && 'beaten', n === adv.best + 1 && 'next', bossOf(n) && 'boss', n === spec.picked && 'picked'].filter(Boolean).join(' ');
+    return h('button', {
+      class: cls,
+      disabled: locked,
+      title: `${n}. ${levelInfo(n).name}${bossOf(n) ? `: ${bossMonster(n).name}` : ''}`,
+      onclick: () => {
+        spec.picked = n;
+        spec.message = '';
+        note.rebuild();
+      },
+    }, String(n), bossOf(n) && h('small', null, 'BOSS'));
+  };
+  const actOfLevel = (n) => ADVENTURE_ACTS.filter((a) => n >= a.from).length;
+  return folds(note, 'acts', ADVENTURE_ACTS.map((a, i) => {
+    const last = (ADVENTURE_ACTS[i + 1]?.from ?? LEVEL_COUNT + 1) - 1;
+    const levels = Array.from({ length: last - a.from + 1 }, (_, k) => a.from + k);
+    const won = levels.filter((n) => n <= adv.best).length;
+    const [head, ...rest] = a.title.split('. ');
+    return {
+      id: `act${i + 1}`,
+      title: head,
+      tag: won === levels.length ? 'all beaten' : levelProblem(adv, a.from) ? 'locked' : `${won} of ${levels.length} beaten`,
+      tagCls: levelProblem(adv, a.from) ? 'locked' : '',
+      build: () => [
+        rest.length > 0 && h('div', { class: 'small' }, rest.join('. ')),
+        h('div', { class: 'levels' }, levels.map(stone)),
+      ],
+    };
+  }), `act${actOfLevel(spec.picked)}`);
+}
+
+function levelDetails(body, note) {
+  const { spec } = note;
+  const adv = G.house.adventure;
+  const run = G.adventureRun;
+  const fighting = !!G.bout?.adventure;
   const n = spec.picked;
   const info = levelInfo(n);
   const { fighters, boss } = levelEnemies(n, 1);

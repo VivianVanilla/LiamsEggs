@@ -34,7 +34,8 @@ export const TARGET_PLANS = {
   strong: { name: 'Strongest', blurb: 'Goes for whoever has the most health left.' },
 };
 
-export const defaultBattlePlan = () => ({ stance: 'close', hurt: 'fight', target: 'near', off: [] });
+// `heart` is the move a Philosopher's Heart speeds up, picked in the battle plan.
+export const defaultBattlePlan = () => ({ stance: 'close', hurt: 'fight', target: 'near', off: [], heart: null });
 
 // A melee swing takes a moment to wind up once something is in reach, so a fighter that is only
 // passing through can get away clean. A bounce comes in already swinging.

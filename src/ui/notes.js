@@ -58,13 +58,13 @@ export function sureButton(label, onSure, cls = '', disabled = false) {
 }
 
 // Notes that belong to no creature in particular.
-const GLOBAL = new Set(['settings', 'arena', 'creatures', 'village', 'nursery', 'adventure', 'farewell', 'naming']);
+const GLOBAL = new Set(['settings', 'arena', 'creatures', 'village', 'nursery', 'adventure', 'farewell', 'naming', 'search']);
 
 // The hubs, and the notes behind each of their tabs.
 export const HUBS = {
-  care: { name: 'Care', tabs: [['feed', 'Feed'], ['farm', 'Farm'], ['workshop', 'Gear']] },
+  care: { name: 'Care', tabs: [['feed', 'Feed'], ['workshop', 'Gear']] },
   powers: { name: 'Powers', tabs: [['powers', 'Powers'], ['plan', 'Battle plan'], ['sheet', 'What it has']] },
-  fight: { name: 'Fight', tabs: [['adventure', 'Adventure'], ['challenges', 'Challenges'], ['arena', 'Arena'], ['duel', 'Duel']] },
+  fight: { name: 'Fight', tabs: [['adventure', 'Adventure'], ['challenges', 'Challenges'], ['arena', 'Arena']] },
   home: { name: 'Home', tabs: [['creatures', 'Creatures'], ['nursery', 'Nursery'], ['village', 'Village']] },
   help: { name: 'Help', tabs: [['guide', 'Guide'], ['settings', 'Settings']] },
 };
@@ -88,7 +88,24 @@ const shown = (note) => !note.buried && mine(note);
 // with a box to type in, like a name for something an expedition found. Otherwise every key you
 // press goes to your other apps, as it should.
 const TYPED = 'input[type=text], input[type=search], textarea';
-const wantsKeys = (n) => shown(n) && (!!n.spec.focus || !!n.el.querySelector(TYPED));
+const wantsKeys = (n) => shown(n) && (!!n.spec.focus || !!n.el.querySelector(`:is(${TYPED}):not([data-lazy]), [data-lazy].typing`));
+
+// A box to type in that sits in a note all the time, like the menu's search, mustn't pull the
+// keyboard away from your other apps just by being there. It asks for it when clicked, and gives it
+// back when you click away.
+export function lazyKeys(input) {
+  input.dataset.lazy = '1';
+  input.addEventListener('pointerdown', () => {
+    input.classList.add('typing');
+    syncFocus();
+    setTimeout(() => input.focus(), 30);
+  });
+  input.addEventListener('blur', () => {
+    input.classList.remove('typing');
+    syncFocus();
+  });
+  return input;
+}
 
 export function syncFocus() {
   api.focus([...notes.values()].some(wantsKeys));
@@ -102,8 +119,7 @@ export function raiseNote(note) {
 
 export const isTopNote = (note) => [...notes.values()].filter(shown).every((n) => n === note || Number(n.el.style.zIndex) < Number(note.el.style.zIndex));
 
-// spec: { title, cls, width, focus, help, at:{x,y}, corner:'left'|'right', build(body, note), tick(note), onClose(), onDrop(paths) }
-// help names the guide page its "?" opens.
+// spec: { title, cls, width, focus, at:{x,y}, corner:'left'|'right', build(body, note), tick(note), onClose(), onDrop(paths) }
 // Opening a note that is already open refreshes it where it is and brings it to the front.
 export function openNote(id, spec) {
   const key = keyFor(id);
@@ -131,7 +147,6 @@ export function openNote(id, spec) {
     old.el.className = `note ${spec.cls ?? ''}${hub ? ' hub' : ''}${mine(old) ? '' : ' elsewhere'}`;
     old.el.style.width = `${spec.width ?? 300}px`;
     old.setTitle(spec.title);
-    old.helpEl.style.display = spec.help ? '' : 'none';
     old.rebuild();
     raiseNote(old);
     syncFocus();
@@ -139,9 +154,8 @@ export function openNote(id, spec) {
   }
   const body = h('div', { class: 'note-body' });
   const titleEl = h('div', { class: 'note-title' }, spec.title);
-  const helpEl = h('button', { class: 'note-help', title: 'Help with this', onclick: () => G.openHelp?.(notes.get(key)?.spec.help) }, '?');
-  helpEl.style.display = spec.help ? '' : 'none';
-  const head = h('div', { class: 'note-head' }, titleEl, helpEl, h('button', { class: 'note-x', title: 'Close', onclick: () => closeHub(key) }, 'x'));
+  // headExtra puts something of its own in the title bar, made once, so it survives rebuilds.
+  const head = h('div', { class: 'note-head' }, titleEl, spec.headExtra?.(), h('button', { class: 'note-x', title: 'Close', onclick: () => closeHub(key) }, 'x'));
   // A hub's index tabs, along the top of the note.
   const tabs = hub && h('div', { class: 'hubtabs' }, HUBS[hub].tabs.map(([tab, label]) => h('button', {
     class: `hubtab${tab === id ? ' on' : ''}`,
@@ -149,7 +163,7 @@ export function openNote(id, spec) {
   }, label)));
   const el = h('div', { class: `note ${spec.cls ?? ''}${hub ? ' hub' : ''}`, style: `width:${spec.width ?? 300}px` }, tabs, head, body);
   const note = {
-    id, key, el, body, spec, helpEl, alive: true, refs: {},
+    id, key, el, body, spec, alive: true, refs: {},
     who: GLOBAL.has(id) ? null : (G.creature?.id ?? ''),
     rebuild() {
       body.replaceChildren();
@@ -179,6 +193,30 @@ export function openNote(id, spec) {
   raiseNote(note);
   syncFocus();
   return note;
+}
+
+// Folding sections for notes that got long: one open at a time, each title with a short summary
+// beside it, so the note reads at a glance and opens where you want to look. items are
+// { id, title, tag, tagCls, build() }. Which one is open is kept on the note under `key`, so it
+// stays open through a rebuild; `first` is the one open to begin with.
+export function folds(note, key, items, first = null) {
+  const open = (note.spec.folds ??= {});
+  if (!(key in open)) open[key] = first;
+  return h('div', { class: 'folds' }, items.filter(Boolean).map((it) => {
+    const isOpen = open[key] === it.id;
+    return h('div', { class: `fold${isOpen ? ' open' : ''}` },
+      h('button', {
+        class: 'foldhead',
+        onclick: () => {
+          open[key] = isOpen ? null : it.id;
+          note.rebuild();
+        },
+      },
+      h('span', { class: 'foldarrow' }, isOpen ? '▾' : '▸'),
+      h('span', { class: 'foldtitle' }, it.title),
+      it.tag != null && it.tag !== false && h('span', { class: `foldtag ${it.tagCls ?? ''}` }, it.tag)),
+      isOpen && h('div', { class: 'foldbody' }, it.build()));
+  }));
 }
 
 // Out of sight behind another tab of its hub, or back.
@@ -226,7 +264,7 @@ function place(note, keep) {
 
 function makeDraggable(note, handle) {
   handle.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('button')) return;
+    if (e.target.closest('button, input, .searchdrop')) return;
     e.preventDefault();
     const { el } = note;
     const ox = e.clientX - el.offsetLeft;

@@ -97,6 +97,10 @@ Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's 
 | `races/mink.png` | `1f43e.svg`, `26a1.svg` |
 | `races/lunarian.png` | `1f525.svg` |
 | `races/lunarian-back.png` | `1fabd.svg` from Twemoji 15.1.0, recolored black, `1f525.svg` |
+| `races/vampire.png` | `1fa78.svg` |
+| `races/cursedalien.png` | `1f6f8.svg` |
+| `races/pillarman-back.png` | `1f3db.svg` |
+| `races/dragon-back.png` | `1fabd.svg` from Twemoji 15.1.0, recolored red |
 | `races/devil.png` | `1f531.svg` |
 | `races/halfdevil.png` | `1fa9a.svg` |
 | `jobs/nurse.png` | `1fa7a.svg` |
@@ -143,6 +147,10 @@ Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's 
 | `techniques/boogie.png` | `1f44f.svg`, `1f501.svg` |
 | `legendary/twinsoul.png` | `1f31f.svg`, `2728.svg` |
 | `legendary/malevolentsoul.png` | `1f5a4.svg`, `26d3.svg`, `1fa78.svg` |
+| `legendary/ironsoul.png` | `2699.svg`, `1f529.svg` |
+| `legendary/ghostsoul.png` | `1f319.svg`, `1f4a8.svg` |
+| `legendary/tidesoul.png` | `1f30a.svg`, `1fae7.svg`, `1f4a7.svg` |
+| `legendary/warsoul.png` | `2694.svg`, `1f525.svg` |
 | `crafts/ruby.png` | `1f534.svg` |
 | `crafts/citrine.png` | `1f7e1.svg` |
 | `crafts/emerald.png` | `1f7e2.svg` |
@@ -173,6 +181,10 @@ Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's 
 | `monsters/mammoth.png` | `1f9a3.svg` |
 | `monsters/rex.png` | `1f996.svg` |
 | `monsters/dragon.png` | `1f409.svg` |
+| `monsters/rhino.png` | `1f98f.svg` |
+| `monsters/leopard.png` | `1f406.svg` |
+| `monsters/shark.png` | `1f988.svg` |
+| `monsters/gorilla.png` | `1f98d.svg` |
 | `monsters/lobster.png` | `1f99e.svg` |
 | `monsters/tiger.png` | `1f405.svg` |
 | `monsters/leviathan.png` | `1f40b.svg` |

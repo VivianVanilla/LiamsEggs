@@ -52,7 +52,8 @@ export function startOver(c, house, now = Date.now()) {
   c.path = { line: [], xp: 0 };
   c.powers = { stand: null, speedster: false, technique: null, technique2: null, fruit: null, quirks: [] };
   c.ofa = null;
-  c.legendary = null;
+  c.souls = [];
+  c.soulExpanders = 0;
   c.soulOffer = null;
   c.trophies = [];
   c.legendWins = [];
@@ -84,7 +85,8 @@ export function rebornLosses(c) {
   if (c.powers.quirks.includes(OFA_ID)) lost.push('One For All, and the line of everyone who held it');
   if (c.powers.stand || c.powers.speedster || c.powers.technique || c.powers.fruit) lost.push('its powers');
   if (c.powers.quirks.some((id) => id !== OFA_ID)) lost.push('its Quirks, and the max HP they cost come back');
-  if (c.legendary) lost.push('its Legendary mutation');
+  if (c.souls.length) lost.push(c.souls.length === 1 ? 'its Legendary mutation' : `its ${c.souls.length} Legendary mutations`);
+  if (c.soulExpanders) lost.push('its Legendary Expanders');
   if (c.mutations.length) lost.push(`${c.mutations.length} mutation${c.mutations.length === 1 ? '' : 's'}`);
   if (c.path.line.length) lost.push('its job');
   if (c.trophies.length) lost.push(`${c.trophies.length} trophies`);
