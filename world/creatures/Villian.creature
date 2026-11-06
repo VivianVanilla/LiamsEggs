@@ -1,0 +1,352 @@
+{
+  "format": "creature/1",
+  "id": "4169ff3ab9bc2de8",
+  "name": "Villian",
+  "lastName": "Gojo",
+  "lineage": "limitless",
+  "otherLine": "strawdoll",
+  "traits": [],
+  "parents": [
+    {
+      "id": "23b60481d4aff044",
+      "name": "Vivisaurus Kugisaki"
+    },
+    {
+      "id": "68e2802c466a45f6",
+      "name": "UltiLiam Gojo"
+    }
+  ],
+  "bredAt": 0,
+  "household": true,
+  "race": "human",
+  "heritage": null,
+  "pureBlood": false,
+  "born": 1793918471827,
+  "lastSeen": 1793921342572,
+  "summary": {
+    "stage": "Grown",
+    "race": "Human",
+    "job": "Doom Knight",
+    "finalForm": true,
+    "power": 92,
+    "maxHp": 438,
+    "colors": {
+      "body": "#b4d5bf",
+      "accent": "#ff8a3c",
+      "tinted": true
+    },
+    "stand": "King Crimson",
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": []
+  },
+  "stats": {
+    "might": 35,
+    "guard": 11,
+    "speed": 14,
+    "wits": 22,
+    "vigor": 10
+  },
+  "growth": 149.13,
+  "fullness": 81.35,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 3,
+    "ink": 0,
+    "ember": 9,
+    "goo": 0
+  },
+  "mutations": [
+    {
+      "id": "antennae",
+      "from": "parent",
+      "at": 1793918471827
+    },
+    {
+      "id": "claws",
+      "from": "parent",
+      "at": 1793918471827
+    },
+    {
+      "id": "arcs",
+      "from": "parent",
+      "at": 1793918471827
+    },
+    {
+      "id": "flamehair",
+      "from": "f0cc1cbcbb4b",
+      "at": 1793919742013
+    },
+    {
+      "id": "firetail",
+      "from": "251b4af8987e",
+      "at": 1793919756789
+    }
+  ],
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 55.76,
+    "total": 55.76
+  },
+  "training": {
+    "might": 4.02,
+    "guard": 0,
+    "speed": 0.39782124232804345,
+    "wits": 24.441999999999993,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "fighter",
+      "berserker",
+      "doom"
+    ],
+    "xp": 1253.5
+  },
+  "powers": {
+    "stand": "kingcrimson",
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": "#b4d5bf"
+  },
+  "gear": {
+    "owned": [
+      "citrine"
+    ],
+    "worn": [
+      "citrine"
+    ]
+  },
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 55,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 3,
+    "duelsLost": 39,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 12,
+    "monstersLost": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793921341738,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "9563cf7199160644",
+      "size": 1024,
+      "at": 1793918530349,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "79aabdc3f1e26332",
+      "size": 1024,
+      "at": 1793918944107,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "948767c0472ad21d",
+      "size": 1024,
+      "at": 1793918947539,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "378caf428f8cad3b",
+      "size": 1024,
+      "at": 1793918948595,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "d971d88ccef1c241",
+      "size": 1024,
+      "at": 1793918950252,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "6da9e1fc78408829",
+      "size": 1024,
+      "at": 1793919574056,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "85e398df183fc236",
+      "size": 1024,
+      "at": 1793919741438,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "f0cc1cbcbb4ba899",
+      "size": 1024,
+      "at": 1793919742013,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "06c30fddb1a51338",
+      "size": 1024,
+      "at": 1793919743245,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "5346e5df84399b4e",
+      "size": 1024,
+      "at": 1793919756213,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "95897596ed6e6c41",
+      "size": 1024,
+      "at": 1793919756557,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "251b4af8987e0957",
+      "size": 1024,
+      "at": 1793919756789,
+      "snippet": ""
+    }
+  ]
+}

@@ -1,0 +1,388 @@
+{
+  "format": "creature/1",
+  "id": "23b60481d4aff044",
+  "name": "Vivisaurus",
+  "lastName": "Kugisaki",
+  "lineage": "strawdoll",
+  "otherLine": "boogie",
+  "traits": [],
+  "parents": [],
+  "bredAt": 1793918471827,
+  "household": true,
+  "born": 1793833864945,
+  "lastSeen": 1793920118137,
+  "summary": {
+    "stage": "Elder",
+    "job": "Grandmaster",
+    "finalForm": true,
+    "power": 123,
+    "maxHp": 232,
+    "colors": {
+      "body": "#b1d3c0",
+      "accent": "#5187cd",
+      "tinted": true
+    },
+    "stand": "Hierophant Green",
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [
+      "Half-Cold Half-Hot",
+      "One For All"
+    ],
+    "oneForAllLevel": 1,
+    "bornWith": []
+  },
+  "stats": {
+    "might": 30,
+    "guard": 17,
+    "speed": 24,
+    "wits": 40,
+    "vigor": 12
+  },
+  "growth": 224.96,
+  "fullness": 75.94,
+  "essence": {
+    "bone": 9,
+    "sap": 0,
+    "spark": 7,
+    "ink": 5,
+    "ember": 6,
+    "goo": 12
+  },
+  "mutations": [
+    {
+      "id": "blobbelly",
+      "from": "4d7b4027543c",
+      "at": 1793834367567
+    },
+    {
+      "id": "secondhead",
+      "from": "1bfe2612eb8a",
+      "at": 1793834413069
+    },
+    {
+      "id": "feelers",
+      "from": "a5acba469499",
+      "at": 1793834420098
+    },
+    {
+      "id": "halo",
+      "from": "2def31ab2067",
+      "at": 1793891727914
+    },
+    {
+      "id": "antennae",
+      "from": "0e3b7b0e6b02",
+      "at": 1793892625092
+    },
+    {
+      "id": "flamehair",
+      "from": "f60459f16e19",
+      "at": 1793895504447
+    },
+    {
+      "id": "claws",
+      "from": "c31e95906d16",
+      "at": 1793895509395
+    },
+    {
+      "id": "arcs",
+      "from": "b86eb8b9eed3",
+      "at": 1793895821868
+    }
+  ],
+  "palette": {
+    "hues": [
+      {
+        "r": 237,
+        "g": 223,
+        "b": 215,
+        "n": 5.12
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 193,
+        "g": 202,
+        "b": 184,
+        "n": 1.27
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 57,
+        "g": 62,
+        "b": 66,
+        "n": 89.6
+      },
+      {
+        "r": 130,
+        "g": 137,
+        "b": 146,
+        "n": 11.66
+      },
+      {
+        "r": 230,
+        "g": 229,
+        "b": 242,
+        "n": 3.51
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 466.48,
+    "total": 577.63
+  },
+  "training": {
+    "might": 3.75,
+    "guard": 0,
+    "speed": 3.6759157695386326,
+    "wits": 19.25000000000001,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "fighter",
+      "tactician",
+      "grandmaster"
+    ],
+    "xp": 1150
+  },
+  "powers": {
+    "stand": "hierophant",
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "quirks": [
+      "halfhalf",
+      "oneforall"
+    ]
+  },
+  "ofa": {
+    "stockpile": 0,
+    "holders": []
+  },
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": null
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "record": {
+    "mined": 477,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 10,
+    "duelsLost": 35,
+    "arenaWins": 2,
+    "arenaLosses": 4,
+    "monstersBeaten": 0,
+    "monstersLost": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793920117193,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "goo",
+      "name": "Test.goo",
+      "sha": "4d7b4027543c2c77730b1f999ad2621b57c99ecada1fc2d8d8201df097020269",
+      "size": 32768,
+      "at": 1793834367567,
+      "snippet": "Mutagen Goo for a creature. name: Test flavor: Blood hunter mutagen  blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp"
+    },
+    {
+      "ext": "goo",
+      "name": "blorp 840.goo",
+      "sha": "1bfe2612eb8a38a13669cf97f3aa13d61d55d92c2cde09d2c3276f8282445c0e",
+      "size": 32768,
+      "at": 1793834413069,
+      "snippet": "Mutagen Goo for a creature. name: blorp 840 flavor: plain  blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blo"
+    },
+    {
+      "ext": "goo",
+      "name": "blorp 149.goo",
+      "sha": "a5acba469499327951c1ec199062ec449dc46dd734f05d84c03d2b908cd63bdd",
+      "size": 32768,
+      "at": 1793834420098,
+      "snippet": "Mutagen Goo for a creature. name: blorp 149 flavor: plain  blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blo"
+    },
+    {
+      "ext": "ink",
+      "name": "Vegapunk juice.ink",
+      "sha": "4692f58cf3b5fd8b6ece2e3a4d00f61fffe0cb973e137433099627d0d4a65e72",
+      "size": 1024,
+      "at": 1793891703523,
+      "snippet": "Thought Ink for a creature. name: Vegapunk juice flavor: egapunk  hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hm"
+    },
+    {
+      "ext": "ink",
+      "name": "Vegapunk juice.ink",
+      "sha": "2def31ab20675042d7d3b748c3a27c1448d4492557ab39ab4fbac7e9ea6a459d",
+      "size": 1024,
+      "at": 1793891727914,
+      "snippet": "Thought Ink for a creature. name: Vegapunk juice flavor: Vegapknk  hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm h"
+    },
+    {
+      "ext": "goo",
+      "name": "blorp 316.goo",
+      "sha": "9f06c07ac35481e68e0cf2b917dc444965306e54cd73d8966bbc2db57815925c",
+      "size": 32768,
+      "at": 1793891732266,
+      "snippet": "Mutagen Goo for a creature. name: blorp 316 flavor: plain  blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blorp blo"
+    },
+    {
+      "ext": "spark",
+      "name": "Cool water jets.spark",
+      "sha": "f818b791cc495e4e3cc8f1a0ee339bd2ac33f2e7f575d4870c51e3a45455692c",
+      "size": 1024,
+      "at": 1793891748664,
+      "snippet": "Spark Cell for a creature. name: Cool water jets flavor: plain  bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt b"
+    },
+    {
+      "ext": "spark",
+      "name": "bzzt 953.spark",
+      "sha": "0e3b7b0e6b0276f57572fe0cafe82488f1da610ecfe297b38b548d1ffd44ff56",
+      "size": 8192,
+      "at": 1793892625092,
+      "snippet": "Spark Cell for a creature. name: bzzt 953 flavor: plain  bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzz"
+    },
+    {
+      "ext": "spark",
+      "name": "bzzt 791.spark",
+      "sha": "512194932a4e72a19b98335d0f0bf77b15c01ac78f3f91b9e998718c1b3b8463",
+      "size": 1024,
+      "at": 1793892628554,
+      "snippet": "Spark Cell for a creature. name: bzzt 791 flavor: plain  bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzz"
+    },
+    {
+      "ext": "ember",
+      "name": "hiss 530.ember",
+      "sha": "f60459f16e1949b2610d592ada869bc469333c338dc9fd375c754b77b7b51652",
+      "size": 32768,
+      "at": 1793895504447,
+      "snippet": "Hot Ember for a creature. name: hiss 530 flavor: plain  hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss"
+    },
+    {
+      "ext": "ember",
+      "name": "hiss 940.ember",
+      "sha": "c31e95906d169378a0b7d5fe6276ceb047b52a867633571fbf6a3b97fcab0773",
+      "size": 32768,
+      "at": 1793895509395,
+      "snippet": "Hot Ember for a creature. name: hiss 940 flavor: plain  hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss hiss"
+    },
+    {
+      "ext": "spark",
+      "name": "bzzt 779.spark",
+      "sha": "b86eb8b9eed37e788f2f031174308ac2faab0780fb85fadca6108e034fabfad8",
+      "size": 32768,
+      "at": 1793895821868,
+      "snippet": "Spark Cell for a creature. name: bzzt 779 flavor: plain  bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzzt bzz"
+    },
+    {
+      "ext": "bone",
+      "name": "crunch 184.bone",
+      "sha": "83d2c240b8c19433ed6140e94303bbacb4a36efbda78b58e1f4a2a5e08d14ff4",
+      "size": 32768,
+      "at": 1793895966515,
+      "snippet": "Bone Meal for a creature. name: crunch 184 flavor: plain  crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch cr"
+    },
+    {
+      "ext": "bone",
+      "name": "crunch 718.bone",
+      "sha": "e7814976622cd1086a9317024e5dd64b04769ad47bf4dda3eeccf0c000b9fcc1",
+      "size": 32768,
+      "at": 1793896189455,
+      "snippet": "Bone Meal for a creature. name: crunch 718 flavor: plain  crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch cr"
+    },
+    {
+      "ext": "bone",
+      "name": "crunch 743.bone",
+      "sha": "23be52053947f23a9f36ab4253d45732bb57b4ec748f180d26172d8d45b55589",
+      "size": 32768,
+      "at": 1793896472605,
+      "snippet": "Bone Meal for a creature. name: crunch 743 flavor: plain  crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch crunch cr"
+    },
+    {
+      "ext": "ink",
+      "name": "hmm 849.ink",
+      "sha": "849444a1eaa95e6bff124dc0aa0e8e6818124698eb4020d2627ce83232604977",
+      "size": 32768,
+      "at": 1793896486586,
+      "snippet": "Thought Ink for a creature. name: hmm 849 flavor: plain  hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm"
+    }
+  ]
+}
