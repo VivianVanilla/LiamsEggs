@@ -22,7 +22,7 @@
   "heritage": null,
   "pureBlood": false,
   "born": 1793920083753,
-  "lastSeen": 1793922060458,
+  "lastSeen": 1793925721820,
   "summary": {
     "stage": "Elder",
     "race": "Human",
@@ -52,8 +52,8 @@
     "wits": 30,
     "vigor": 12
   },
-  "growth": 336.73,
-  "fullness": 74.76,
+  "growth": 338.33,
+  "fullness": 81.63,
   "essence": {
     "bone": 0,
     "sap": 0,
@@ -260,7 +260,7 @@
     "fields": [],
     "animals": [],
     "store": 0,
-    "lastTick": 1793922059790,
+    "lastTick": 1793925721058,
     "wateredAt": 0,
     "nextId": 1
   },
