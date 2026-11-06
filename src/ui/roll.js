@@ -8,7 +8,7 @@ import { G, saveHouse } from '../state.js';
 import { h, fill, button } from './notes.js';
 import { fullName } from '../core/creature.js';
 import { eggFromId, rollEgg, matchChance, hyperRoll, hatchEgg } from '../core/roll.js';
-import { TECHNIQUES, TECHNIQUE_IDS, TRAITS, TRAIT_IDS } from '../data/powers.js';
+import { TECHNIQUES, TECHNIQUE_IDS, TRAITS, BORN_TRAIT_IDS } from '../data/powers.js';
 import { ROLL_COST, HYPER_BUDGETS } from '../data/family.js';
 import { createCreature } from './panels.js';
 import { openNursery } from './nursery.js';
@@ -76,7 +76,7 @@ export function buildEggs(page, note) {
     have < ROLL_COST && h('div', { class: 'small' }, 'No gems left. Mining, the village, expeditions and Adventure all bring them in.'),
     h('div', { class: 'sect' }, 'Hyper roll'),
     h('div', { class: 'small' }, 'Keeps rolling by itself until it gets everything you pick here.'),
-    h('div', { class: 'chips', style: 'margin-top:4px' }, TRAIT_IDS.map((id) => chip(TRAITS[id].name, st.want.traits.includes(id), () => {
+    h('div', { class: 'chips', style: 'margin-top:4px' }, BORN_TRAIT_IDS.map((id) => chip(TRAITS[id].name, st.want.traits.includes(id), () => {
       st.want.traits = st.want.traits.includes(id) ? st.want.traits.filter((t) => t !== id) : [...st.want.traits, id];
       note.rebuild();
     }, TRAITS[id].color))),

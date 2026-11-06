@@ -158,15 +158,16 @@ export const LEGENDARY = {
     blurb: 'A second soul growing beside the first. It can hold any two of a Stand, speedster powers and a cursed technique, instead of one.',
   },
   malevolentsoul: {
-    name: 'Malevolent Soul', color: '#c9302c', stats: { might: 3, vigor: 2 }, apart: true,
-    blurb: 'Something cruel has moved in. It can hold a Stand, plus either speedster powers or a cursed technique, but not those two together.',
+    name: 'Malevolent Soul', color: '#c9302c', stats: { might: 3, vigor: 2 }, apart: true, fruit: true,
+    blurb: 'Something cruel has moved in. It can hold a Stand, plus one more: speedster powers, a cursed technique or a Devil Fruit.',
   },
 };
 export const LEGENDARY_ID = 'twinsoul';
 export const MALEVOLENT_ID = 'malevolentsoul';
 
-// What a soul with `apart` keeps separate: it can't hold two powers from one category.
-export const POWER_CATEGORIES = { stand: 'stand', speedster: 'other', technique: 'other' };
+// What a soul with `apart` keeps separate: it can't hold two powers from one category. A soul with
+// `fruit` can hold a Devil Fruit beside its other power; without it, a fruit goes with nothing.
+export const POWER_CATEGORIES = { stand: 'stand', speedster: 'other', technique: 'other', fruit: 'other' };
 
 // One new mutation in this many comes with a Twin Soul, and The Last Dragon always gives one.
 // Any other win to the death has this chance of a Malevolent Soul. A creature only ever has one.
@@ -346,8 +347,48 @@ export const TRAITS = {
     name: 'One Punch', color: '#f2d66b',
     blurb: 'Every 10th swing is a Serious Punch, for five times the damage.',
   },
+
+  // Earned, not born: a creature gets these by what it does (EARN_RULES below), and keeps them for
+  // good. They never pass on to a baby.
+  ultrainstinct: {
+    name: 'Ultra Instinct', color: '#bcd4ff', earned: true,
+    blurb: 'Its body moves before it thinks: 15% more likely to dodge anything that can be dodged.',
+  },
+  eightgates: {
+    name: 'Eight Inner Gates', color: '#3ec46d', earned: true,
+    blurb: 'Below a quarter of its health it forces the gates open: 50% more damage and 30% faster for the rest of the fight.',
+  },
+  domain: {
+    name: 'Domain Expansion', color: '#6b35a8', earned: true,
+    blurb: 'Eight seconds into a fight it opens its domain: for 6 seconds nothing can dodge its hits, and they land 30% harder.',
+  },
+  observation: {
+    name: 'Observation Haki', color: '#7a5cff', earned: true,
+    blurb: 'Sees what is coming: 10% more likely to dodge, and 10% more critical hits.',
+  },
+  gourmet: {
+    name: 'Gourmet Cells', color: '#ff6f91', earned: true,
+    blurb: 'Every swing that lands heals it for 3% of its max HP.',
+  },
+  willofd: {
+    name: 'Will of D.', color: '#ffcf33', earned: true,
+    blurb: 'Hits 10% harder, and shrugs off the first stun or confusion in every fight.',
+  },
 };
 export const TRAIT_IDS = Object.keys(TRAITS);
+export const BORN_TRAIT_IDS = TRAIT_IDS.filter((id) => !TRAITS[id].earned);
+export const EARNED_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].earned);
+
+// How each earned gift is earned. record: a count in its record; training: how many stats are
+// trained to the limit; trophies: wins to the death, with technique: holding a cursed technique.
+export const EARN_RULES = {
+  ultrainstinct: { record: 'adventureWins', need: 10, how: 'Win 10 Adventure levels with it in the party.' },
+  eightgates: { training: true, need: 3, how: 'Train three of its stats all the way, to the training limit.' },
+  domain: { trophies: true, technique: true, need: 3, how: 'Hold a cursed technique, and win 3 fights to the death.' },
+  observation: { record: 'arenaWins', need: 15, how: 'Win 15 fights in the arena.' },
+  gourmet: { record: 'plantsEaten', need: 50, how: 'Eat 50 plants from the farm.' },
+  willofd: { record: 'adventureBest', need: 20, how: 'Beat Adventure level 20, The Dragon\'s Throne, with it in the party.' },
+};
 
 // One hatchling in this many is born with each. Six Eyes is only ever born into the Gojo family,
 // though a parent can pass it to anyone.
@@ -366,6 +407,13 @@ export const HAKI = { weaker: 6, stronger: 1.5 };
 export const SUN_BREATHING = 0.01;
 export const NINE_TAILS = { hp: 0.3, damage: 0.3 };
 export const ONE_PUNCH = { every: 10, power: 5 };
+// And the earned ones.
+export const ULTRA_DODGE = 0.15;
+export const EIGHT_GATES = { below: 0.25, damage: 0.5, speed: 0.3 };
+export const DOMAIN = { at: 8, lasts: 6, damage: 0.3 };
+export const OBSERVATION = { dodge: 0.1, crit: 0.1 };
+export const GOURMET_HEAL = 0.03;
+export const WILL_DAMAGE = 0.1;
 
 // ---------- One For All ----------
 

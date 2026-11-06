@@ -1,13 +1,14 @@
 {
   "quiet": false,
-  "bottomOnly": false,
+  "bottomOnly": true,
   "calm": false,
   "dark": true,
   "scale": 0.5,
-  "opacity": 0.8,
+  "opacity": 0.9,
   "team": [
-    "Test egg"
+    "Test egg",
+    "setst"
   ],
-  "active": "Test egg",
-  "display": 1083108159
+  "display": 1083108159,
+  "active": "setst"
 }

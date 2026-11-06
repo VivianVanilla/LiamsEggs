@@ -1,9 +1,11 @@
 // Sticky-note panels. h() builds DOM with text nodes only, never innerHTML, so names from
 // imported .creature files cannot inject anything into the page.
 //
-// Any number can be open at once, like tabs. Most belong to one creature: they hide while you look
-// after another, and come back where you left them when you click it again. A few, like Settings
-// and the arena, belong to no creature and always stay.
+// Most belong to one creature: they hide while you look after another, and come back where you
+// left them when you click it again. A few, like Settings and the arena, belong to no creature and
+// always stay. Related notes share one hub (Care, Powers, Fight, Home): a hub is one note on the
+// screen with index tabs along its top, and the notes behind the other tabs wait, out of sight, just
+// as you left them.
 
 import { clamp } from '../lib/util.js';
 import { G, api } from '../state.js';
@@ -58,12 +60,29 @@ export function sureButton(label, onSure, cls = '', disabled = false) {
 // Notes that belong to no creature in particular.
 const GLOBAL = new Set(['settings', 'arena', 'creatures', 'village', 'nursery', 'adventure', 'farewell', 'naming']);
 
+// The hubs, and the notes behind each of their tabs.
+export const HUBS = {
+  care: { name: 'Care', tabs: [['feed', 'Feed'], ['farm', 'Farm'], ['workshop', 'Gear']] },
+  powers: { name: 'Powers', tabs: [['powers', 'Powers'], ['plan', 'Battle plan'], ['sheet', 'What it has']] },
+  fight: { name: 'Fight', tabs: [['adventure', 'Adventure'], ['challenges', 'Challenges'], ['arena', 'Arena'], ['duel', 'Duel']] },
+  home: { name: 'Home', tabs: [['creatures', 'Creatures'], ['nursery', 'Nursery'], ['village', 'Village']] },
+  help: { name: 'Help', tabs: [['guide', 'Guide'], ['settings', 'Settings']] },
+};
+const HUB_OF = Object.fromEntries(Object.entries(HUBS).flatMap(([hub, { tabs }]) => tabs.map(([id]) => [id, hub])));
+export const hubOf = (id) => HUB_OF[id] ?? null;
+// The tab each hub was last left on, so its button in the menu opens that one again.
+const lastTab = {};
+export const lastTabOf = (hub) => lastTab[hub] ?? HUBS[hub]?.tabs[0][0];
+
 const notes = new Map();
 let zTop = 10;
 let away = 0;
 
 const keyFor = (id, cid = G.creature?.id ?? '') => (GLOBAL.has(id) ? id : `${id}@${cid}`);
-const shown = (note) => note.who === null || note.who === (G.creature?.id ?? '');
+// Its creature is the one being looked after, or it belongs to nobody.
+const mine = (note) => note.who === null || note.who === (G.creature?.id ?? '');
+// On the screen right now: one of mine, and the open tab of its hub.
+const shown = (note) => !note.buried && mine(note);
 
 // The window only takes typing while a note that needs it is showing: one that asks for it, or one
 // with a box to type in, like a name for something an expedition found. Otherwise every key you
@@ -89,9 +108,27 @@ export const isTopNote = (note) => [...notes.values()].filter(shown).every((n) =
 export function openNote(id, spec) {
   const key = keyFor(id);
   const old = notes.get(key);
+  // In a hub, whichever tab was showing steps back, and this one takes its place.
+  const hub = hubOf(id);
+  let spot = null;
+  if (hub) {
+    lastTab[hub] = id;
+    for (const n of notes.values()) {
+      if (n === old || hubOf(n.id) !== hub || !shown(n)) continue;
+      spot = spot ?? { x: n.el.offsetLeft, y: n.el.offsetTop };
+      bury(n, true);
+    }
+  }
   if (old) {
+    if (old.buried) {
+      bury(old, false);
+      if (spot) {
+        old.el.style.left = `${spot.x}px`;
+        old.el.style.top = `${spot.y}px`;
+      }
+    }
     old.spec = spec;
-    old.el.className = `note ${spec.cls ?? ''}`;
+    old.el.className = `note ${spec.cls ?? ''}${hub ? ' hub' : ''}${mine(old) ? '' : ' elsewhere'}`;
     old.el.style.width = `${spec.width ?? 300}px`;
     old.setTitle(spec.title);
     old.helpEl.style.display = spec.help ? '' : 'none';
@@ -104,8 +141,13 @@ export function openNote(id, spec) {
   const titleEl = h('div', { class: 'note-title' }, spec.title);
   const helpEl = h('button', { class: 'note-help', title: 'Help with this', onclick: () => G.openHelp?.(notes.get(key)?.spec.help) }, '?');
   helpEl.style.display = spec.help ? '' : 'none';
-  const head = h('div', { class: 'note-head' }, titleEl, helpEl, h('button', { class: 'note-x', title: 'Close', onclick: () => closeKey(key) }, 'x'));
-  const el = h('div', { class: `note ${spec.cls ?? ''}`, style: `width:${spec.width ?? 300}px` }, head, body);
+  const head = h('div', { class: 'note-head' }, titleEl, helpEl, h('button', { class: 'note-x', title: 'Close', onclick: () => closeHub(key) }, 'x'));
+  // A hub's index tabs, along the top of the note.
+  const tabs = hub && h('div', { class: 'hubtabs' }, HUBS[hub].tabs.map(([tab, label]) => h('button', {
+    class: `hubtab${tab === id ? ' on' : ''}`,
+    onclick: () => { if (tab !== id) G.open?.(tab); },
+  }, label)));
+  const el = h('div', { class: `note ${spec.cls ?? ''}${hub ? ' hub' : ''}`, style: `width:${spec.width ?? 300}px` }, tabs, head, body);
   const note = {
     id, key, el, body, spec, helpEl, alive: true, refs: {},
     who: GLOBAL.has(id) ? null : (G.creature?.id ?? ''),
@@ -126,10 +168,24 @@ export function openNote(id, spec) {
   document.getElementById('notes').append(el);
   notes.set(key, note);
   spec.build(body, note);
-  place(note, false);
+  if (spot) {
+    // Where the tab before it was, kept on the screen.
+    el.style.left = `${spot.x}px`;
+    el.style.top = `${spot.y}px`;
+    place(note, true);
+  } else {
+    place(note, false);
+  }
   raiseNote(note);
   syncFocus();
   return note;
+}
+
+// Out of sight behind another tab of its hub, or back.
+function bury(note, on) {
+  note.buried = on;
+  note.el.classList.toggle('buried', on);
+  if (!on) raiseNote(note);
 }
 
 const boxOf = (el) => ({ x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight });
@@ -191,6 +247,17 @@ function makeDraggable(note, handle) {
   });
 }
 
+// The x on a hub closes all of its tabs, the ones waiting behind it too.
+function closeHub(key) {
+  const note = notes.get(key);
+  const hub = note && hubOf(note.id);
+  if (!hub) {
+    closeKey(key);
+    return;
+  }
+  [...notes.values()].filter((n) => hubOf(n.id) === hub && (n.who === null || n.who === note.who)).forEach((n) => closeKey(n.key));
+}
+
 function closeKey(key) {
   const note = notes.get(key);
   if (!note) return;
@@ -214,7 +281,7 @@ export function closeNotesOf(cid) {
 
 // Shows the notes of the creature now being looked after, and hides everyone else's.
 export function showNotesFor() {
-  for (const note of notes.values()) note.el.classList.toggle('elsewhere', !shown(note));
+  for (const note of notes.values()) note.el.classList.toggle('elsewhere', !mine(note));
   syncFocus();
 }
 
@@ -238,7 +305,45 @@ export function tickNotes() {
   }
 }
 
-// ---------- drawing a box on the screen ----------
+// ---------- picking a spot, or drawing a box, on the screen ----------
+
+// One click on the screen. Resolves to { x, y }, or null if it was called off. size draws a ring that
+// big around the pointer, showing what the click will take in.
+export function pickSpot(hint, { size = 72 } = {}) {
+  return new Promise((resolve) => {
+    const ring = h('div', { class: 'picker-spot', style: `display:none;width:${size}px;height:${size}px;margin:${-size / 2}px 0 0 ${-size / 2}px` });
+    const finish = (spot) => {
+      cancelBox = null;
+      overlay.remove();
+      api.captureAll(false);
+      G.picking = false;
+      notesAway(false);
+      resolve(spot);
+    };
+    const hintEl = h('div', { class: 'picker-hint' }, hint, h('button', { class: 'btn', onclick: () => finish(null) }, 'Cancel'));
+    const overlay = h('div', {
+      class: 'picker',
+      oncontextmenu: (e) => {
+        e.preventDefault();
+        finish(null);
+      },
+      onpointermove: (e) => {
+        ring.style.display = 'block';
+        ring.style.left = `${e.clientX}px`;
+        ring.style.top = `${e.clientY}px`;
+      },
+      onpointerdown: (e) => {
+        if (e.button !== 0 || e.target.closest('.picker-hint')) return;
+        finish({ x: e.clientX, y: e.clientY });
+      },
+    }, ring, hintEl);
+    document.getElementById('notes').append(overlay);
+    notesAway(true);
+    api.captureAll(true);
+    G.picking = true;
+    cancelBox = () => finish(null);
+  });
+}
 
 let cancelBox = null;
 

@@ -394,6 +394,7 @@ select option { color: #26231c; background: #fff; }
 /* ---------- box picker ---------- */
 
 .picker { position: fixed; inset: 0; z-index: 2147483000; pointer-events: auto; cursor: crosshair; background: rgb(0 0 0 / 0.14); }
+.picker-spot { position: absolute; pointer-events: none; border: 2.5px dashed #fff; outline: 2.5px dashed #17171c; outline-offset: -2.5px; border-radius: 50%; background: rgb(255 255 255 / 0.12); }
 .picker-box { position: absolute; border: 2.5px dashed #fff; outline: 2.5px dashed #17171c; outline-offset: -2.5px; background: rgb(255 255 255 / 0.12); }
 .picker-hint {
   position: fixed;
@@ -553,6 +554,153 @@ button.chip:disabled { opacity: 0.4; cursor: not-allowed; }
 .lvl small { position: absolute; left: 0; right: 0; bottom: -1px; font: 700 8px "Segoe UI", sans-serif; letter-spacing: 0.04em; }
 .levelcard { margin-top: 6px; padding: 7px 9px; background: var(--card); border-radius: 8px; }
 .party { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+
+/* ---------- hubs: one note with index tabs along its top ---------- */
+
+#notes .note.buried { display: none; }
+.note.hub { padding-top: 26px; }
+.hubtabs { position: absolute; top: -2px; left: 10px; right: 30px; display: flex; gap: 3px; }
+.hubtab {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 3px 9px 4px;
+  font: 700 11px "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--shade-2);
+  border: 1.5px solid var(--shade-4);
+  border-top: 0;
+  border-radius: 0 0 9px 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.1s;
+}
+.hubtab:hover { background: var(--card-hi); transform: translateY(1px); }
+.hubtab.on { background: var(--hot); border-color: var(--ink); cursor: default; transform: translateY(2px); }
+/* The tape sits to one side on a hub, clear of its tabs. */
+.note.hub::before { left: auto; right: 4px; width: 46px; margin-left: 0; transform: rotate(8deg); }
+
+/* The menu: two things to do now, and four places for the rest. */
+.actions.quick { grid-template-columns: repeat(2, 1fr); margin-top: 8px; }
+.actions.quick .btn { padding: 7px 4px; font-size: 12.5px; }
+.hubs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 7px; }
+.hubbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 7px 10px; text-align: left; border-width: 2.5px; }
+.hubbtn b { font: 700 16px/1.1 "Segoe Print", "Ink Free", cursive; }
+.hubbtn small { font: 400 10.5px/1.25 "Segoe UI", sans-serif; opacity: 0.75; }
+.hubbtn.hub-care { background: linear-gradient(135deg, rgb(126 224 90 / 0.28), var(--btn) 70%); }
+.hubbtn.hub-powers { background: linear-gradient(135deg, rgb(138 90 208 / 0.28), var(--btn) 70%); }
+.hubbtn.hub-fight { background: linear-gradient(135deg, rgb(255 107 94 / 0.3), var(--btn) 70%); }
+.hubbtn.hub-home { background: linear-gradient(135deg, rgb(63 142 194 / 0.3), var(--btn) 70%); }
+
+/* ---------- the team dock, down the side of the screen ---------- */
+
+#dock {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 92px;
+  max-height: 78vh;
+  padding: 8px 6px 8px 5px;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: linear-gradient(168deg, var(--paper-lit), transparent 46%);
+  border-radius: 0 12px 12px 0;
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+  opacity: var(--see, 0.75);
+  transition: opacity 0.12s, transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+#dock:hover { opacity: 1; }
+#dock.closed { transform: translate(-82px, -50%); }
+#dock.closed .dock-list, #dock.closed .dock-add, #dock.closed .dock-head span { visibility: hidden; }
+body.all-hidden #dock, body.notes-away #dock { visibility: hidden; }
+.dock-head { display: flex; align-items: center; justify-content: space-between; gap: 2px; font: 700 13px "Segoe Print", cursive; }
+.dock-toggle { border: 0; background: none; color: inherit; font: 700 15px/1 "Segoe UI", sans-serif; cursor: pointer; padding: 0 2px; }
+.dock-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; overflow-x: hidden; min-height: 0; padding-right: 1px; }
+.dock-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 2px 2px;
+  background: var(--card);
+  border: 2px solid transparent;
+  border-radius: 9px;
+  cursor: grab;
+  touch-action: none;
+}
+.dock-tile:hover { background: var(--card-hi); }
+.dock-tile.out { border-color: #3f8ec2; }
+.dock-tile.me { border-color: var(--ink); box-shadow: 0 0 0 2px var(--hot); }
+.dock-tile.away { opacity: 0.55; cursor: not-allowed; }
+.dock-tile canvas { width: 46px; height: 54px; pointer-events: none; }
+.dock-name { max-width: 76px; font: 600 10.5px/1.15 "Segoe UI", sans-serif; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dock-dot { position: absolute; top: 3px; right: 4px; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--paper); background: #7b7468; }
+.dock-tile.out .dock-dot { background: #3f8ec2; }
+.dock-tile.home .dock-dot { background: #5aa83f; }
+.dock-tile.mine .dock-dot { background: #c98a00; }
+.dock-tile.away .dock-dot { background: #b36ad0; }
+.dock-away { position: absolute; top: 3px; left: 3px; padding: 0 3px; font: 700 8.5px/1.4 "Segoe UI", sans-serif; color: #fff; background: #b36ad0; border-radius: 5px; }
+.dock-home { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; padding: 0; font: 700 11px/1 "Segoe UI", sans-serif; color: var(--ink); background: var(--btn); border: 1.5px solid var(--ink); border-radius: 50%; cursor: pointer; }
+.dock-add { padding: 3px 0; font: 700 12px "Segoe UI", sans-serif; color: var(--ink); background: var(--hot); border: 2px solid var(--ink); border-radius: 9px; cursor: pointer; }
+.dock-hint { font-size: 9.5px; text-align: center; opacity: 0.7; line-height: 1.2; }
+/* The party: three slots at the top for the ones out on your screen. */
+.dock-party { display: flex; flex-direction: column; gap: 4px; padding: 4px 3px; background: var(--shade); border-radius: 10px; }
+.dock-slot.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 4px;
+  font: 600 9.5px/1.2 "Segoe UI", sans-serif;
+  text-align: center;
+  opacity: 0.6;
+  border: 2px dashed var(--shade-4);
+  border-radius: 9px;
+}
+.dock-slot.target, .dock-list.target { outline: 3px solid var(--hot); outline-offset: 1px; opacity: 1; background: var(--card-hi); }
+.dock-sep { margin-top: 2px; font: 700 10px "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; text-align: center; }
+#dock.closed .dock-party, #dock.closed .dock-sep { visibility: hidden; }
+/* The creature being dragged out of the dock, following the mouse. */
+.dock-ghost { position: fixed; z-index: 2147483200; pointer-events: none; width: 64px; height: 76px; transform: translate(-50%, -80%) rotate(-6deg); filter: drop-shadow(3px 6px 6px rgb(0 0 0 / 0.45)); }
+.dock-ghost-label { position: fixed; z-index: 2147483200; pointer-events: none; transform: translate(-50%, 8px); padding: 2px 8px; font: 700 12px "Segoe UI", sans-serif; color: #fff; background: rgb(20 20 30 / 0.82); border-radius: 8px; white-space: nowrap; }
+#dock.drop-here { box-shadow: 0 0 0 4px var(--hot), var(--shadow); }
+
+/* ---------- the Codex ---------- */
+
+.cx-nav { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
+.cx-nav .chip { padding: 2px 8px; font-weight: 600; }
+.cx-page { margin-top: 6px; max-height: min(560px, calc(100vh - 170px)); }
+.cx-intro { margin: 2px 0 6px; }
+.cx-head { margin: 10px 0 4px; font: 700 15px "Segoe Print", "Ink Free", cursive; border-bottom: 2px solid var(--shade-4); }
+.cx-card { margin-top: 5px; padding: 6px 8px 7px 10px; background: var(--card); border-left: 6px solid var(--c); border-radius: 4px 10px 10px 4px; box-shadow: 0 1px 0 var(--shade-3); }
+.cx-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.cx-name { font: 700 14px/1.2 "Segoe Print", "Ink Free", cursive; color: var(--ink); }
+.cx-tag { flex: none; padding: 0 7px; font: 700 9.5px/1.7 "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 0.03em; color: #fff; background: var(--c, #7b7468); border-radius: 8px; }
+.cx-blurb { margin: 1px 0 2px; font-size: 11.5px; font-style: italic; opacity: 0.85; }
+.cx-line { font-size: 11.5px; line-height: 1.35; }
+.cx-line b { font-weight: 700; }
+.cx-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 8px; margin-top: 4px; }
+.cx-mini { display: flex; flex-direction: column; padding: 3px 6px; font-size: 11px; background: var(--shade); border-radius: 6px; }
+.cx-mini b { font-weight: 700; }
+.cx-mini span { opacity: 0.8; }
+/* The job tree: each branch hangs off the one above it. */
+.cx-tree { margin-top: 6px; }
+.cx-node { position: relative; margin-top: 4px; padding: 5px 8px 6px; background: var(--card); border-radius: 8px; border-left: 5px solid #8a5ad0; }
+.cx-node.tier1 { border-left-color: #e0683c; }
+.cx-node.tier2 { border-left-color: #3f8ec2; }
+.cx-node.tier3 { border-left-color: #c98a00; }
+.cx-kids { margin-left: 12px; padding-left: 8px; border-left: 2px dashed var(--shade-4); }
+.cx-level { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding: 3px 6px; font-size: 11.5px; border-bottom: 1px dotted var(--shade-4); }
+.cx-level.boss { background: rgb(194 65 43 / 0.08); }
+.levels .acthead { grid-column: 1 / -1; margin: 2px 0 -1px; font: 700 12px "Segoe Print", cursive; opacity: 0.8; }
 
 /* ---------- the loud bits (ui/flair.js). Calm mode in Settings turns these off. ---------- */
 

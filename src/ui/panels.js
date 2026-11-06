@@ -2,7 +2,7 @@
 
 import { toast, glow, newBadge, markSeen, rich } from './flair.js';
 import { G, api, saveCreature, creatureText } from '../state.js';
-import { h, fill, button, openNote, closeNote, getNote, isTopNote, pickRect, notesAway } from './notes.js';
+import { h, fill, button, openNote, closeNote, getNote, isTopNote, pickRect, pickSpot, notesAway, HUBS, hubOf, lastTabOf } from './notes.js';
 import {
   newCreature, parseCreature, serializeCreature, computeStats, stageOf, growthProgress,
   STAT_KEYS, STAT_LABELS, pathTitle, pathChoice, choosePath, nextTierProgress, isFinalForm, powerOf,
@@ -16,7 +16,7 @@ import { EXPEDITIONS } from '../data/village.js';
 import { STANDS, QUIRKS, TECHNIQUES, LEGENDARY, TRAITS, OFA_ID } from '../data/powers.js';
 import { FRUITS } from '../data/fruits.js';
 import { RACES, DEFAULT_RACE } from '../data/races.js';
-import { CROPS, CROP_IDS } from '../data/crafting.js';
+import { CROPS, CROP_IDS, SPOT_MINE } from '../data/crafting.js';
 import { addField, removeField, farmCounts, fieldCap, animalCap, ANIMALS, adoptAnimal, animalUnlocked, TILE, setFieldCrop, waterFields, waterReadyIn } from '../sim/farm.js';
 import { dropRig, drawPortrait, hasArt, artUrl, setPictureScale } from '../draw/art.js';
 import { openDuel } from './duel.js';
@@ -28,7 +28,7 @@ import { openPlan } from './plan.js';
 import { openSheet } from './sheet.js';
 import { openWorkshop } from './workshop.js';
 import { openNursery } from './nursery.js';
-import { openVillage, expeditionClock, tickClocks } from './village.js';
+import { openVillage, expeditionClock, tickClocks, clockText } from './village.js';
 import { openCreatures, renameCreature } from './creatures.js';
 import { openAdventure } from './adventure.js';
 import { nextStep } from '../core/advice.js';
@@ -90,8 +90,15 @@ const leaveMenu = (open) => () => open();
 
 const meter = (label, color, fillBar) => h('div', { class: 'meter' }, h('span', null, label), h('div', { class: `bar ${color}` }, fillBar));
 
-// A labeled row in the menu's grid of buttons.
-const actionRow = (label, ...buttons) => [h('div', { class: 'sect' }, label), h('div', { class: `actions${buttons.length === 3 ? ' three' : ''}` }, buttons)];
+// A big button for one hub: its name, and what is inside it. It opens the tab last used.
+function hubButton(hub, hint, disabled = false) {
+  const { name, tabs } = HUBS[hub];
+  const el = h('button', { class: `btn hubbtn hub-${hub}`, title: hint, disabled, onclick: () => openAny(lastTabOf(hub)) },
+    h('b', null, name),
+    h('small', null, tabs.map(([, label]) => label).join(' · ')));
+  el.dataset.label = name;
+  return newBadge(el, `hub:${hub}`);
+}
 
 // A menu button with a short hint when the mouse rests on it.
 const act = (label, onclick, hint, cls = '', disabled = false) => {
@@ -197,46 +204,41 @@ export function openMenu() {
       fill(body,
         h('div', { class: 'gap', style: 'display:grid;gap:3px;margin-top:6px' }, STAT_KEYS.map((k) => statRow(k, stats[k], limits[k]))),
         h('div', { class: 'small', style: 'margin-top:3px' }, `Only one stat can reach ${best}, one ${second}, one ${third}, one ${fourth}, one ${worst}.`),
-        actionRow('Look after it',
-          act('Feed', leaveMenu(openFeed), 'Free snacks, and the plants your farms grew'),
+        // Two things to do right now, and everything else in four places.
+        h('div', { class: 'actions quick' },
+          act('Snack', () => {
+            const problem = G.pet?.feedSnack();
+            if (problem) G.pet.say(problem, 2.5, true);
+          }, 'A free snack: it fills up and grows a little'),
           mining
-            ? act('Stop mining', () => {
+            ? (note.refs.stopMine = act(`Stop mining (${clockText((G.pet.mineLeft ?? 0) * 1000)})`, () => {
               G.pet.stopRequested = true;
               note.close();
-            }, 'Stop the mining run it is on', 'hot')
-            : act('Mine colors', leaveMenu(beginMine), 'Draw a box on your screen and it digs the colors out'),
-          act('Farm', leaveMenu(openFarm), 'Fields, plants and animals'),
-          act('Workshop', leaveMenu(openWorkshop), 'Dye, charms, paint, and the forge for weapons')),
-        actionRow('Its build',
-          act('Powers', leaveMenu(openPowers), 'Stands, speedster powers, cursed techniques, Quirks, One For All'),
-          act('Battle plan', leaveMenu(openPlan), 'Its moves, and how it fights'),
-          act('What it has', leaveMenu(openSheet), 'Everything it has, and what each thing does')),
-        actionRow('Fight',
-          newBadge(act('Adventure', leaveMenu(openAdventure), 'A 20-level campaign for a party of three', '', !!G.challenge), 'adventure'),
-          act('Challenges', leaveMenu(openChallenges), 'Training monsters, and fights to the death'),
-          act('Arena', leaveMenu(openArena), 'A free-for-all with any .creature files', '', !!G.challenge),
-          act('Puzzle duel', leaveMenu(openDuel), 'Play a puzzle against it')),
-        actionRow('Your creatures',
-          newBadge(act('Creatures', leaveMenu(openCreatures), 'Every creature you have, in one place'), 'creatures'),
-          newBadge(act('Nursery', leaveMenu(() => openNursery()), 'Breed, hatch eggs, use items, the Mega Breeder'), 'nursery'),
-          newBadge(act('Village', leaveMenu(() => openVillage()), 'Work, the Legendary Mine, and expeditions'), 'village')),
+            }, 'Stop digging and come back', 'hot'))
+            : act('Mine colors', leaveMenu(beginMine), `Click a spot on your screen, and it digs the colors out of it for ${Math.round(SPOT_MINE.seconds / 60)} minutes`)),
+        h('div', { class: 'hubs' },
+          hubButton('care', 'Farmed food, its fields and animals, dye, charms and weapons'),
+          hubButton('powers', 'Stands, techniques, Quirks and the rest, how it fights, and everything it has'),
+          hubButton('fight', 'Adventure, training and deadly monsters, the arena and puzzle duels', !!G.challenge),
+          hubButton('home', 'Every creature you have, eggs and breeding, and the village')),
         h('div', { class: 'menufoot' },
-          footButton('Guide', leaveMenu(() => openGuide())),
+          footButton('Codex', leaveMenu(() => openGuide('codex'))),
           footButton('Rename', leaveMenu(openRename)),
           footButton('Settings', leaveMenu(openSettings)),
           footButton('Export', () => exportCreature(), !isFinalForm(c), isFinalForm(c) ? '' : 'It can be exported once it reaches a final form'),
           footButton('Close game', () => api.closeGame())),
       );
-      // The button for the next step glows too, wherever it is in the grid.
+      // The button for the next step glows too.
       const goKey = String(tip?.go ?? '').split(':')[0];
-      const target = tip && ({ feed: 'Feed', farm: 'Farm', mine: 'Mine colors', workshop: 'Workshop', challenges: 'Challenges', nursery: 'Nursery', expeditions: 'Village', village: 'Village', creatures: 'Creatures', adventure: 'Adventure', powers: 'Powers' }[goKey] ?? null);
-      if (target) glow([...body.querySelectorAll('.actions .btn')].find((b) => b.textContent === target));
+      const target = goKey === 'mine' ? 'Mine colors' : HUBS[hubOf(goKey) ?? (goKey === 'expeditions' ? 'home' : '')]?.name;
+      if (tip && target) glow([...body.querySelectorAll('.actions .btn, .hubs .btn')].find((b) => b.dataset.label === target || b.textContent === target));
       note.spec.tick(note);
     },
     tick(note) {
       const { canvas, food, grow, stage } = note.refs;
       if (!canvas) return;
       tickClocks(note);
+      if (note.refs.stopMine && G.pet) note.refs.stopMine.textContent = `Stop mining (${clockText((G.pet.mineLeft ?? 0) * 1000)})`;
       drawPortrait(canvas, c);
       food.style.width = `${c.fullness}%`;
       grow.style.width = `${growthProgress(c) * 100}%`;
@@ -454,6 +456,7 @@ export function feedPaths(paths, x, y, onDone, pet = G.pet) {
 
 // ---------- mining ----------
 
+// Click one spot on the screen, and it digs there for a while, out of the colors in that spot.
 export async function beginMine() {
   const pet = G.pet;
   if (!pet) return;
@@ -463,17 +466,24 @@ export async function beginMine() {
   }
   // The notes step aside until the colors have been read, so they don't get mined too.
   notesAway(true);
-  let grid;
-  let rect;
+  let area;
   try {
-    rect = await pickRect('Drag a box over the part of the screen to mine');
-    if (!rect) return;
-    // Pause so the box is gone from the screen before its colors are read.
+    const spot = await pickSpot(`Click the spot to mine. It digs there for ${Math.round(SPOT_MINE.seconds / 60)} minutes.`, { size: SPOT_MINE.size });
+    if (!spot) return;
+    // Pause so the ring is gone from the screen before its colors are read.
     await new Promise((r) => { setTimeout(r, 90); });
-    const cell = Math.max(22, Math.ceil(Math.sqrt((rect.w * rect.h) / 56)));
-    const cols = Math.max(1, Math.round(rect.w / cell));
-    const rows = Math.max(1, Math.round(rect.h / cell));
-    grid = await api.sampleScreen({ ...rect, cols, rows });
+    const { work } = G.screen;
+    const s = SPOT_MINE.size;
+    area = {
+      x: Math.round(Math.min(Math.max(spot.x - s / 2, 0), G.screen.w - s)),
+      y: Math.round(Math.min(Math.max(spot.y - s / 2, work.y), work.y + work.h - s)),
+      w: s,
+      h: s,
+      cols: SPOT_MINE.cells,
+      rows: SPOT_MINE.cells,
+    };
+    const grid = await api.sampleScreen(area);
+    area = { ...area, cols: grid.cols, rows: grid.rows, colors: grid.colors };
   } catch (err) {
     console.error(err);
     pet.say('i cannot see the screen', 3, true);
@@ -482,7 +492,7 @@ export async function beginMine() {
     notesAway(false);
   }
   pet.cancel();
-  pet.run(pet.mineRun({ ...rect, cols: grid.cols, rows: grid.rows, colors: grid.colors }), 'work');
+  pet.run(pet.mineSpot(area), 'work');
 }
 
 // ---------- path choices ----------

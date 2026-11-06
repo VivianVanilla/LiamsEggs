@@ -342,11 +342,13 @@ async function run() {
   // --- mining ---
   await js(`window.__game.G.creature.fullness = 90`);
   await js(`(async () => { const { beginMine } = await import('./ui/panels.js'); beginMine(); })()`);
-  ok('box picker opens', await waitFor(`document.querySelector('.picker')`));
+  ok('the spot picker opens', await waitFor(`document.querySelector('.picker')`));
+  await js(`document.querySelector('.picker').dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 650, clientY: 300 }))`);
   await sleep(120);
   await shot('08-mine-picker');
-  await dragBox(500, 200, 300, 200);
-  ok('creature starts a mining run', await waitFor(`window.__game.G.pet.kind === 'work'`));
+  ok('a ring shows the spot it will take in', await js(`getComputedStyle(document.querySelector('.picker-spot')).display === 'block'`));
+  await js(`document.querySelector('.picker').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 650, clientY: 300 }))`);
+  ok('creature starts mining that spot, for five minutes', await waitFor(`window.__game.G.pet.kind === 'work' && window.__game.G.pet.mineLeft > 290`));
   await fastForward(22);
   await sleep(50);
   await shot('09-mining');
@@ -354,7 +356,7 @@ async function run() {
   ok('it dug cells and banked color', minedMid > 2 && await js(`window.__game.G.creature.palette.total > 0`), `${minedMid} cells`);
   await js(`(async () => { const { openMenu } = await import('./ui/panels.js'); openMenu(); })()`);
   await sleep(100);
-  ok('while it mines, the menu can stop it', await js(`[...document.querySelectorAll('.actions .btn')].some((b) => b.textContent === 'Stop mining')`));
+  ok('while it mines, the menu can stop it, and shows how long is left', await js(`[...document.querySelectorAll('.actions .btn')].some((b) => /^Stop mining \\(4:\\d\\d\\)$/.test(b.textContent))`), await js(`[...document.querySelectorAll('.actions .btn')].map((b) => b.textContent).join(' | ')`));
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); })()`);
   await js(`(() => { window.__game.G.pet.stopRequested = true; })()`);
   await fastForward(10);
@@ -627,21 +629,25 @@ async function run() {
   await sleep(150);
   ok('the menu sums up its powers', await js(`[...document.querySelectorAll('.note .small')].some((e) => e.textContent.includes('Speedster') && e.textContent.includes('One For All') && /\\d of 8 mutations/.test(e.textContent))`));
   ok('the menu is compact', await js(`document.querySelector('.note').offsetHeight < 620`), await js(`String(document.querySelector('.note').offsetHeight)`));
-  ok('every label fits its button', await js(`[...document.querySelectorAll('.actions .btn')].length === 14 && [...document.querySelectorAll('.actions .btn')].every((b) => {
+  ok('the menu is two things to do now and four places for the rest', await js(`document.querySelectorAll('.actions.quick .btn').length === 2 && [...document.querySelectorAll('.hubs .btn')].map((b) => b.dataset.label).join() === 'Care,Powers,Fight,Home'`));
+  ok('every label fits its button', await js(`[...document.querySelectorAll('.actions .btn')].length === 2 && [...document.querySelectorAll('.actions .btn, .hubs .btn')].every((b) => {
     const glowing = b.classList.contains('glow');
     b.classList.remove('glow');
     const fits = b.scrollWidth <= b.clientWidth;
     if (glowing) b.classList.add('glow');
     return fits;
   })`));
-  ok('every menu button says what it does when the mouse rests on it', await js(`[...document.querySelectorAll('.actions .btn')].every((b) => b.title.length > 10)`));
+  ok('every menu button says what it does when the mouse rests on it', await js(`[...document.querySelectorAll('.actions .btn, .hubs .btn')].every((b) => b.title.length > 10)`));
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); window.__game.G.pet.still = false; return true; })()`);
 
   // --- what it has: every mutation and power, and what each does ---
   await js(`(async () => { const { openMenu } = await import('./ui/panels.js'); openMenu(); })()`);
   await sleep(120);
-  await clickText('.note', 'What it has');
+  await clickText('.note', 'Powers');
+  await sleep(120);
+  await js(`[...document.querySelectorAll('.note:not(.buried) .hubtab')].find((b) => b.textContent === 'What it has').click()`);
   await sleep(150);
+  ok('the powers hub has a tab for what it has, in the same place', await js(`(async () => { const { getNote } = await import('./ui/notes.js'); return getNote('powers').buried && !getNote('sheet').buried; })()`));
   const sheetNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent.startsWith('What Bobbo'))`;
   ok('the sheet opens', await js(`!!${sheetNote}`));
   ok('it lists mutations with their effect', await js(`(() => { const t = ${sheetNote}.textContent; return t.includes('Mutations (') && /\\+\\d (Might|Guard|Speed|Wits|Vigor)/.test(t); })()`));
@@ -1066,11 +1072,16 @@ async function run() {
   // --- tabs: notes stay open side by side ---
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { openMenu } = await import('./ui/panels.js'); openMenu(); return true; })()`);
   await sleep(150);
-  await clickText('.note', 'Feed');
+  await js(`[...document.querySelectorAll('.hubs .btn')].find((b) => b.dataset.label === 'Care').click()`);
   await sleep(150);
-  await clickText('.note', 'Farm');
+  await js(`[...document.querySelectorAll('.note:not(.buried) .hubtab')].find((b) => b.textContent === 'Farm').click()`);
+  await sleep(150);
+  ok('a hub keeps one place on the screen: Farm took Feed\'s place, behind its tab', await js(`(async () => { const { getNote } = await import('./ui/notes.js'); const feed = getNote('feed'); const farm = getNote('farm'); return feed.buried && !farm.buried && farm.el.style.left === feed.el.style.left; })()`));
+  await js(`[...document.querySelectorAll('.note:not(.buried) .hubtab')].find((b) => b.textContent === 'Feed').click()`);
+  await sleep(150);
+  await js(`[...document.querySelectorAll('.hubs .btn')].find((b) => b.dataset.label === 'Fight').click()`);
   await sleep(200);
-  ok('opening things from the menu keeps the menu open', await hasNote('menu') && await hasNote('feed') && await hasNote('farm'));
+  ok('opening things from the menu keeps the menu open', await hasNote('menu') && await hasNote('feed') && await hasNote('farm') && await hasNote('adventure'));
   const overlapOf = (a, b) => js(`(async () => {
     const { getNote } = await import('./ui/notes.js');
     const r1 = getNote('${a}').el.getBoundingClientRect();
@@ -1079,7 +1090,7 @@ async function run() {
     const h = Math.max(0, Math.min(r1.bottom, r2.bottom) - Math.max(r1.top, r2.top));
     return (w * h) / Math.min(r1.width * r1.height, r2.width * r2.height);
   })()`);
-  const overlaps = [await overlapOf('menu', 'feed'), await overlapOf('menu', 'farm'), await overlapOf('feed', 'farm')];
+  const overlaps = [await overlapOf('menu', 'feed'), await overlapOf('menu', 'adventure'), await overlapOf('feed', 'adventure')];
   ok('each new one finds its own space', overlaps.every((o) => o < 0.1), overlaps.map((o) => o.toFixed(2)).join(', '));
   await js(`(async () => { const { getNote } = await import('./ui/notes.js'); getNote('menu').el.querySelector('.note-body').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return true; })()`);
   ok('clicking a note brings it to the front', await js(`(async () => { const { getNote, isTopNote } = await import('./ui/notes.js'); return isTopNote(getNote('menu')); })()`));
@@ -1360,17 +1371,17 @@ async function run() {
   // --- the menu: a next step, and a family row ---
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); window.__game.G.creature.fullness = 10; const { openMenu } = await import('./ui/panels.js'); openMenu(); return true; })()`);
   await sleep(150);
-  ok('the menu has a row for your creatures: the roster, the nursery and the village', await js(`['Creatures', 'Nursery', 'Village', 'Adventure'].every((label) => [...document.querySelectorAll('.actions .btn')].some((b) => b.textContent === label))`));
+  ok('the menu has its four places, each saying what is in it', await js(`[...document.querySelectorAll('.hubs .btn')].every((b) => b.querySelector('small').textContent.includes(' · '))`));
   ok('and a line for the household', await js(`document.querySelector('.note .household')?.textContent.includes('gems')`));
   ok('and suggests what to do next', await js(`!!document.querySelector('.note .tip') && document.querySelector('.note .tip').textContent.startsWith('Next:')`));
-  ok('the button for it glows, with a CLICK! on it', await js(`document.querySelector('.note .tip').classList.contains('loud') && [...document.querySelectorAll('.actions .btn.glow')].some((b) => b.textContent === 'Feed')`));
-  ok('new things say NEW! until they are tried', await js(`['Creatures', 'Nursery', 'Village', 'Adventure'].some((label) => [...document.querySelectorAll('.actions .btn.isnew')].some((b) => b.textContent === label))`));
+  ok('the button for it glows, with a CLICK! on it', await js(`document.querySelector('.note .tip').classList.contains('loud') && [...document.querySelectorAll('.hubs .btn.glow')].some((b) => b.dataset.label === 'Care')`));
+  ok('new things say NEW! until they are tried', await js(`[...document.querySelectorAll('.hubs .btn.isnew')].length > 0`));
   ok('and the creature stops saying CLICK ME once its menu has been opened', await js(`localStorage.getItem('creature-seen:menu') === '1'`));
   await shot('30-menu');
 
   // --- your creatures: everyone in one place ---
   const creaturesNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Your creatures')`;
-  await clickText('.note', 'Creatures');
+  await js('window.__game.G.open("creatures")');
   await waitFor(`!!${creaturesNote}`);
   await sleep(150);
   ok('your creatures shows everyone, out on the screen and at home', await js(`(() => { const n = ${creaturesNote}; const names = [...n.querySelectorAll('.card .name')].map((x) => x.textContent); return names.some((t) => t.startsWith('Digger')) && names.some((t) => t.startsWith('Extra')) && !!n.querySelector('.badge.out') && !!n.querySelector('.badge.home'); })()`));
@@ -1463,7 +1474,7 @@ async function run() {
     return true;
   })()`);
   await sleep(150);
-  ok('adventure shows twenty levels, only the first open', await js(`(() => { const lv = [...${adventureNote}.querySelectorAll('.lvl')]; return lv.length === 20 && !lv[0].disabled && lv[1].disabled; })()`));
+  ok('adventure shows thirty levels in two acts, only the first open', await js(`(() => { const lv = [...${adventureNote}.querySelectorAll('.lvl')]; return lv.length === 30 && !lv[0].disabled && lv[1].disabled && ${adventureNote}.querySelectorAll('.acthead').length === 2; })()`));
   ok('and the party starts as whoever is out', await js('window.__game.G.house.adventure.party.length >= 1'));
   await shot('34-adventure');
   await clickText('.note', 'Fight level 1');
@@ -1570,6 +1581,53 @@ async function run() {
   ok('renaming one renames its file too', await waitFor(`window.__game.G.everyone.some((r) => r.c.name === 'Denji')`) && fs.existsSync(path.join(HOME, 'creatures', 'Denji.creature')) && !fs.existsSync(pochitaFile));
   ok('and it keeps its place in the Legendary Mine', await js(`window.__game.G.house.mine.includes(window.__game.G.everyone.find((r) => r.c.name === 'Denji').c.id)`));
   await shot('38-renamed');
+
+  // --- the dock: every creature down the side, dragged out onto the screen ---
+  ok('the dock shows every creature', await js(`document.querySelectorAll('#dock .dock-tile').length === window.__game.G.everyone.length`));
+  ok('the dock has a party of three slots at the top', await js(`document.querySelectorAll('#dock .dock-party .dock-slot').length === 3`));
+  // Drags a tile to a point, the way a mouse would.
+  const dockDrag = (name, toSelector) => js(`(() => {
+    const tile = [...document.querySelectorAll('#dock .dock-tile')].find((t) => t.querySelector('.dock-name').textContent === ${JSON.stringify(name)});
+    const target = document.querySelector(${JSON.stringify(toSelector)});
+    if (!tile || !target) return 'missing';
+    const a = tile.getBoundingClientRect();
+    const b = target.getBoundingClientRect();
+    tile.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: a.left + 10, clientY: a.top + 10 }));
+    window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: b.left + b.width / 2, clientY: b.top + b.height / 2 }));
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: b.left + b.width / 2, clientY: b.top + b.height / 2 }));
+    return true;
+  })()`);
+  const swap = await js(`(() => {
+    const { G } = window.__game;
+    const away = new Set(G.house.expeditions.flatMap((e) => e.party.map((p) => p.base)));
+    const row = G.everyone.find((r) => !G.team.some((m) => m.base === r.base) && !away.has(r.base));
+    return row ? { name: row.c.name, first: G.team[0].c.name, full: G.team.length } : null;
+  })()`);
+  await dockDrag(swap.name, '#dock .dock-party .dock-slot');
+  ok('dragging one onto a full party slot swaps the two', await waitFor(`window.__game.G.team.some((m) => m.c.name === ${JSON.stringify(swap.name)}) && !window.__game.G.team.some((m) => m.c.name === ${JSON.stringify(swap.first)})`), JSON.stringify(swap));
+  await sleep(200);
+  await dockDrag(swap.name, '#dock .dock-list');
+  ok('and dragging one from the party down to the village puts it away', await waitFor(`!window.__game.G.team.some((m) => m.c.name === ${JSON.stringify(swap.name)})`));
+  await sleep(200);
+  await dockDrag(swap.name, '#dock .dock-party .dock-slot.empty');
+  ok('and into a free slot brings it out again', await waitFor(`window.__game.G.team.some((m) => m.c.name === ${JSON.stringify(swap.name)})`));
+  const dragged = swap.name;
+  await sleep(300);
+  await shot('39-dock');
+
+  // --- the Codex: every race, job, gift and the rest, from the game's own data ---
+  await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); window.__game.G.open('guide:codex'); return true; })()`);
+  await sleep(200);
+  ok('the Codex lists every race', await js(`document.querySelectorAll('.cx-card').length >= 9 && [...document.querySelectorAll('.cx-name')].some((n) => n.textContent === 'Skypiean')`));
+  await shot('40-codex-races');
+  await js(`[...document.querySelectorAll('.cx-nav .chip')].find((b) => b.textContent === 'Jobs').click()`);
+  await sleep(150);
+  ok('and the whole job tree, every branch', await js(`document.querySelectorAll('.cx-node').length >= 28 && document.querySelectorAll('.cx-node.tier3').length === 16`));
+  await shot('41-codex-jobs');
+  await js(`[...document.querySelectorAll('.cx-nav .chip')].find((b) => b.textContent === 'Gifts').click()`);
+  await sleep(150);
+  ok('and every gift, born and earned', await js(`(() => { const t = document.querySelector('.cx-page').textContent; return t.includes('Titan Shifter') && t.includes('Ultra Instinct') && !t.includes('undefined'); })()`));
+  await shot('42-codex-gifts');
 
   ok('no console errors in the page', pageErrors.length === 0, pageErrors.slice(0, 5).join(' | '));
 }

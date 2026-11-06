@@ -16,11 +16,14 @@ import { onBoutEnded, forgetFighter } from './ui/boards.js';
 import { onChallengeEnded } from './ui/challenges.js';
 import { loadVillage } from './ui/village.js';
 import { onLevelEnded } from './ui/adventure.js';
+import { initDock, refreshDock, dockRects, overDock, tickDock, setDockDrop } from './ui/dock.js';
 import { takeEgg } from './ui/roll.js';
 import { hoursDue, runVillage, finishExpeditions, tidyMine } from './core/village.js';
 import { FRUITS } from './data/fruits.js';
 import { RACES } from './data/races.js';
 import { ITEMS } from './data/items.js';
+import { TRAITS } from './data/powers.js';
+import { earnTraits } from './core/earned.js';
 
 const canvas = document.getElementById('world');
 const ctx = canvas.getContext('2d');
@@ -134,6 +137,7 @@ function lookAfter(m) {
   G.base = m?.base ?? null;
   G.pet = m?.pet ?? null;
   showNotesFor();
+  refreshDock();
   if (m) rememberTeam();
 }
 
@@ -220,7 +224,14 @@ G.onPathReady = (c = G.creature) => {
 // Says so once, when a power is there for the taking. The menu shows it too.
 function announcePowers(m) {
   const { c } = m;
-  const lines = { stand: 'something is standing behind me', speed: 'everything just got so slow', technique: 'my hands feel cursed', second: 'my other hand feels cursed too' };
+  // Anything it has earned by what it did: Ultra Instinct, the Eight Inner Gates and the rest.
+  for (const id of earnTraits(c)) {
+    shoutNews(`${c.name.toUpperCase()} EARNED ${TRAITS[id].name.toUpperCase()}!!!`, TRAITS[id].color, 24, 'rare');
+    m.pet.say(TRAITS[id].name.toLowerCase(), 4, true);
+    saveCreature(c);
+    if (G.creature === c) refreshMenu();
+  }
+  const lines ={ stand: 'something is standing behind me', speed: 'everything just got so slow', technique: 'my hands feel cursed', second: 'my other hand feels cursed too' };
   const ready = canAwakenStand(c) ? 'stand' : canBecomeSpeedster(c) ? 'speed' : canLearnTechnique(c) ? 'technique' : canLearnSecondTechnique(c) ? 'second' : '';
   if (!ready || m.powerPrompted === ready) return;
   m.powerPrompted = ready;
@@ -365,6 +376,7 @@ function update(dt) {
   if (noteClock > 0.1) {
     noteClock = 0;
     tickNotes();
+    tickDock();
   }
 
   villageClock += dt;
@@ -416,7 +428,7 @@ G.tickVillage = () => tickVillage();
 const onScreen = () => G.team.filter((m) => !inBout(m.c));
 
 function sendRects() {
-  const rects = noteRects();
+  const rects = [...noteRects(), ...dockRects()];
   if (!G.picking) onScreen().forEach((m) => rects.push(m.pet.hitRect()));
   // Like the creature, a vein needs the mouse to rest on it, so quick clicks still reach your apps.
   G.veins.forEach((v) => rects.push({ x: v.x - 3, y: v.y - 3, w: v.size + 6, h: v.size + 6 }));
@@ -527,8 +539,11 @@ function memberNear(x, y) {
   return onScreen().sort((a, b) => Math.hypot(a.pet.x - x, a.pet.y - y) - Math.hypot(b.pet.x - x, b.pet.y - y))[0] ?? null;
 }
 
+// The one under a point, for the dock's drag and drop too.
+G.memberAt = memberAt;
+
 window.addEventListener('pointerdown', (e) => {
-  if (G.picking || e.button !== 0 || e.target.closest?.('.note')) return;
+  if (G.picking || e.button !== 0 || e.target.closest?.('.note') || e.target.closest?.('#dock')) return;
   const vein = G.veins.find((v) => e.clientX >= v.x - 3 && e.clientY >= v.y - 3 && e.clientX <= v.x + v.size + 3 && e.clientY <= v.y + v.size + 3);
   if (vein) {
     const miner = memberOf(vein.pet?.c) ?? memberOf(G.creature) ?? G.team[0];
@@ -550,14 +565,22 @@ window.addEventListener('pointermove', (e) => {
     press.moved = true;
     pet.grab();
   }
-  if (press.moved) pet.moveHeld(e.clientX, e.clientY);
+  if (press.moved) {
+    pet.moveHeld(e.clientX, e.clientY);
+    setDockDrop(G.team.length > 1 && overDock(e.clientX, e.clientY));
+  }
 });
 
-window.addEventListener('pointerup', () => {
+window.addEventListener('pointerup', (e) => {
   if (!press) return;
   api.captureAll(false);
   const { m } = press;
-  if (press.moved) {
+  setDockDrop(false);
+  if (press.moved && G.team.length > 1 && overDock(e.clientX, e.clientY)) {
+    // Carried back onto the dock: it goes home.
+    m.pet.release();
+    G.putAway(m.c);
+  } else if (press.moved) {
     m.pet.release();
     saveCreature(m.c);
   } else if (G.team.includes(m)) {
@@ -692,6 +715,7 @@ async function start() {
   if (!out.length && rows.length) out.push(rows.find((r) => r.base === info.settings.active) ?? rows[0]);
   out.forEach((r) => addMember(r.c, r.base));
   await loadVillage();
+  initDock();
   tickVillage();
   if (G.team.length) {
     lookAfter(G.team.find((m) => m.base === info.settings.active) ?? G.team[0]);

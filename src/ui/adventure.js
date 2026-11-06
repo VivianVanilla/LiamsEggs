@@ -1,6 +1,7 @@
-// Adventure: pick three of your creatures and fight your way through 20 levels, one ring at a time
-// on your screen. Every fifth level a deadly monster leads the enemy. Nobody can die here: the party
-// fights as copies.
+// Adventure: pick three of your creatures and fight your way through 30 levels in two acts, one
+// ring at a time on your screen. Every fifth level a deadly monster leads the enemy, and in Act 2 the
+// enemy carries forged weapons. Nobody can die here: the party fights as copies. Every win counts
+// toward the gifts earned in Adventure.
 
 import { toast } from './flair.js';
 import { G, saveHouse } from '../state.js';
@@ -8,12 +9,15 @@ import { h, fill, button, openNote, getNote } from './notes.js';
 import { fullName, stageOf, powerOf } from '../core/creature.js';
 import { awayBases } from '../core/village.js';
 import {
-  LEVEL_COUNT, levelInfo, bossOf, levelEnemies, levelToughness, partyProblem, levelProblem, startLevel, levelWon, winLevel,
+  LEVEL_COUNT, levelInfo, bossOf, bossMonster, levelEnemies, levelToughness, partyProblem, levelProblem, startLevel, levelWon, winLevel, creditParty,
 } from '../core/adventure.js';
+import { earnTraits } from '../core/earned.js';
+import { saveAnywhere } from './breed.js';
+import { RACES } from '../data/races.js';
+import { ADVENTURE_ARMED } from '../data/adventure.js';
 import {
   ADVENTURE_PARTY, ADVENTURE_PRIZES, ADVENTURE_GEMS_PER_LEVEL, ADVENTURE_FINISH_GEMS, ADVENTURE_REPLAY_ORE, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL,
 } from '../data/adventure.js';
-import { DEADLY_MONSTERS } from '../data/monsters.js';
 import { ITEMS } from '../data/items.js';
 import { TRAITS } from '../data/powers.js';
 import { drawPortrait } from '../draw/art.js';
@@ -60,9 +64,10 @@ export async function openAdventure() {
 function rewardText(n, best) {
   if (n > best) {
     const prize = ADVENTURE_PRIZES[n] ?? {};
-    const bits = [`${n * ADVENTURE_GEMS_PER_LEVEL + (n === LEVEL_COUNT ? ADVENTURE_FINISH_GEMS : 0)} gems`];
+    const bits = [`${n * ADVENTURE_GEMS_PER_LEVEL + (prize.gems ?? 0) + (n === LEVEL_COUNT ? ADVENTURE_FINISH_GEMS : 0)} gems`];
     if (prize.ore) bits.push(`${prize.ore} Legendary ore`);
     Object.entries(prize.items ?? {}).forEach(([id, k]) => bits.push(`${k > 1 ? `${k} ` : 'a '}${ITEMS[id].name}`));
+    if (prize.found) bits.push(`a ${RACES[prize.found].name} who wants to join you`);
     return `The first win pays ${bits.join(', ')}.`;
   }
   return `Beaten already. Again, it can still drop loot${bossOf(n) ? `, and the boss always leaves ${ADVENTURE_REPLAY_ORE} ore` : ''}.`;
@@ -81,18 +86,20 @@ function buildAdventure(body, note) {
       h('span', null, h('b', null, Math.floor(G.house.ore)), ' ore')),
     h('div', { class: 'levels' }, Array.from({ length: LEVEL_COUNT }, (_, i) => {
       const n = i + 1;
+      const act = (n === 1 || n === ADVENTURE_ARMED) && h('div', { class: 'acthead' }, n === 1 ? 'Act 1: the road to the dragon' : 'Act 2: past the end of the map. The enemy is armed.');
       const locked = !!levelProblem(adv, n);
       const cls = ['lvl', n <= adv.best && 'beaten', n === adv.best + 1 && 'next', bossOf(n) && 'boss', n === spec.picked && 'picked'].filter(Boolean).join(' ');
-      return h('button', {
+      const stone = h('button', {
         class: cls,
         disabled: locked,
-        title: `${n}. ${levelInfo(n).name}${bossOf(n) ? `: ${DEADLY_MONSTERS[bossOf(n)].name}` : ''}`,
+        title: `${n}. ${levelInfo(n).name}${bossOf(n) ? `: ${bossMonster(n).name}` : ''}`,
         onclick: () => {
           spec.picked = n;
           spec.message = '';
           note.rebuild();
         },
       }, String(n), bossOf(n) && h('small', null, 'BOSS'));
+      return [act, stone];
     })),
   );
 
@@ -106,7 +113,7 @@ function buildAdventure(body, note) {
       h('div', { class: 'nameline grow', style: 'font-size:16px' }, `${n}. ${info.name}`),
       boss && h('span', { class: 'badge boss' }, 'boss')),
     h('div', { class: 'small' }, info.text),
-    h('div', { class: 'small', style: 'margin-top:3px' }, `${fighters.length ? `${fighters.length} ${fighters.length === 1 ? WILD_WORDS[wild].replace(/s$/, '') : WILD_WORDS[wild]}` : ''}${boss ? `${fighters.length ? ', led by ' : ''}${DEADLY_MONSTERS[boss].name}` : ''}${n > 1 ? `, ${Math.round((levelToughness(n) - 1) * 100)}% tougher than usual` : ''}.`),
+    h('div', { class: 'small', style: 'margin-top:3px' }, `${fighters.length ? `${fighters.length} ${fighters.length === 1 ? WILD_WORDS[wild].replace(/s$/, '') : WILD_WORDS[wild]}` : ''}${boss ? `${fighters.length ? ', led by ' : ''}${bossMonster(n).name}` : ''}${n >= ADVENTURE_ARMED ? ', every one of them armed' : ''}${n > 1 ? `, ${Math.round((levelToughness(n) - 1) * 100)}% tougher than usual` : ''}.`),
     h('div', { class: 'small', style: 'font-weight:600' }, rewardText(n, adv.best)),
     h('div', { class: 'small' }, `Any win: ${Object.entries(ADVENTURE_DROPS).map(([id, p]) => `${ITEMS[id].name} ${fine(p + n * ADVENTURE_DROPS_PER_LEVEL[id])}`).join(', ')}.`)));
 
@@ -201,11 +208,12 @@ export function onLevelEnded(bout) {
   if (won) {
     const reward = winLevel(G.house, n);
     saveHouse();
-    const bits = [reward.gems && `+${reward.gems} gems`, reward.ore && `+${reward.ore} ore`, ...reward.items.map((id) => `a ${ITEMS[id].name}`)].filter(Boolean);
+    creditAndGift(n);
+    const bits = [reward.gems && `+${reward.gems} gems`, reward.ore && `+${reward.ore} ore`, ...reward.items.map((id) => `a ${ITEMS[id].name}`), reward.found && `a ${RACES[reward.found].name} wants to join you (name it in the Village)`].filter(Boolean);
     run.result = `Level ${n} beaten!${bits.length ? ` ${bits.join(', ')}.` : ''}${n === LEVEL_COUNT && reward.first ? ' The whole campaign is done!' : ''}`;
     const note = getNote('adventure');
-    if (note && n < LEVEL_COUNT) note.spec.picked = n + 1;
-    G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, n === LEVEL_COUNT ? 'THE DRAGON FALLS' : `LEVEL ${n} BEATEN`, '#8ef06a', 26, 3);
+    if (note && n < LEVEL_COUNT && n >= G.house.adventure.best) note.spec.picked = n + 1;
+    G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, n === 20 ? 'THE DRAGON FALLS' : n === LEVEL_COUNT ? 'THE FIRST FLAME GOES OUT' : `LEVEL ${n} BEATEN`, '#8ef06a', 26, 3);
     toast(`LEVEL ${n} BEATEN!${bits.length ? ` ${bits.join(', ').toUpperCase()}!!!` : ''}`, reward.items.length || reward.first ? 'rare' : 'good');
   } else {
     run.result = `Level ${n} was too much this time. Grow the party, give them weapons from the forge, and try again.`;
@@ -220,4 +228,14 @@ export function onLevelEnded(bout) {
     getNote('adventure')?.rebuild();
   }, 2200);
   getNote('adventure')?.rebuild();
+}
+
+// Each real creature in the party gets credit for the win, and anything it has now earned.
+async function creditAndGift(n) {
+  const rows = partyRows();
+  creditParty(rows.map((r) => r.c), n);
+  for (const row of rows) {
+    for (const id of earnTraits(row.c)) toast(`${row.c.name.toUpperCase()} EARNED ${TRAITS[id].name.toUpperCase()}!!!`, 'rare');
+    await saveAnywhere(row.c, row.base);
+  }
 }

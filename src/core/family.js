@@ -62,7 +62,8 @@ export function giftsOf(a, b) {
     if (!list.some((g) => g.kind === kind && g.id === id)) list.push({ key: `${kind}:${id}`, kind, id, from, name, what });
   };
   const both = [['a', a], ['b', b]];
-  both.forEach(([who, p]) => p.traits.forEach((id) => add('trait', id, who, TRAITS[id].name, TRAITS[id].blurb)));
+  // Earned gifts were learned, not born, so they stay with the parent.
+  both.forEach(([who, p]) => p.traits.filter((id) => !TRAITS[id].earned).forEach((id) => add('trait', id, who, TRAITS[id].name, TRAITS[id].blurb)));
   both.forEach(([who, p]) => p.mutations.forEach((m) => add('mutation', m.id, who, MUTATIONS[m.id].name, `Mutation: ${statText(MUTATIONS[m.id].stats)}.`)));
   both.forEach(([who, p]) => p.powers.quirks.filter((id) => id !== OFA_ID).forEach((id) => add('quirk', id, who, QUIRKS[id].name, `Quirk: ${statText(QUIRKS[id].stats)}. It costs the baby ${QUIRKS[id].cost}% of its max HP, the same as it did the parent.`)));
   return list;

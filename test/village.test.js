@@ -23,6 +23,9 @@ import { RACES, RACE_IDS, RACE_MOVES } from '../src/data/races.js';
 import { FRUITS, FRUIT_IDS, FRUIT_VIGOR, FRUIT_MOVES, FRUIT_FROM_EXPEDITION } from '../src/data/fruits.js';
 import { ABILITIES, TIER_XP } from '../src/data/paths.js';
 import { EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE, VILLAGE_WORK, MAX_CARE_BOOST, LEGENDARY_MINE } from '../src/data/village.js';
+
+// Humans work this much harder than their job alone, in the village.
+const HUMAN = 1 + RACES.human.village.work;
 import { TRAIT_ODDS, TECHNIQUE_IDS } from '../src/data/powers.js';
 import { BREED_STAGE } from '../src/data/family.js';
 
@@ -194,7 +197,7 @@ test('villagers work by their job, and nurses make everyone work harder, up to a
     choosePath(n, 'nurse');
     return n;
   });
-  assert.equal(workOf(miner).colors, VILLAGE_WORK.mine.colors);
+  assert.equal(workOf(miner).colors, VILLAGE_WORK.mine.colors * HUMAN);
   assert.ok(workOf(farmer).store > 0 && workOf(farmer).plants > 0);
   const plain = villageOutput([miner, farmer]);
   const cared = villageOutput([miner, farmer, ...nurses]);
@@ -210,11 +213,11 @@ test('fighters in the village go hunting: food, and now and then a gem', () => {
   choosePath(hunter, 'fighter');
   const w = workOf(hunter);
   assert.equal(w.kind, 'battle');
-  assert.equal(w.store, VILLAGE_WORK.battle.store);
+  assert.equal(w.store, VILLAGE_WORK.battle.store * HUMAN);
   assert.ok(w.gems > 0);
   const house = emptyHouse();
   runVillage(house, [hunter], 20, () => 0.5);
-  assert.equal(house.store, VILLAGE_WORK.battle.store * 20);
+  assert.equal(house.store, VILLAGE_WORK.battle.store * HUMAN * 20);
   assert.ok(house.bank.gems >= 1);
 });
 
@@ -226,8 +229,9 @@ test('village work adds up exactly over many small steps', () => {
   runVillage(a, [miner], 10, () => 0.5);
   for (let i = 0; i < 600; i++) runVillage(b, [miner], 10 / 600, () => 0.5);
   const color = workOf(miner).color;
-  assert.equal(a.bank[color], 200);
-  assert.ok(Math.abs(b.bank[color] - 200) <= 1, `${b.bank[color]}`);
+  const want = VILLAGE_WORK.mine.colors * HUMAN * 10;
+  assert.equal(a.bank[color], want);
+  assert.ok(Math.abs(b.bank[color] - want) <= 1, `${b.bank[color]}`);
   assert.equal(Math.floor(a.bank.gems), Math.floor(b.bank.gems + 0.0001));
   // While the game was closed it only counts so much.
   const house = emptyHouse();
@@ -273,10 +277,10 @@ test('the Legendary Mine brings up ore instead of colors, and nurses help it too
   const deep = legendaryMiner('Deep');
   joinMine(house, deep);
   const w = workOf(deep, true);
-  assert.equal(w.ore, LEGENDARY_MINE.ore);
+  assert.equal(w.ore, LEGENDARY_MINE.ore * HUMAN);
   assert.equal(w.colors, 0);
   runVillage(house, [deep], 6, () => 0.5);
-  assert.equal(house.ore, 6 * LEGENDARY_MINE.ore);
+  assert.equal(house.ore, Math.floor(6 * w.ore));
   assert.equal(house.bank[w.color], 0, 'no colors while it is down the mine');
   const nurse = grown('Nurse');
   choosePath(nurse, 'nurse');
@@ -284,7 +288,7 @@ test('the Legendary Mine brings up ore instead of colors, and nurses help it too
   // Out of the mine, it digs colors like any Miner.
   leaveMine(house, deep.id);
   runVillage(house, [deep], 1, () => 0.5);
-  assert.equal(house.ore, 6 * LEGENDARY_MINE.ore);
+  assert.equal(house.ore, Math.floor(6 * w.ore));
   assert.ok(house.bank[w.color] > 0);
 });
 

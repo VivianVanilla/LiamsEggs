@@ -43,9 +43,16 @@ export const EXPEDITIONS = {
     finds: { fishman: 0.04, giant: 0.03, mink: 0.03, lunarian: 0.01, devil: 0.015 },
     items: { chamber: 0.15, expander: 0.06 },
   },
+  sky: {
+    name: 'Up to the sky island', hours: 8, gems: [10, 20],
+    finds: { skypiean: 0.06, lunarian: 0.02 },
+    items: { chamber: 0.2, expander: 0.08 },
+  },
 };
 export const EXPEDITION_IDS = Object.keys(EXPEDITIONS);
 export const PARTY_MAX = 3;
 export const EXPEDITIONS_AT_ONCE = 3;
 // A strong party brings back more: this many extra gems for every 100 power between them.
 export const PARTY_GEMS_PER_100 = 1;
+// An expedition out can be hurried home, for this many plants from the larder per hour taken off.
+export const HURRY_PLANTS = 200;

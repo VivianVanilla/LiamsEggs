@@ -5,7 +5,7 @@
 import { STAGES } from './creature.js';
 import { perkText } from './sheet.js';
 import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER, TEAM_MAX, ROLL_COST } from '../data/family.js';
-import { TRAITS, TRAIT_IDS, TRAIT_ODDS, TECHNIQUES, TECHNIQUE_IDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, QUIRKS, OFA_ID, MAX_HP_GIVEN } from '../data/powers.js';
+import { TRAITS, BORN_TRAIT_IDS, TRAIT_ODDS, TECHNIQUES, TECHNIQUE_IDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, QUIRKS, OFA_ID, MAX_HP_GIVEN } from '../data/powers.js';
 import { MAX_MUTATIONS } from '../data/mutations.js';
 import { PATHS } from '../data/paths.js';
 import { ITEMS, CHAMBER_STAGE, EXPANDER_SLOTS } from '../data/items.js';
@@ -40,7 +40,7 @@ export function breedingGuide() {
     {
       title: 'What can pass on',
       rows: [
-        { name: 'Born-with gifts', detail: `${andList(TRAIT_IDS.map((id) => TRAITS[id].name))}. A baby can get one its own family would never hatch with: ${sixeyes.name} passes to anyone.` },
+        { name: 'Born-with gifts', detail: `${andList(BORN_TRAIT_IDS.map((id) => TRAITS[id].name))}. A baby can get one its own family would never hatch with: ${sixeyes.name} passes to anyone. Gifts a parent earned, like Ultra Instinct, stay with the parent.` },
         { name: 'Mutations', detail: `Each one counts toward the baby's ${MAX_MUTATIONS}. Two from the same plant family teach that family's move from the start.` },
         { name: 'One Quirk', detail: `The baby pays the same max HP for it as its parent did, and can never give up more than ${MAX_HP_GIVEN}% in all.` },
         { name: 'Never', detail: `${QUIRKS[OFA_ID].name}: that only goes on when its holder gives everything, from the Powers note. Stands, speedster powers, awakened techniques, jobs, stats, weapons, trophies and Legendary mutations stay with the parent. The baby earns its own.` },

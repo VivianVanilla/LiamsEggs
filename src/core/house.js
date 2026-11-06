@@ -69,6 +69,7 @@ export function sanitizeHouse(raw) {
       start: time(e.start),
       end: time(e.end),
       party: e.party.slice(0, PARTY_MAX).filter((p) => p && typeof p.base === 'string').map((p) => ({ base: safeStr(p.base, 40), name: safeStr(p.name, 60), power: clamp(num(p.power), 0, 1000) })),
+      bonus: { gems: clamp(num(e.bonus?.gems), 0, 1), finds: clamp(num(e.bonus?.finds), 0, 2) },
     }));
   house.found = (Array.isArray(raw?.found) ? raw.found : [])
     .filter((f) => f && Object.hasOwn(RACES, f.race))

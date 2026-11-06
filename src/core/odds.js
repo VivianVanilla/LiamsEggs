@@ -3,7 +3,7 @@
 
 import { perksOf, hasTrait } from './creature.js';
 import {
-  TRAITS, TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, SHARINGAN_COPY, TECHNIQUES, TECHNIQUE_IDS, LEGENDARY, LEGENDARY_ID, MALEVOLENT_ID,
+  TRAITS, BORN_TRAIT_IDS, EARNED_TRAIT_IDS, EARN_RULES, TRAIT_ODDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, SHARINGAN_COPY, TECHNIQUES, TECHNIQUE_IDS, LEGENDARY, LEGENDARY_ID, MALEVOLENT_ID,
   LEGENDARY_ONE_IN, LEGENDARY_FROM_TROPHY, BLACK_FLASH, OFA_LEVEL_AT,
 } from '../data/powers.js';
 import { TRAINING_CHANCE, DEADLY_ROLL, DEADLY_MONSTERS } from '../data/monsters.js';
@@ -49,7 +49,7 @@ export function chanceSections(c = null) {
           detail: `Of any egg. ${TRAITS.sharingan.blurb} The copy is ${pct(SHARINGAN_COPY)} as strong as the real move.`,
         },
         // Everything else is the same for any egg.
-        ...TRAIT_IDS.filter((id) => id !== 'sixeyes' && id !== 'sharingan').map((id) => ({
+        ...BORN_TRAIT_IDS.filter((id) => id !== 'sixeyes' && id !== 'sharingan').map((id) => ({
           name: TRAITS[id].name,
           odds: oneIn(TRAIT_ODDS[id]),
           has: born(id),
@@ -86,6 +86,15 @@ export function chanceSections(c = null) {
           detail: `Of every Adventure win, first time or not: the further the level, the better the chance. Some levels also hand one over the first time they are beaten. ${ITEMS[id].text}`,
         })),
       ],
+    },
+    {
+      title: 'Earned gifts',
+      rows: EARNED_TRAIT_IDS.map((id) => ({
+        name: TRAITS[id].name,
+        odds: 'earned',
+        has: born(id),
+        detail: `${EARN_RULES[id].how} ${TRAITS[id].blurb} Earned gifts never pass on to a baby.`,
+      })),
     },
     {
       title: 'Devil Fruits',
