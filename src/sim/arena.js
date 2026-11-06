@@ -2,7 +2,9 @@
 // (hits, KOs, fx) for the renderer. Also runs headless so balance can be tested.
 
 import { clamp, makeRng } from '../lib/util.js';
-import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, fightPassive } from '../core/creature.js';
+import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, fightPassive, addPassive, emptyPassive, negativeShare } from '../core/creature.js';
+import { negFightSpec, negShell } from '../core/negative.js';
+import { NEG_SCALE, KO } from '../data/negative.js';
 import { tuningOf } from '../core/sheet.js';
 import { ABILITIES } from '../data/paths.js';
 import {
@@ -25,6 +27,47 @@ const MINIONS = {
 
 const SUDDEN_DEATH_AT = 60;
 const MAX_TIME = 150;
+
+// What the passives of data/races.js and the rest do, where they need numbers of their own.
+const FRENZY_CAP = 0.6;
+const EVOLVE_BELOW = 0.3;
+const ENRAGE_BELOW = 0.5;
+const ENRAGE_SPEED = 1.25;
+const LIFE_HP = 0.5;
+const DECAY_FOR = 3;
+const NULL_FIELD = { every: 6, silence: 2, range: 220 };
+const DEFAULT_AURA_RANGE = 160;
+
+// A passive as the numbers a fighter carries.
+export function passiveFields(p) {
+  return {
+    absorb: p.absorb,
+    reflect: p.reflect,
+    regen: p.regen,
+    unstoppable: p.unstoppable,
+    echo: p.echo,
+    execute: p.execute,
+    frenzy: p.frenzy,
+    frenzyHits: 0,
+    evolve: p.evolve ? 'ready' : null,
+    evolveDmg: p.evolve,
+    lives: p.lives,
+    critMul: 2 + p.critMul,
+    monsterDmg: p.monsterDmg,
+    aura: p.aura,
+    auraRange: p.auraRange || DEFAULT_AURA_RANGE,
+    nullField: p.nullField,
+    nullClock: NULL_FIELD.every,
+    decay: p.decay,
+    enrage: p.enrage,
+    enraged: false,
+    horizon: p.horizon,
+  };
+}
+
+// What lives in Chapter ??? barely feels anything without Negative blood: a hit from something half
+// Negative or more lands in full, and a quarter halfway.
+export const voidFactor = (from, guard) => 1 - guard * (1 - Math.min(1, (from?.voidShare ?? 0) * 2));
 
 // What a set of stats means in a fight, for creatures and monsters alike.
 export function combatNumbers(s) {
@@ -66,33 +109,51 @@ export class Bout {
     const n = creatures.length;
     creatures.forEach((c, i) => {
       const a = (i / n) * Math.PI * 2 - Math.PI / 2;
-      const f = this.makeFighter(c, cx + Math.cos(a) * r * 0.7, cy + Math.sin(a) * r * 0.62, i);
+      const x = cx + Math.cos(a) * r * 0.7;
+      const y = cy + Math.sin(a) * r * 0.62;
+      const f = c.dimension === 'negative' ? this.makeNegFighter(c, x, y, i) : this.makeFighter(c, x, y, i);
       this.fighters.push(f);
       if (f.stand) this.events.push({ type: 'menace', x: f.x, y: f.y, color: f.stand.def.color });
     });
   }
 
-  makeFighter(c, x, y, team) {
-    const s = computeStats(c);
+  // A creature of the Negative, through the light-world shell that wears its race and gifts, with every
+  // number its own.
+  makeNegFighter(nc, x, y, team) {
+    const f = this.makeFighter(negShell(nc), x, y, team, negFightSpec(nc));
+    f.neg = nc;
+    f.name = nc.name;
+    f.voidShare = 1;
+    f.ringMul = NEG_SCALE;
+    return f;
+  }
+
+  // `neg` is what a creature of the Negative brings instead (negFightSpec in core/negative.js).
+  makeFighter(c, x, y, team, neg = null) {
+    const s = neg ? neg.eq : computeStats(c);
     const stage = stageOf(c);
     const tuning = tuningOf(c);
     // A Philosopher's Heart speeds up the one move picked for it in the battle plan.
     const heart = hasTrait(c, 'philosopher') ? c.battle.heart : null;
     const quicker = (id, def) => (id === heart && def.cd ? { ...def, cd: def.cd * (1 - PHILOSOPHER_HEART) } : def);
-    const abilities = abilitiesOf(c)
-      .filter((id) => !c.battle.off.includes(id))
-      .map((id) => (Object.hasOwn(ABILITIES, id) ? { id, def: quicker(id, tuneMove(id, ABILITIES[id], tuning)), cd: 1.5 + this.rand() * 3 } : null))
-      .filter(Boolean);
+    const abilities = neg
+      ? neg.moves.map(({ id, def }) => ({ id, def, cd: 1.5 + this.rand() * 3 }))
+      : abilitiesOf(c)
+        .filter((id) => !c.battle.off.includes(id))
+        .map((id) => (Object.hasOwn(ABILITIES, id) ? { id, def: quicker(id, tuneMove(id, ABILITIES[id], tuning)), cd: 1.5 + this.rand() * 3 } : null))
+        .filter(Boolean);
     const prep = prepEffects(c);
     // What its races and its Legendary mutation do in a fight, and its earned gifts that just change its numbers.
     const passive = fightPassive(c);
+    if (neg) addPassive(passive, neg.passive);
     const sees = hasTrait(c, 'observation');
-    const maxHp = maxHpOf(c, s) * (1 + prep.hp) * (1 + passive.hp);
+    const maxHp = (neg ? hpFromStats(s) * neg.hpMul : maxHpOf(c, s)) * (1 + prep.hp) * (1 + passive.hp);
     const dir = x < this.cx ? 1 : -1;
     const size = 26 * stage.scale * this.sizeMul * raceSize(c);
     const fast = c.powers.speedster;
     const standDef = c.powers.stand ? STANDS[c.powers.stand] : null;
     const base = combatNumbers(s);
+    if (neg) base.atk *= neg.atkMul;
     const weapon = c.weapon && Object.hasOwn(WEAPONS, c.weapon) ? WEAPONS[c.weapon] : null;
     // Gifts awakened by breeding that just change its numbers.
     const mark = hasTrait(c, 'slayermark');
@@ -129,15 +190,22 @@ export class Bout {
       gourmet: hasTrait(c, 'gourmet'),
       will: hasTrait(c, 'willofd') ? 'ready' : null,
       ackerman: hasTrait(c, 'ackerman'),
+      // Ackerman Blood, a Fighter's Extra Attack: this share of its swings land twice.
+      twice: (hasTrait(c, 'ackerman') ? ACKERMAN.twice : 0) + passive.twice,
+      ...passiveFields(passive),
+      voidShare: negativeShare(c),
+      ringMul: 1,
+      ko: neg?.ko ? { ...neg.ko, n: 0 } : null,
+      koOpen: 0,
       reach: passive.reach * this.sizeMul,
       poisonproof: passive.poisonproof,
       feast: passive.feast,
-      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit * (hasTrait(c, 'voidaura') ? 1 + VOID_AURA : 1),
+      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit * (hasTrait(c, 'voidaura') ? 1 + VOID_AURA : 1) * (1 + passive.damage),
       moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move) * (1 + passive.speed) * markSpeed,
       attackEvery: (base.attackEvery * (fast ? SPEEDSTER.arenaAttack : 1)) / (1 + prep.attack) / markSpeed,
       // Nothing dodges everything.
       dodge: Math.min(0.75, base.dodge + (fast ? SPEEDSTER.arenaDodge : 0) + prep.dodge + passive.dodge + (hasTrait(c, 'ultrainstinct') ? ULTRA_DODGE : 0) + (sees ? OBSERVATION.dodge : 0)),
-      cdMul: base.cdMul * (1 - prep.moves) * (hasTrait(c, 'scarleteyes') ? 1 - SCARLET_EYES.moves : 1),
+      cdMul: base.cdMul * (1 - prep.moves) * (hasTrait(c, 'scarleteyes') ? 1 - SCARLET_EYES.moves : 1) * (1 - Math.min(0.6, passive.cooldown)),
       takenMul: (1 - prep.taken) * (1 - passive.taken),
       blackFlash: !!c.powers.technique,
       tuning,
@@ -187,6 +255,9 @@ export class Bout {
       .map((id) => (Object.hasOwn(ABILITIES, id) ? { id, def: ABILITIES[id], cd: 1.5 + this.rand() * 3 } : null))
       .filter(Boolean);
     const maxHp = hpFromStats(stats);
+    // A boss can carry a passive of its own (data/adventure.js), and it works like a race's.
+    const passive = addPassive(emptyPassive(), def.passive);
+    const numbers = combatNumbers(stats);
     const monster = {
       id: this.nextId++,
       team: 1,
@@ -200,9 +271,18 @@ export class Bout {
       dir: -1,
       scale: (def.size / 120) * this.sizeMul,
       size: def.size * 0.22 * this.sizeMul,
-      hp: maxHp,
-      maxHp,
-      ...combatNumbers(stats),
+      hp: maxHp * (1 + passive.hp),
+      maxHp: maxHp * (1 + passive.hp),
+      ...numbers,
+      atk: numbers.atk * (1 + passive.damage),
+      dodge: Math.min(0.75, numbers.dodge + passive.dodge),
+      crit: numbers.crit + passive.crit,
+      takenMul: 1 - passive.taken,
+      poisonproof: passive.poisonproof,
+      feast: passive.feast,
+      reach: passive.reach * this.sizeMul,
+      ...passiveFields(passive),
+      ringMul: 1,
       plan: { stance: def.stance ?? 'close', hurt: 'fight', target: 'near' },
       backOff: 0,
       waited: 0,
@@ -267,6 +347,10 @@ export class Bout {
       hp: Math.max(6, owner.maxHp * m.hp),
       maxHp: Math.max(6, owner.maxHp * m.hp),
       atk: Math.max(1, owner.atk * m.atk),
+      // What it was summoned by decides how hard it hits in Chapter ???.
+      voidShare: owner.voidShare ?? 0,
+      voidGuard: owner.voidGuard ?? 0,
+      ringMul: owner.ringMul ?? 1,
       def: 0,
       moveSpeed: m.speed,
       attackEvery: 0.9,
@@ -361,6 +445,10 @@ export class Bout {
       if (f.poison.left <= 0) f.poison = null;
     }
     if (f.sun && f.hp < f.maxHp) f.hp = Math.min(f.maxHp, f.hp + f.maxHp * SUN_BREATHING * dt);
+    if (f.regen && f.hp < f.maxHp) f.hp = Math.min(f.maxHp, f.hp + f.maxHp * f.regen * dt);
+    if (f.aura) this.rot(f, dt);
+    if (f.nullField) this.tickNullField(f, dt);
+    if (!f.alive) return;
     if (f.saiyan === 'ready' && this.t >= SAIYAN.after) this.superSaiyan(f);
     if (f.domain === 'ready' && this.t >= DOMAIN.at) this.openDomain(f);
     this.tickStand(f, dt);
@@ -369,7 +457,7 @@ export class Bout {
     const dx = f.x - this.cx;
     const dy = (f.y - this.cy) * 1.35;
     if (this.t > SUDDEN_DEATH_AT && Math.hypot(dx, dy) > this.r) {
-      const sting = 3 + (this.t - SUDDEN_DEATH_AT) * 0.25;
+      const sting = (3 + (this.t - SUDDEN_DEATH_AT) * 0.25) * (f.ringMul ?? 1);
       this.hurt(f, sting * dt, null, { silent: true });
       if (!f.alive) return;
     }
@@ -458,14 +546,20 @@ export class Bout {
       serious = true;
       power *= ONE_PUNCH.power;
       this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'SERIOUS PUNCH', color: TRAITS.onepunch.color, loud: true });
+    } else if (f.ko && ++f.ko.n >= f.ko.every) {
+      // Ko: all of its aura in one fist, and nothing left to guard with for a moment.
+      f.ko.n = 0;
+      power *= f.ko.power;
+      f.koOpen = this.t + KO.open;
+      this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'KO', color: '#ffb347', loud: true });
     } else if (f.blackFlash && this.rand() < BLACK_FLASH.chance) {
       power *= BLACK_FLASH.power;
       this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'BLACK FLASH', color: '#ff5a4a', loud: true });
     }
     this.landSwing(f, target, power, serious);
-    // Ackerman Blood: some swings land twice.
-    if (f.ackerman && target.alive && this.rand() < ACKERMAN.twice) {
-      this.events.push({ type: 'status', x: f.x, y: f.y - 76 * f.scale, text: 'again!', color: TRAITS.ackerman.color });
+    // Ackerman Blood, and a Fighter's Extra Attack: some swings land twice.
+    if (f.twice && target.alive && this.rand() < f.twice) {
+      this.events.push({ type: 'status', x: f.x, y: f.y - 76 * f.scale, text: 'again!', color: f.ackerman ? TRAITS.ackerman.color : '#e0e6ef' });
       this.landSwing(f, target, power, serious);
     }
   }
@@ -484,12 +578,47 @@ export class Bout {
     return true;
   }
 
+  // Nothing stuns, confuses or silences an unstoppable one.
   stunFor(o, secs) {
+    if (o.unstoppable) return;
     if (secs > o.stun && !this.shrugs(o)) o.stun = secs;
   }
 
   confuseFor(o, secs) {
+    if (o.unstoppable) return;
     if (secs > o.confuse && !this.shrugs(o)) o.confuse = secs;
+  }
+
+  silenceFor(o, secs, color) {
+    if (o.unstoppable || !o.alive) return;
+    o.silence = Math.max(o.silence, secs);
+    this.events.push({ type: 'status', x: o.x, y: o.y - 80 * o.scale, text: 'no moves!', color });
+  }
+
+  // The Ultimate Life Form, once below 30% health: back to full, and harder hits from then on.
+  evolveNow(f) {
+    f.evolve = 'used';
+    f.hp = f.maxHp;
+    f.atk *= 1 + f.evolveDmg;
+    f.unstoppable = true;
+    this.events.push({ type: 'nova', x: f.x, y: f.y, range: 180, color: '#fff3b0' });
+    this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'ULTIMATE LIFE FORM', color: '#fff3b0', loud: true });
+  }
+
+  // An extra life: it gets back up with half its health.
+  getBackUp(f) {
+    f.lives -= 1;
+    f.hp = f.maxHp * LIFE_HP;
+    this.events.push({ type: 'nova', x: f.x, y: f.y, range: 140, color: '#e0e0ff' });
+    this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: f.monster ? 'IT GETS BACK UP' : 'BACK UP', color: '#e0e0ff', loud: true });
+  }
+
+  // Below half its health, it gets angry.
+  enrageNow(f) {
+    f.enraged = true;
+    f.atk *= 1 + f.enrage;
+    f.attackEvery /= ENRAGE_SPEED;
+    this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'ENRAGED', color: '#ff3a3a', loud: true });
   }
 
   // Domain Expansion: for a few seconds nothing dodges its hits, and they land harder.
@@ -697,11 +826,32 @@ export class Bout {
     }
   }
 
+  // An aura that rots everything on the other side close to it, every second.
+  rot(f, dt) {
+    for (const o of this.enemies(f)) {
+      if (Math.hypot(o.x - f.x, o.y - f.y) <= f.auraRange + o.size) this.hurt(o, f.atk * f.aura * dt, f, { silent: true, still: true });
+    }
+  }
+
+  // A Null Field: every few seconds, nothing near it can use a move.
+  tickNullField(f, dt) {
+    f.nullClock -= dt;
+    if (f.nullClock > 0) return;
+    f.nullClock = NULL_FIELD.every;
+    this.events.push({ type: 'nova', x: f.x, y: f.y, range: NULL_FIELD.range, color: '#9a9ab0' });
+    for (const o of this.enemies(f)) {
+      if (Math.hypot(o.x - f.x, o.y - f.y) <= NULL_FIELD.range + o.size) this.silenceFor(o, NULL_FIELD.silence, '#9a9ab0');
+    }
+  }
+
   useAbility(f, target, dist) {
     if (f.silence > 0) return false;
     for (const a of f.abilities) {
       if (a.cd > 0) continue;
       const d = a.def;
+      // A Hatsu sworn to work only when cornered, or never early on.
+      if (d.cornered && f.hp / f.maxHp >= 0.5) continue;
+      if (d.after && this.t < d.after) continue;
       let use = false;
       if (d.kind === 'heal') use = f.hp / f.maxHp < 0.6;
       // Six Eyes keeps Infinity coming wherever the fight is.
@@ -716,6 +866,11 @@ export class Bout {
       a.cd = d.auto ? d.cd : d.cd * f.cdMul;
       this.events.push({ type: 'ability', x: f.x, y: f.y - 60 * f.scale, name: d.cry ?? d.name, color: d.color, who: f.id, loud: !!d.loud });
       this.cast(f, target, d);
+      // A Twin Soul: sometimes the second soul does it too.
+      if (f.echo && d.kind !== 'timestop' && this.rand() < f.echo && target.alive) {
+        this.events.push({ type: 'status', x: f.x, y: f.y - 84 * f.scale, text: 'twice!', color: '#ffe14a' });
+        this.cast(f, target, d);
+      }
       this.afterCast(f, d);
       this.copyMove(f, a);
       return true;
@@ -741,10 +896,7 @@ export class Bout {
   riders(f, o, d) {
     if (d.stun) this.stunFor(o, d.stun);
     if (d.confuse) this.confuseFor(o, d.confuse);
-    if (d.silence) {
-      o.silence = Math.max(o.silence, d.silence);
-      this.events.push({ type: 'status', x: o.x, y: o.y - 80 * o.scale, text: 'no moves!', color: d.color });
-    }
+    if (d.silence) this.silenceFor(o, d.silence, d.color);
     if (d.poison && !o.poisonproof) o.poison = { left: d.poisonFor, dps: f.atk * d.poison, from: f };
     if (d.push && o.alive) this.pushAway(f, o, d.push * this.sizeMul);
   }
@@ -772,6 +924,8 @@ export class Bout {
     if (d.selfConfuse) f.confuse = Math.max(f.confuse, d.selfConfuse);
     if (d.selfPoison && !f.poisonproof) f.poison = { left: 3, dps: f.atk * d.selfPoison, from: null };
     if (d.selfBuff) f.buffs.push({ ...d.selfBuff });
+    // An Alchemy circle's toll: a share of its own attack, gone for the rest of the fight.
+    if (d.toll) f.atk *= 1 - d.toll;
   }
 
   cast(f, target, d) {
@@ -786,7 +940,7 @@ export class Bout {
       for (const o of this.enemies(f)) {
         const dx = o.x - f.x;
         if (Math.hypot(dx, o.y - f.y) <= d.range + o.size && dx * f.dir > -10) {
-          this.strike(f, o, d.power, { sure: true });
+          this.strike(f, o, d.power, { sure: true, drain: d.drain });
           this.riders(f, o, d);
         }
       }
@@ -794,7 +948,7 @@ export class Bout {
       this.events.push({ type: 'nova', x: f.x, y: f.y, range: d.range, color: d.color });
       for (const o of this.enemies(f)) {
         if (Math.hypot(o.x - f.x, o.y - f.y) <= d.range + o.size) {
-          this.strike(f, o, d.power, { sure: true });
+          this.strike(f, o, d.power, { sure: true, drain: d.drain });
           this.riders(f, o, d);
         }
       }
@@ -809,7 +963,7 @@ export class Bout {
       const side = target.x >= f.x ? 1 : -1;
       target.x = f.x + side * (f.size + target.size + 6);
       target.y = f.y + 2;
-      this.strike(f, target, d.power, { sure: true });
+      this.strike(f, target, d.power, { sure: true, drain: d.drain });
       this.riders(f, target, d);
     } else if (d.kind === 'bomb') {
       this.fuses.push({ left: d.fuse, target, from: f, def: d });
@@ -835,35 +989,54 @@ export class Bout {
       f.x = target.x - target.dir * (f.size + target.size + 4);
       f.y = target.y + 2;
       this.events.push({ type: 'burrow', x: f.x, y: f.y, color: d.color });
-      this.strike(f, target, d.power, { sure: true });
+      this.strike(f, target, d.power, { sure: true, drain: d.drain });
       this.riders(f, target, d);
     }
   }
 
   // Returns the damage it dealt: none if it missed.
-  strike(f, target, power, { sure = false } = {}) {
+  // `drain` heals it for that share of the damage, on top of anything it heals from every hit.
+  strike(f, target, power, { sure = false, drain = 0 } = {}) {
     if (!target.alive) return 0;
-    // Nothing can dodge in stopped time, or inside a domain.
+    // Nothing can dodge in stopped time, or inside a domain. An Event Horizon can dodge even a sure thing.
     const domain = f.domainUntil > this.t;
-    if (!sure && !domain && !this.frozen(target) && this.rand() < target.dodge + this.buffValue(target, 'dodge')) {
+    if ((!sure || target.horizon) && !domain && !this.frozen(target) && this.rand() < target.dodge + this.buffValue(target, 'dodge')) {
       this.events.push({ type: 'dodge', x: target.x, y: target.y - 60 * target.scale });
       return 0;
     }
     const crit = this.rand() < f.crit + this.buffValue(f, 'crit');
     let dmg = f.atk * power * (1 + this.buffValue(f, 'atk')) * (0.85 + this.rand() * 0.3);
-    if (crit) dmg *= 2;
+    if (crit) dmg *= f.critMul ?? 2;
     if (f.plan?.hurt === 'berserk' && lowHealth(f)) dmg *= BERSERK_HIT;
     if (f.weapon?.monster && target.monster) dmg *= 1 + f.weapon.monster;
+    if (f.monsterDmg && target.monster) dmg *= 1 + f.monsterDmg;
+    if (f.execute && target.hp < target.maxHp * 0.5) dmg *= 1 + f.execute;
+    if (f.frenzy) dmg *= 1 + Math.min(FRENZY_CAP, f.frenzyHits * f.frenzy);
     if (domain) dmg *= 1 + DOMAIN.damage;
-    return this.hurt(target, dmg, f, { crit });
+    const dealt = this.hurt(target, dmg, f, { crit });
+    if (dealt > 0) {
+      const heal = (f.absorb ?? 0) + drain;
+      if (heal > 0 && f.alive) f.hp = Math.min(f.maxHp, f.hp + dealt * heal);
+      if (f.frenzy) f.frenzyHits += 1;
+      // A curse, or entropy: they keep hurting for a few seconds.
+      if (f.decay && target.alive && !target.poisonproof && !(target.poison?.dps > f.atk * f.decay)) {
+        target.poison = { left: DECAY_FOR, dps: f.atk * f.decay, from: f };
+      }
+    }
+    return dealt;
   }
 
   // `still` is for damage over time, which shouldn't shove the target on every tick. Returns the
   // damage it took.
-  hurt(target, raw, from, { crit = false, silent = false, still = false } = {}) {
+  // `pure` damage skips its guard: it is what a mirror throws back.
+  hurt(target, raw, from, { crit = false, silent = false, still = false, pure = false } = {}) {
+    if (!target.alive) return 0;
     const shield = 1 - clamp(this.buffValue(target, 'guard') + (target.holding ? HOLD_GUARD : 0), 0, 0.8);
     const bare = target.plan?.hurt === 'berserk' && lowHealth(target) ? BERSERK_TAKEN : 1;
-    const dmg = raw * (30 / (30 + target.def)) * shield * bare * (target.takenMul ?? 1);
+    let dmg = pure ? raw : raw * (30 / (30 + target.def)) * shield * bare * (target.takenMul ?? 1);
+    // Just after a Ko, it is wide open.
+    if (target.koOpen > this.t) dmg *= KO.openTaken;
+    if (target.voidGuard && from) dmg *= voidFactor(from, target.voidGuard);
     target.hp -= dmg;
     if (from) from.damageDone += dmg;
     if (from && !still) {
@@ -872,9 +1045,14 @@ export class Bout {
       target.y += Math.sin(a) * 3;
     }
     if (!silent) this.events.push({ type: 'hit', x: target.x, y: target.y - 44 * target.scale, amt: dmg, crit, color: from?.c ? null : '#fff' });
+    // A mirror throws some of it straight back.
+    if (target.reflect && from && from !== target && from.alive && !still && !pure && dmg > 0) this.hurt(from, dmg * target.reflect, target, { still: true, pure: true });
     if (target.hp <= 0 && target.fox === 'ready') this.foxWakes(target);
+    if (target.hp <= 0 && target.lives > 0) this.getBackUp(target);
     if (target.titan === 'ready' && target.hp > 0 && target.hp < target.maxHp * TITAN.below) this.titanShift(target);
     if (target.gates === 'ready' && target.hp > 0 && target.hp < target.maxHp * EIGHT_GATES.below) this.openGates(target);
+    if (target.evolve === 'ready' && target.hp > 0 && target.hp < target.maxHp * EVOLVE_BELOW) this.evolveNow(target);
+    if (target.enrage && !target.enraged && target.hp > 0 && target.hp < target.maxHp * ENRAGE_BELOW) this.enrageNow(target);
     if (target.hp <= 0) {
       target.hp = 0;
       target.alive = false;
@@ -912,7 +1090,7 @@ export class Bout {
       if (d <= step + 8) {
         b.life = 0;
         if (b.tx.alive) {
-          this.strike(b.from, b.tx, b.def.power ?? 0.5, { sure: !b.def.dodgeable });
+          this.strike(b.from, b.tx, b.def.power ?? 0.5, { sure: !b.def.dodgeable, drain: b.def.drain });
           this.riders(b.from, b.tx, b.def);
           this.events.push({ type: 'spark', x: b.x, y: b.y, color: b.def.color });
         }
@@ -929,7 +1107,14 @@ export class Bout {
       if (fuse.left <= 0 && fuse.target.alive) {
         const { target, def } = fuse;
         this.events.push({ type: 'ability', x: target.x, y: target.y - 80 * target.scale, name: def.boom ?? def.name, color: def.color, loud: true });
-        this.strike(fuse.from, target, def.power, { sure: true });
+        this.strike(fuse.from, target, def.power, { sure: true, drain: def.drain });
+        // A Fireball, or a meteor: everything close to where it lands goes up too.
+        if (def.splash) {
+          this.events.push({ type: 'nova', x: target.x, y: target.y, range: def.splash, color: def.color });
+          for (const o of this.enemies(fuse.from)) {
+            if (o !== target && Math.hypot(o.x - target.x, o.y - target.y) <= def.splash + o.size) this.strike(fuse.from, o, def.power, { sure: true, drain: def.drain });
+          }
+        }
       }
     }
     this.fuses = this.fuses.filter((fuse) => fuse.left > 0);

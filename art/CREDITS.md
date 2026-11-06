@@ -37,7 +37,7 @@ To swap one for your own drawing, save over the file and remove its row here.
 
 The mutation, job, Stand, Quirk, technique, crafting and monster pictures below are Twemoji pictures (same credit and license as above), turned, mirrored, cropped (the helmets lose their chin straps) and placed on a transparent canvas by `tools/build-looks.cjs`. The Stands and the Dark Shadow also use the AIGA figure above, recolored. To swap one for your own drawing, save over the file and remove it from `LOOKS` in that tool and from this list.
 
-The Lunarian's wings are the wing picture from Twemoji 15.1.0, the version of Twemoji its community keeps going at [jdecked/twemoji](https://github.com/jdecked/twemoji), under the same CC-BY 4.0 license. Recolored from grey to black.
+The wings (Lunarian, Dragon, Antiseraph, Dreadwyrm) are the wing picture from Twemoji 15.1.0, the version of Twemoji its community keeps going at [jdecked/twemoji](https://github.com/jdecked/twemoji), under the same CC-BY 4.0 license, recolored for each race. The Antiseraph's halo and the Dreadwyrm's flames are Twemoji pictures recolored too.
 
 Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's Bizarre Adventure*, *My Hero Academia* and *Jujutsu Kaisen*. None of the pictures come from those shows.
 
@@ -103,6 +103,18 @@ Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's 
 | `races/dragon-back.png` | `1fabd.svg` from Twemoji 15.1.0, recolored red |
 | `races/devil.png` | `1f531.svg` |
 | `races/halfdevil.png` | `1fa9a.svg` |
+| `races/voidling.png` | `1f573.svg`, `1f311.svg` |
+| `races/antiseraph.png` | `2b55.svg`, recolored black |
+| `races/antiseraph-back.png` | `1fabd.svg` from Twemoji 15.1.0, recolored ash grey |
+| `races/abyssaltitan.png` | `26d3.svg`, `1faa8.svg` |
+| `races/hexborn.png` | `1f52e.svg`, `1f578.svg` |
+| `races/mirrorkin.png` | `1fa9e.svg`, `2728.svg` |
+| `races/entropywraith.png` | `23f3.svg`, `1f342.svg` |
+| `races/chimera.png` | `1f356.svg` |
+| `races/chimera-back.png` | `1f40d.svg` |
+| `races/homunculus.png` | `1f534.svg`, `2697.svg` |
+| `races/dreadwyrm.png` | `1f525.svg`, recolored purple |
+| `races/dreadwyrm-back.png` | `1fabd.svg` from Twemoji 15.1.0, recolored void purple |
 | `jobs/nurse.png` | `1fa7a.svg` |
 | `jobs/medic.png` | `1fa7a.svg`, `1fa79.svg` |
 | `jobs/midwife.png` | `1fa7a.svg`, `1f37c.svg` |

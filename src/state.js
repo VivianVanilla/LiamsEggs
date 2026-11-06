@@ -2,6 +2,7 @@
 
 import { serializeCreature } from './core/creature.js';
 import { emptyHouse, withoutHouse } from './core/house.js';
+import { emptyNegWorld } from './core/negative.js';
 import { Fx } from './draw/scene.js';
 
 export const api = window.api;
@@ -12,6 +13,9 @@ export const G = {
   team: [],
   // The bank, plants and food store all your creatures share. Saved in world/data/household.json.
   house: emptyHouse(),
+  // The Negative Dimension: its creatures, its Void Shards and its Adventure. Saved in
+  // world/data/negative.json, apart from everything else, and a universe reset never touches it.
+  neg: emptyNegWorld(),
   // Every living creature, and those of them at home in the village: { base, c }.
   everyone: [],
   village: [],
@@ -47,6 +51,7 @@ export const memberOf = (c) => G.team.find((m) => m.c === c || (c && m.c.id === 
 export const inBout = (c) => !!G.bout && G.boutHide.has(c.id);
 
 export const saveHouse = () => api.saveData('household', JSON.stringify(G.house));
+export const saveNeg = () => api.saveData('negative', JSON.stringify(G.neg));
 
 // A creature's own file never holds the shared pool, so nothing in it can be counted twice.
 export const creatureText = (c) => serializeCreature(withoutHouse(c));

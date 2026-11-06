@@ -22,8 +22,8 @@ import { ITEMS } from '../src/data/items.js';
 const clean = (s) => !/undefined|NaN|null|\[object/.test(s);
 const party = (level, base = 1) => [0, 1, 2].map((i) => wildCreature(base + i * 7919, level));
 
-test('fifty levels in four acts, each with a name, and a deadly monster every fifth', () => {
-  assert.equal(LEVEL_COUNT, 50);
+test('sixty levels in five acts, each with a name, a deadly monster every fifth, and every other one in Act 5', () => {
+  assert.equal(LEVEL_COUNT, 60);
   for (let n = 1; n <= LEVEL_COUNT; n++) {
     const info = levelInfo(n);
     assert.ok(info.name && clean(info.text), `level ${n}`);
@@ -31,14 +31,14 @@ test('fifty levels in four acts, each with a name, and a deadly monster every fi
     assert.equal(info.act ?? 1, actOf(n), `level ${n} act`);
   }
   assert.equal(actOf(ADVENTURE_ARMED), 2);
-  assert.equal(ADVENTURE_ACTS.length, 4);
-  assert.deepEqual(Object.keys(ADVENTURE_BOSSES).map(Number), [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
+  assert.equal(ADVENTURE_ACTS.length, 5);
+  assert.deepEqual(Object.keys(ADVENTURE_BOSSES).map(Number), [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 52, 54, 56, 58, 60]);
   Object.values(ADVENTURE_BOSSES).forEach((b) => assert.ok(DEADLY_MONSTERS[b.monster], b.monster));
   assert.equal(bossMonster(20), DEADLY_MONSTERS.dragon, 'Act 1 ends with The Last Dragon');
   assert.equal(bossMonster(30).name, 'The First Dragon', 'and Act 2 with an older one');
   assert.equal(bossMonster(30).id, 'dragon', 'which looks like a dragon');
   assert.equal(levelInfo(0), null);
-  assert.equal(levelInfo(51), null);
+  assert.equal(levelInfo(61), null);
 });
 
 test('Acts 3 and 4: every enemy is Legendary, and every level climbs faster', () => {
@@ -137,8 +137,9 @@ test('a first win pays gems and any prize, a replay only has its chance of loot'
   assert.deepEqual(lucky.items.sort(), Object.keys(ITEMS).filter((id) => id !== 'soulexpander').sort(), 'every win can drop loot');
   assert.equal(levelReward(20, 19, never).gems, 20 * ADVENTURE_GEMS_PER_LEVEL + ADVENTURE_PRIZES[20].gems);
   assert.equal(levelReward(30, 29, never).gems, 30 * ADVENTURE_GEMS_PER_LEVEL + ADVENTURE_PRIZES[30].gems, 'the end of Act 2 still pays its bonus');
-  assert.equal(levelReward(50, 49, never).gems, 50 * ADVENTURE_GEMS_PER_LEVEL + ADVENTURE_FINISH_GEMS);
-  assert.ok(levelReward(50, 49, never).items.includes('soulexpander'), 'the end of it all pays a Legendary Expander');
+  assert.equal(levelReward(50, 49, never).gems, 50 * ADVENTURE_GEMS_PER_LEVEL);
+  assert.ok(levelReward(50, 49, never).items.includes('soulexpander'), 'the end of Act 4 pays a Legendary Expander');
+  assert.equal(levelReward(60, 59, never).gems, 60 * ADVENTURE_GEMS_PER_LEVEL + ADVENTURE_PRIZES[60].gems + ADVENTURE_FINISH_GEMS, 'the end of it all pays the most');
   assert.equal(levelReward(23, 22, never).found, 'lunarian', 'a Lunarian wants to join');
 });
 

@@ -2,7 +2,9 @@
 
 import { toast } from './ui/flair.js';
 import { clamp } from './lib/util.js';
-import { G, api, saveCreature, saveTeam, saveHouse, creatureText, memberOf, inBout, rememberTeam } from './state.js';
+import { G, api, saveCreature, saveTeam, saveHouse, saveNeg, creatureText, memberOf, inBout, rememberTeam } from './state.js';
+import { emptyNegWorld, sanitizeNegWorld } from './core/negative.js';
+import { resetUniverse } from './core/universe.js';
 import { emptyHouse, sanitizeHouse, joinHouse } from './core/house.js';
 import { Pet } from './pet.js';
 import { parseCreature, digestTime, pathChoice, canAwakenStand, canBecomeSpeedster, canLearnTechnique, canLearnSecondTechnique, fullName } from './core/creature.js';
@@ -10,12 +12,13 @@ import { TILE, tickFarm, ANIMALS } from './sim/farm.js';
 import { TEAM_MAX } from './data/family.js';
 import { loadArt, drawArt, drawAnimal, dropRig, setPictureScale } from './draw/art.js';
 import { drawFields, drawFileSprite, drawArenaFloor, drawFighter, drawHealthBar, drawBolts, drawVeins } from './draw/scene.js';
-import { closeNotesOf, noteRects, tickNotes, getNote, syncFocus, cancelPicking, showNotesFor } from './ui/notes.js';
+import { closeNotesOf, noteRects, tickNotes, getNote, syncFocus, cancelPicking, showNotesFor, closeAllNotes } from './ui/notes.js';
 import { openMenu, toggleMenu, openAny, openSettings, openNaming, createCreature, feedPaths, openFeed, openPathChoice, refreshMenu } from './ui/panels.js';
 import { onBoutEnded, forgetFighter } from './ui/boards.js';
 import { onChallengeEnded } from './ui/challenges.js';
 import { loadVillage } from './ui/village.js';
 import { onLevelEnded } from './ui/adventure.js';
+import { onNegLevelEnded } from './ui/negative.js';
 import { initDock, refreshDock, dockRects, overDock, tickDock, setDockDrop } from './ui/dock.js';
 import { takeEgg } from './ui/roll.js';
 import { hoursDue, runVillage, finishExpeditions, tidyMine } from './core/village.js';
@@ -209,6 +212,41 @@ G.getRidOf = async (base, c, how = { by: 'you' }) => {
   return true;
 };
 
+// The universe starts over. Every creature dies, out on the screen or at home, and the household
+// is wiped, all but the memory that it happened. The Negative Dimension is untouched. Then an egg
+// falls, the same as the very first time.
+G.resetUniverse = async () => {
+  if (G.bout) return false;
+  const fresh = resetUniverse(G.house);
+  if (!fresh) return false;
+  const now = Date.now();
+  const files = await api.listCreatures();
+  for (const m of [...G.team]) dropMember(m);
+  for (const f of files) {
+    let c;
+    try {
+      c = parseCreature(f.text);
+    } catch {
+      continue;
+    }
+    if (c.dead) continue;
+    c.dead = { at: now, by: 'the universe reset' };
+    forgetFighter(c.id);
+    await api.buryCreature(f.base, creatureText(c));
+  }
+  G.house = fresh;
+  await saveHouse();
+  closeAllNotes();
+  G.meals = [];
+  G.drops = [];
+  G.veins = [];
+  rememberTeam();
+  await loadVillage();
+  refreshDock();
+  if (!G.egg) beginFirstRun();
+  return true;
+};
+
 G.onCreatureChanged = () => refreshMenu();
 G.newEgg = () => beginFirstRun();
 G.onPathReady = (c = G.creature) => {
@@ -358,7 +396,7 @@ function update(dt) {
     const wasDone = bout.done;
     bout.tick(dt);
     handleBoutEvents(bout);
-    if (bout.done && !wasDone) (G.challenge ? onChallengeEnded : bout.adventure ? onLevelEnded : onBoutEnded)(bout);
+    if (bout.done && !wasDone) (G.challenge ? onChallengeEnded : bout.negative ? onNegLevelEnded : bout.adventure ? onLevelEnded : onBoutEnded)(bout);
   }
 
   G.fx.update(dt);
@@ -682,10 +720,10 @@ api.onCommand((msg) => {
       if (getNote('settings')) openSettings();
       break;
     case 'quit':
-      Promise.all([saveTeam(), saveHouse()]).finally(() => api.quitReady());
+      Promise.all([saveTeam(), saveHouse(), saveNeg()]).finally(() => api.quitReady());
       break;
     case 'reloadArt':
-      Promise.all([saveTeam(), saveHouse()]).finally(() => window.location.reload());
+      Promise.all([saveTeam(), saveHouse(), saveNeg()]).finally(() => window.location.reload());
       break;
     default:
       break;
@@ -701,6 +739,11 @@ async function loadHouse(rows) {
     G.house = sanitizeHouse(JSON.parse((await api.loadData('household')) ?? 'null'));
   } catch {
     G.house = emptyHouse();
+  }
+  try {
+    G.neg = sanitizeNegWorld(JSON.parse((await api.loadData('negative')) ?? 'null'));
+  } catch {
+    G.neg = emptyNegWorld();
   }
   const newcomers = rows.filter((r) => !r.c.household);
   if (!newcomers.length) return;

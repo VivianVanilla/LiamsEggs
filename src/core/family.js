@@ -9,7 +9,8 @@ import { QUIRKS, TRAITS, MAX_HP_GIVEN, OFA_ID, ofaLevelFor, TECHNIQUES, BRED_TRA
 import { PATHS } from '../data/paths.js';
 import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER, ALTAR } from '../data/family.js';
 import { RACES, PURE_BLOOD_CHANCE, MIN_SHARE, DEFAULT_RACE } from '../data/races.js';
-import { heritageOf, raceParts, hasTrait } from './creature.js';
+import { heritageOf, raceParts, hasTrait, negativeShare } from './creature.js';
+import { DELUXE_BREEDER } from '../data/universe.js';
 
 // ---------- the nurse ----------
 
@@ -118,8 +119,17 @@ export function awakenChances(a, b, passing = []) {
 
 // ---------- breeding ----------
 
-// help is what helps this egg along: the nurse's help, plus mega: true with the Mega Breeder.
-export const giftLimit = (help) => BREED_GIFTS + (help?.picks ?? 0) + (help?.mega ? MEGA_BREEDER.gifts : 0);
+// help is what helps this egg along: the nurse's help, plus mega: true with the Mega Breeder and
+// deluxe: true with the Deluxe Breeder.
+export const giftLimit = (help) => BREED_GIFTS + (help?.picks ?? 0) + (help?.mega ? MEGA_BREEDER.gifts : 0) + (help?.deluxe ? DELUXE_BREEDER.gifts : 0);
+
+// Negative blood only breeds with the Deluxe Breeder: a creature of the Negative with another, or
+// with anyone from the light world.
+export const needsDeluxe = (a, b) => negativeShare(a) > 0 || negativeShare(b) > 0;
+export function pairProblem(a, b, help = null) {
+  if (needsDeluxe(a, b) && !help?.deluxe) return 'Negative blood only breeds with the Deluxe Breeder';
+  return null;
+}
 // The fullness each parent spends, after the nurse's help.
 export const breedCost = (help) => Math.round(BREED_COST * (1 - (help?.save ?? 0)));
 
@@ -187,7 +197,7 @@ export const mainRace = (heritage) => Object.entries(heritage).filter(([id]) => 
 // Returns { baby } and spends both parents' fullness, or { problem } and changes nothing.
 export function breed(a, b, choice, name, now = Date.now(), help = null, rng = Math.random) {
   if (!a || !b || a.id === b.id) return { problem: 'It takes two' };
-  const problem = breedProblem(a) ?? breedProblem(b) ?? choiceProblem(a, b, choice, help);
+  const problem = breedProblem(a) ?? breedProblem(b) ?? pairProblem(a, b, help) ?? choiceProblem(a, b, choice, help);
   if (problem) return { problem };
   const pick = (who) => (who === 'b' ? b : a);
   const first = pick(choice.family);

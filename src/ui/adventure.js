@@ -1,22 +1,25 @@
-// Adventure: pick three of your creatures and fight your way through 50 levels in four acts, one
-// ring at a time on your screen. Every fifth level a deadly monster leads the enemy. From Act 2 the
-// enemy carries forged weapons, from Act 3 Legendary mutations. Nobody can die here: the party fights as copies. Every win counts
-// toward the gifts earned in Adventure.
+// Adventure: pick three of your creatures and fight your way through 60 levels in five acts, one
+// ring at a time on your screen. Every fifth level a deadly monster leads the enemy, and every other
+// level in Act 5. From Act 2 the enemy carries forged weapons, from Act 3 Legendary mutations. Nobody
+// can die here: the party fights as copies. Every win counts toward the gifts earned in Adventure.
+// Beating the last level cracks the universe, and resetting it opens Chapter ??? and the Negative.
 
 import { toast } from './flair.js';
 import { G, saveHouse } from '../state.js';
-import { h, fill, button, openNote, getNote, folds } from './notes.js';
-import { fullName, stageOf, powerOf } from '../core/creature.js';
+import { h, fill, button, sureButton, openNote, getNote, folds } from './notes.js';
+import { fullName, stageOf, powerOf, negativeShare } from '../core/creature.js';
 import { awayBases } from '../core/village.js';
 import {
   LEVEL_COUNT, levelInfo, bossOf, bossMonster, levelEnemies, levelToughness, partyProblem, levelProblem, startLevel, levelWon, winLevel, creditParty,
+  ABYSS_COUNT, abyssInfo, abyssBossOf, abyssBossMonster, abyssEnemies, abyssToughness, abyssProblem, startAbyss, abyssReward, winAbyss,
 } from '../core/adventure.js';
+import { universeCracked, afterReset, resetsOf, gemMultiplier } from '../core/universe.js';
 import { earnTraits } from '../core/earned.js';
 import { saveAnywhere } from './breed.js';
 import { RACES } from '../data/races.js';
-import { ADVENTURE_ACTS } from '../data/adventure.js';
 import {
-  ADVENTURE_PARTY, ADVENTURE_PRIZES, ADVENTURE_GEMS_PER_LEVEL, ADVENTURE_FINISH_GEMS, ADVENTURE_REPLAY_ORE, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL,
+  ADVENTURE_ACTS, ADVENTURE_PARTY, ADVENTURE_PRIZES, ADVENTURE_GEMS_PER_LEVEL, ADVENTURE_FINISH_GEMS, ADVENTURE_REPLAY_ORE, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL, ADVENTURE_ARMED,
+  ADVENTURE_ELITE, ADVENTURE_ELITE_GIFTS, ABYSS,
 } from '../data/adventure.js';
 import { ITEMS } from '../data/items.js';
 import { TRAITS } from '../data/powers.js';
@@ -25,6 +28,7 @@ import { loadVillage } from './village.js';
 
 const WILD_WORDS = { 1: 'young scrappers', 2: 'seasoned fighters', 3: 'final forms' };
 const fine = (v) => `${Number((v * 100).toFixed(v < 0.1 ? 1 : 0))}%`;
+const big = (n) => Math.floor(n).toLocaleString('en-US');
 
 // Who can go: anyone alive who is not away on an expedition.
 const ready = () => {
@@ -44,16 +48,22 @@ export async function openAdventure() {
   // A first party: whoever is out on the screen.
   if (!partyRows().length) adv.party = G.team.map((m) => m.c.id).slice(0, ADVENTURE_PARTY);
   const old = getNote('adventure')?.spec;
+  const run = G.adventureRun;
   openNote('adventure', {
     title: 'Adventure',
     cls: 'parch',
-    width: 392,
+    width: 400,
     help: 'chances',
-    picked: old?.picked ?? G.adventureRun?.n ?? Math.min(LEVEL_COUNT, adv.best + 1),
+    picked: old?.picked ?? (run && !run.abyss ? run.n : Math.min(LEVEL_COUNT, adv.best + 1)),
+    abyss: old?.abyss ?? !!run?.abyss,
+    pickedAbyss: old?.pickedAbyss ?? (run?.abyss ? run.n : Math.min(ABYSS_COUNT, (G.house.universe?.abyssBest ?? 0) + 1)),
     message: '',
     build(body, note) {
       note.refs.portraits = [];
-      buildAdventure(body, note);
+      // Everything scrolls, so the button to fight is always in reach however long the note gets.
+      const page = h('div', { class: 'scrollnote' });
+      fill(body, page);
+      buildAdventure(page, note);
     },
     tick(note) {
       note.refs.portraits?.forEach(({ canvas, c }) => drawPortrait(canvas, c));
@@ -68,46 +78,92 @@ function rewardText(n, best) {
     if (prize.ore) bits.push(`${prize.ore} Legendary ore`);
     Object.entries(prize.items ?? {}).forEach(([id, k]) => bits.push(`${k > 1 ? `${k} ` : 'a '}${ITEMS[id].name}`));
     if (prize.found) bits.push(`a ${RACES[prize.found].name} who wants to join you`);
-    return `The first win pays ${bits.join(', ')}.`;
+    return `The first win pays ${bits.join(', ')}.${n === LEVEL_COUNT ? ' And it cracks the universe.' : ''}`;
   }
   return `Beaten already. Again, it can still drop loot${bossOf(n) ? `, and the boss always leaves ${ADVENTURE_REPLAY_ORE} ore` : ''}.`;
 }
 
 function buildAdventure(body, note) {
   const adv = G.house.adventure;
+  const mult = gemMultiplier(G.house);
   fill(body,
     h('div', { class: 'small' }, `A campaign of ${LEVEL_COUNT} levels, fought in a ring on your screen. Take up to ${ADVENTURE_PARTY} creatures. Nobody can die here, and every level beaten opens the next.`),
     h('div', { class: 'purse' },
       h('span', null, 'Best: ', h('b', null, adv.best ? `level ${adv.best}` : 'none yet')),
-      h('span', null, h('b', null, Math.floor(G.house.bank.gems)), ' gems'),
-      h('span', null, h('b', null, Math.floor(G.house.ore)), ' ore')),
+      h('span', null, h('b', null, big(G.house.bank.gems)), ' gems'),
+      h('span', null, h('b', null, Math.floor(G.house.ore)), ' ore'),
+      mult > 1 && h('span', null, 'gems ', h('b', null, `x${mult.toFixed(1)}`))),
+    universeCard(note),
     actFolds(note),
   );
-
   // The level picked, and what it holds.
-  levelDetails(body, note);
+  if (note.spec.abyss && afterReset(G.house)) abyssDetails(body, note);
+  else levelDetails(body, note);
 }
 
-// The levels, one act at a time.
+// Once the last level is beaten, the universe cracks. After a reset, the Negative and Chapter ???.
+function universeCard(note) {
+  const house = G.house;
+  const cards = [];
+  if (afterReset(house)) {
+    cards.push(h('div', { class: 'mega void' },
+      h('div', { class: 'row nowrap' },
+        h('div', { class: 'grow' },
+          h('div', { class: 'hand', style: 'font-weight:700' }, 'The Negative Dimension'),
+          h('div', { class: 'small' }, 'A world of its own, on other rules: classes and spells, Nen, Alchemy. Win its last level and a creature can cross over, with its race and its gifts. Only Negative blood can wound what lives in Chapter ???.')),
+        button('Enter', () => G.open?.('negative'), 'hot'))));
+  }
+  if (universeCracked(house)) {
+    cards.push(h('div', { class: 'mega void' },
+      h('div', { class: 'hand', style: 'font-weight:700' }, afterReset(house) ? `The universe is cracked again (reset ${resetsOf(house)} time${resetsOf(house) === 1 ? '' : 's'})` : 'The universe is cracked'),
+      h('div', { class: 'small' }, 'The End of All Things is gone, and so is the floor of the world. Reset the universe, and every creature you have dies: everything they built goes with them, gems, ore, weapons, the village, the altar, the breeders, every level of Adventure. What it opens: the Negative Dimension, and Chapter ???, 25 levels harder than anything here.'),
+      h('div', { class: 'warning' }, 'This kills every creature you have, and it can\'t be undone.'),
+      h('div', { class: 'row gap' }, sureButton('Reset the universe', async () => {
+        if (G.bout) return;
+        const ok = await G.resetUniverse?.();
+        if (ok) toast('THE UNIVERSE WAS RESET. EVERYTHING IS GONE. THE NEGATIVE DIMENSION IS OPEN...', 'rare');
+      }, 'big hot', !!G.bout))));
+  }
+  return cards;
+}
+
+// The levels, one act at a time, and Chapter ??? after a reset.
 function actFolds(note) {
   const { spec } = note;
   const adv = G.house.adventure;
   const stone = (n) => {
     const locked = !!levelProblem(adv, n);
-    const cls = ['lvl', n <= adv.best && 'beaten', n === adv.best + 1 && 'next', bossOf(n) && 'boss', n === spec.picked && 'picked'].filter(Boolean).join(' ');
+    const cls = ['lvl', n <= adv.best && 'beaten', n === adv.best + 1 && 'next', bossOf(n) && 'boss', n > 50 && 'act5', !spec.abyss && n === spec.picked && 'picked'].filter(Boolean).join(' ');
     return h('button', {
       class: cls,
       disabled: locked,
       title: `${n}. ${levelInfo(n).name}${bossOf(n) ? `: ${bossMonster(n).name}` : ''}`,
       onclick: () => {
         spec.picked = n;
+        spec.abyss = false;
         spec.message = '';
         note.rebuild();
       },
     }, String(n), bossOf(n) && h('small', null, 'BOSS'));
   };
+  const abyssBest = G.house.universe?.abyssBest ?? 0;
+  const abyssStone = (k) => {
+    const locked = !!abyssProblem(G.house, k);
+    const cls = ['lvl', 'abyss', k <= abyssBest && 'beaten', k === abyssBest + 1 && 'next', abyssBossOf(k) && 'boss', spec.abyss && k === spec.pickedAbyss && 'picked'].filter(Boolean).join(' ');
+    return h('button', {
+      class: cls,
+      disabled: locked,
+      title: `?${k}. ${abyssInfo(k).name}`,
+      onclick: () => {
+        spec.pickedAbyss = k;
+        spec.abyss = true;
+        spec.message = '';
+        note.rebuild();
+      },
+    }, `?${k}`, abyssBossOf(k) && h('small', null, 'BOSS'));
+  };
   const actOfLevel = (n) => ADVENTURE_ACTS.filter((a) => n >= a.from).length;
-  return folds(note, 'acts', ADVENTURE_ACTS.map((a, i) => {
+  const acts = ADVENTURE_ACTS.map((a, i) => {
     const last = (ADVENTURE_ACTS[i + 1]?.from ?? LEVEL_COUNT + 1) - 1;
     const levels = Array.from({ length: last - a.from + 1 }, (_, k) => a.from + k);
     const won = levels.filter((n) => n <= adv.best).length;
@@ -122,27 +178,70 @@ function actFolds(note) {
         h('div', { class: 'levels' }, levels.map(stone)),
       ],
     };
-  }), `act${actOfLevel(spec.picked)}`);
+  });
+  if (afterReset(G.house)) {
+    acts.push({
+      id: 'abyss',
+      title: 'Chapter ???',
+      tag: abyssBest >= ABYSS_COUNT ? 'all beaten' : `${abyssBest} of ${ABYSS_COUNT} beaten`,
+      build: () => [
+        h('div', { class: 'small' }, `The Abyss Between, under both worlds. ${ABYSS_COUNT} levels, each ${ABYSS.grow} times harder than the one before, starting past the end of Act 5. Only Negative blood wounds what lives here: anything without it does ${Math.round((1 - ABYSS.voidGuard) * 100)}% of its damage, a quarter Negative about half, half Negative or more in full.`),
+        h('div', { class: 'levels' }, Array.from({ length: ABYSS_COUNT }, (_, k) => abyssStone(k + 1))),
+      ],
+    });
+  }
+  return folds(note, 'acts', acts, spec.abyss ? 'abyss' : `act${actOfLevel(spec.picked)}`);
+}
+
+function bossLine(def) {
+  return def?.passive?.text ? h('div', { class: 'small warning' }, h('b', null, `${def.name}: `), def.passive.text) : null;
 }
 
 function levelDetails(body, note) {
   const { spec } = note;
   const adv = G.house.adventure;
-  const run = G.adventureRun;
-  const fighting = !!G.bout?.adventure;
   const n = spec.picked;
   const info = levelInfo(n);
   const { fighters, boss } = levelEnemies(n, 1);
   const wild = n >= 12 ? 3 : n >= 5 ? 2 : 1;
-  fill(body, h('div', { class: 'levelcard' },
+  const twin = boss?.twin > 1 ? `${boss.twin} of ${bossMonster(n).name}` : boss ? bossMonster(n).name : '';
+  fill(body, h('div', { class: `levelcard${n > 50 ? ' act5' : ''}` },
     h('div', { class: 'row nowrap' },
       h('div', { class: 'nameline grow', style: 'font-size:16px' }, `${n}. ${info.name}`),
       boss && h('span', { class: 'badge boss' }, 'boss')),
     h('div', { class: 'small' }, info.text),
-    h('div', { class: 'small', style: 'margin-top:3px' }, `${fighters.length ? `${fighters.length} ${fighters.length === 1 ? WILD_WORDS[wild].replace(/s$/, '') : WILD_WORDS[wild]}` : ''}${boss ? `${fighters.length ? ', led by ' : ''}${bossMonster(n).name}` : ''}${n >= ADVENTURE_ARMED ? ', every one of them armed' : ''}${n > 1 ? `, ${Math.round((levelToughness(n) - 1) * 100)}% tougher than usual` : ''}.`),
+    h('div', { class: 'small', style: 'margin-top:3px' }, `${fighters.length ? `${fighters.length} ${fighters.length === 1 ? WILD_WORDS[wild].replace(/s$/, '') : WILD_WORDS[wild]}` : ''}${boss ? `${fighters.length ? ', led by ' : ''}${twin}` : ''}${n >= ADVENTURE_ARMED ? ', every one of them armed' : ''}${n >= ADVENTURE_ELITE ? `, Elders trained to the limit and born with ${ADVENTURE_ELITE_GIFTS} gifts` : ''}${n > 1 ? `, ${Math.round((levelToughness(n) - 1) * 100)}% tougher than usual` : ''}.`),
+    boss && bossLine(bossMonster(n)),
     h('div', { class: 'small', style: 'font-weight:600' }, rewardText(n, adv.best)),
     h('div', { class: 'small' }, `Any win: ${Object.entries(ADVENTURE_DROPS).map(([id, p]) => `${ITEMS[id].name} ${fine(p + n * ADVENTURE_DROPS_PER_LEVEL[id])}`).join(', ')}.`)));
+  partyAndGo(body, note, n, levelProblem(adv, n), n <= adv.best);
+}
 
+function abyssDetails(body, note) {
+  const { spec } = note;
+  const k = spec.pickedAbyss;
+  const info = abyssInfo(k);
+  const { fighters, boss } = abyssEnemies(k, 1);
+  const best = G.house.universe?.abyssBest ?? 0;
+  const pay = abyssReward(k, best, () => 1);
+  const name = boss ? `${boss.twin > 1 ? `${boss.twin} of ` : ''}${abyssBossMonster(k).name}` : '';
+  fill(body, h('div', { class: 'levelcard abyss' },
+    h('div', { class: 'row nowrap' },
+      h('div', { class: 'nameline grow', style: 'font-size:16px' }, `?${k}. ${info.name}`),
+      boss && h('span', { class: 'badge boss' }, 'boss')),
+    h('div', { class: 'small' }, info.text),
+    h('div', { class: 'small', style: 'margin-top:3px' }, `${fighters.length} void-touched Elders of the Negative's races${boss ? `, led by ${name}` : ''}, each with three Legendary mutations, armed, ${abyssToughness(k).toFixed(1)} times as strong as usual.`),
+    boss && bossLine(abyssBossMonster(k)),
+    h('div', { class: 'small warning' }, `Only Negative blood wounds them: without it, only ${Math.round((1 - ABYSS.voidGuard) * 100)}% of the damage lands.`),
+    h('div', { class: 'small', style: 'font-weight:600' }, pay.first ? `The first win pays ${big(pay.gems)} gems, ${pay.ore} ore, and loot.` : `Beaten already. Again, it pays ${big(pay.gems)} gems.`)));
+  partyAndGo(body, note, k, abyssProblem(G.house, k), k <= best, true);
+}
+
+function partyAndGo(body, note, n, levelBlock, beaten, abyss = false) {
+  const { spec } = note;
+  const adv = G.house.adventure;
+  const run = G.adventureRun;
+  const fighting = !!G.bout?.adventure;
   // The party.
   const rows = ready();
   const party = partyRows();
@@ -153,18 +252,20 @@ function levelDetails(body, note) {
       : h('div', { class: 'party' }, rows.slice().sort((a, b) => powerOf(b.c) - powerOf(a.c)).map((r) => {
         const on = adv.party.includes(r.c.id);
         const gift = r.c.traits[0];
+        const neg = negativeShare(r.c);
         return h('button', {
           class: `chip${on ? ' on' : ''}`,
           style: gift ? `--c:${TRAITS[gift].color}` : '',
           disabled: fighting || (!on && party.length >= ADVENTURE_PARTY),
-          title: `${fullName(r.c)}: ${stageOf(r.c).name}, power ${powerOf(r.c)}`,
+          title: `${fullName(r.c)}: ${stageOf(r.c).name}, power ${powerOf(r.c)}${neg ? `, ${Math.round(neg * 100)}% Negative` : ''}`,
           onclick: () => {
             adv.party = on ? adv.party.filter((id) => id !== r.c.id) : [...party.map((p) => p.c.id), r.c.id];
             saveHouse();
             note.rebuild();
           },
-        }, `${r.c.name} (${powerOf(r.c)})`);
+        }, `${r.c.name} (${powerOf(r.c)})${abyss && neg ? ' ◆' : ''}`);
       })),
+    abyss && h('div', { class: 'small' }, '◆ has Negative blood.'),
     party.length > 0 && h('div', { class: 'row', style: 'margin-top:5px;gap:4px' }, party.map((r) => {
       const canvas = h('canvas', { style: 'width:44px;height:52px' });
       note.refs.portraits.push({ canvas, c: r.c });
@@ -174,7 +275,7 @@ function levelDetails(body, note) {
 
   if (fighting && run) {
     fill(body,
-      h('div', { class: 'callout' }, h('div', { class: 'hand' }, `Level ${run.n}: fight!`)),
+      h('div', { class: 'callout' }, h('div', { class: 'hand' }, `${run.abyss ? `?${run.n}` : `Level ${run.n}`}: fight!`)),
       h('div', { class: 'row gap' }, button('Give up', () => {
         endLevel();
         note.rebuild();
@@ -182,10 +283,11 @@ function levelDetails(body, note) {
     return;
   }
   if (run?.result) fill(body, h('div', { class: 'callout' }, h('div', { class: 'hand' }, run.result)));
-  const problem = partyProblem(party.map((r) => r.c)) ?? levelProblem(adv, n);
+  const problem = partyProblem(party.map((r) => r.c)) ?? levelBlock;
+  const label = abyss ? (beaten ? `Play ?${n} again` : `Fight ?${n}`) : (beaten ? `Play level ${n} again` : `Fight level ${n}`);
   fill(body,
     (spec.message || (party.length === 0 && problem)) && h('div', { class: 'warning' }, spec.message || problem),
-    h('div', { class: 'row gap' }, button(n <= adv.best ? `Play level ${n} again` : `Fight level ${n}`, () => begin(note), 'big hot', !!problem || !!G.bout)),
+    h('div', { class: 'row gap' }, button(label, () => begin(note), 'big hot', !!problem || !!G.bout)),
     G.bout && !G.bout.adventure && h('div', { class: 'small' }, 'Finish the fight that is already on first.'),
   );
 }
@@ -198,22 +300,25 @@ function ring() {
 
 function begin(note) {
   if (G.bout) return;
-  const n = note.spec.picked;
+  const abyss = note.spec.abyss && afterReset(G.house);
+  const n = abyss ? note.spec.pickedAbyss : note.spec.picked;
   const party = partyRows().map((r) => r.c);
-  const problem = partyProblem(party) ?? levelProblem(G.house.adventure, n);
+  const problem = partyProblem(party) ?? (abyss ? abyssProblem(G.house, n) : levelProblem(G.house.adventure, n));
   if (problem) {
     note.spec.message = problem;
     note.rebuild();
     return;
   }
   const seed = Math.floor(Math.random() * 2 ** 31);
-  G.adventureRun = { n, seed, result: '' };
-  G.bout = startLevel(n, party, { seed, ...ring(), sizeMul: G.settings.scale ?? 1 });
+  G.adventureRun = { n, seed, result: '', abyss };
+  const opts = { seed, ...ring(), sizeMul: G.settings.scale ?? 1 };
+  G.bout = abyss ? startAbyss(n, party, opts) : startLevel(n, party, opts);
   // Everyone out steps aside while the ring is up.
   G.boutHide = new Set(G.team.map((m) => m.c.id));
   G.team.forEach((m) => m.pet.interrupt());
   note.spec.message = '';
-  toast(`LEVEL ${n}: ${levelInfo(n).name.toUpperCase()}!`, bossOf(n) ? 'rare' : 'info');
+  const name = abyss ? `?${n}: ${abyssInfo(n).name}` : `LEVEL ${n}: ${levelInfo(n).name}`;
+  toast(`${name.toUpperCase()}!`, (abyss ? abyssBossOf(n) : bossOf(n)) ? 'rare' : 'info');
   note.rebuild();
 }
 
@@ -222,7 +327,7 @@ function endLevel() {
     G.bout = null;
     G.boutHide = new Set();
   }
-  if (G.adventureRun) G.adventureRun.result = `You called off level ${G.adventureRun.n}.`;
+  if (G.adventureRun) G.adventureRun.result = `You called off ${G.adventureRun.abyss ? `?${G.adventureRun.n}` : `level ${G.adventureRun.n}`}.`;
 }
 
 // Called by the game loop when a level is over.
@@ -231,20 +336,27 @@ export function onLevelEnded(bout) {
   if (!run) return;
   const won = levelWon(bout);
   const n = run.n;
+  const where = run.abyss ? `?${n}` : `Level ${n}`;
   if (won) {
-    const reward = winLevel(G.house, n);
+    const reward = run.abyss ? winAbyss(G.house, n) : winLevel(G.house, n);
     saveHouse();
-    creditAndGift(n);
-    const bits = [reward.gems && `+${reward.gems} gems`, reward.ore && `+${reward.ore} ore`, ...reward.items.map((id) => `a ${ITEMS[id].name}`), reward.found && `a ${RACES[reward.found].name} wants to join you (name it in the Village)`].filter(Boolean);
-    run.result = `Level ${n} beaten!${bits.length ? ` ${bits.join(', ')}.` : ''}${n === LEVEL_COUNT && reward.first ? ' The whole campaign is done!' : ''}`;
+    if (!run.abyss) creditAndGift(n);
+    const bits = [reward.gems && `+${big(reward.gems)} gems`, reward.ore && `+${reward.ore} ore`, ...reward.items.map((id) => `a ${ITEMS[id].name}`), reward.found && `a ${RACES[reward.found].name} wants to join you (name it in the Village)`].filter(Boolean);
+    const cracked = !run.abyss && n === LEVEL_COUNT && reward.first;
+    run.result = `${where} beaten!${bits.length ? ` ${bits.join(', ')}.` : ''}${cracked ? ' The whole campaign is done, and the universe is cracking.' : ''}${run.abyss && n === ABYSS_COUNT && reward.first ? ' Nobody has ever heard the answer before.' : ''}`;
     const note = getNote('adventure');
-    if (note && n < LEVEL_COUNT && n >= G.house.adventure.best) note.spec.picked = n + 1;
-    G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, n === 20 ? 'THE DRAGON FALLS' : n === LEVEL_COUNT ? 'THE FIRST FLAME GOES OUT' : `LEVEL ${n} BEATEN`, '#8ef06a', 26, 3);
-    toast(`LEVEL ${n} BEATEN!${bits.length ? ` ${bits.join(', ').toUpperCase()}!!!` : ''}`, reward.items.length || reward.first ? 'rare' : 'good');
+    if (note && run.abyss && n < ABYSS_COUNT && n >= (G.house.universe.abyssBest ?? 0)) note.spec.pickedAbyss = n + 1;
+    if (note && !run.abyss && n < LEVEL_COUNT && n >= G.house.adventure.best) note.spec.picked = n + 1;
+    const shout = run.abyss ? `${where} BEATEN` : n === 20 ? 'THE DRAGON FALLS' : n === 50 ? 'THE FIRST BEAST FALLS' : n === LEVEL_COUNT ? 'EVERYTHING ENDS' : `LEVEL ${n} BEATEN`;
+    G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, shout, '#8ef06a', 26, 3);
+    toast(`${where.toUpperCase()} BEATEN!${bits.length ? ` ${bits.join(', ').toUpperCase()}!!!` : ''}`, reward.items.length || reward.first ? 'rare' : 'good');
+    if (cracked) toast('THE UNIVERSE IS CRACKING. THE ADVENTURE NOTE CAN RESET IT...', 'rare');
   } else {
-    run.result = `Level ${n} was too much this time. Grow the party, give them weapons from the forge, and try again.`;
+    run.result = run.abyss
+      ? `${where} was too much. Only Negative blood wounds what lives there: cross creatures over from the Negative, or breed them with the Deluxe Breeder.`
+      : `${where} was too much this time. Grow the party, give them weapons from the forge, and try again.`;
     G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, 'THE PARTY FELL', '#ff6b5e', 26, 3);
-    toast(`THE PARTY FELL ON LEVEL ${n}!`, 'bad');
+    toast(`THE PARTY FELL ON ${where.toUpperCase()}!`, 'bad');
   }
   setTimeout(() => {
     if (G.bout === bout) {

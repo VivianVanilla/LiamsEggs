@@ -24,11 +24,12 @@ const DIRS = {
 const FOOD_EXTS = new Set(['bone', 'sap', 'spark', 'ink', 'ember', 'goo']);
 const MAX_FOOD_BYTES = 1024 * 1024;
 const MAX_CREATURE_BYTES = 4 * 1024 * 1024;
-const DATA_KEYS = new Set(['arena', 'household']);
+// negative is the Negative Dimension (src/core/negative.js), which a universe reset never touches.
+const DATA_KEYS = new Set(['arena', 'household', 'negative']);
 const DWELL_MS = 220; // the cursor must rest on the creature this long, so quick clicks reach your apps
 const APP_ID = 'creature.overlay.game';
 const TEAM_MAX = 3;
-const OPENABLE = new Set(['menu', 'feed', 'nursery', 'creatures', 'village', 'adventure', 'powers', 'search']);
+const OPENABLE = new Set(['menu', 'feed', 'nursery', 'creatures', 'village', 'adventure', 'powers', 'search', 'negative']);
 // Creature.exe, when the game was started with it (tools/launcher/Creature.cs). A pinned taskbar
 // button and the jump list then start the game through it, with its icon, and in the same world.
 const LAUNCHER = (() => {

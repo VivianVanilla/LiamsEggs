@@ -66,12 +66,16 @@ Open Powers, Powers. Each needs its stat in its top three, and all of them are f
 - **A Devil Fruit** (*One Piece*) at 20 Vigor, from the fruits your farms and expeditions find.
 
 It can hold one of those. **A Legendary mutation** changes that. The only way to get one is to beat the monster that gives it in Challenges. A creature holds one, and each **Legendary Expander** (from Bizarre expeditions) makes room for one more, up to 3: their stats and fight bonuses add up, and its powers fit if any one of them could hold them all. With no room left, a new one is yours to swap in or turn down.
-- **Twin Soul** (The Last Dragon): any two of a Stand, speedster powers and a technique.
-- **Malevolent Soul** (Old Rex): a Stand plus one more, and that one can be a **Devil Fruit**.
-- **Iron Soul** (The Iron Rhino): still one power, but takes 20% less damage and has 15% more max HP.
-- **Ghost Soul** (The Ghost Leopard): still one power, but dodges, crits and moves more.
-- **Tide Soul** (The Sea King): a Devil Fruit beside any one power, and poison can't touch it.
-- **War Soul** (The Silverback): speedster powers and a technique together, more crits and reach, but never a Stand.
+Every soul brings a move of its own and a passive worth about a second power. Iron and Ghost still hold one power, so theirs are the strongest.
+
+| Soul | From | Holds | In every fight | Its move |
+| --- | --- | --- | --- | --- |
+| **Twin Soul** | The Last Dragon | any two of a Stand, speedster powers and a technique | each move has a 30% chance to go off twice; moves back 15% sooner | Twin Burst |
+| **Malevolent Soul** | Old Rex | a Stand plus one more, which can be a **Devil Fruit** | 50% harder hits on anything below half health; heals 15% when a foe falls | Cruel Edge |
+| **Iron Soul** | The Iron Rhino | one power | 35% less damage, 40% more max HP, throws 30% of every hit back, can't be stunned, confused or silenced | Iron Fortress |
+| **Ghost Soul** | The Ghost Leopard | one power | 20% more dodging (even sure hits), 20% more crits at 2.5x, 25% faster, phases out every 5 seconds | Phase Out |
+| **Tide Soul** | The Sea King | a Devil Fruit beside any one power | poison-proof, 15% more max HP, heals 2% a second | Tidal Wave |
+| **War Soul** | The Silverback | speedster powers and a technique, never a Stand | 15% more crits, more reach, each hit lands 3% harder for the rest of the fight (up to 60%) | Warpath |
 
 Without one, a fruit goes with nothing else.
 
@@ -102,7 +106,7 @@ Every race has stats, a fight move, a passive in every fight, and a specialty at
 
 | Race | In a fight | At home | Where from |
 | --- | --- | --- | --- |
-| Human | | Works 25% harder | most eggs |
+| Human | nothing special, and no weakness | Works 25% harder | most eggs |
 | Giant | Takes 15% less damage, and is drawn bigger | Digs 50% more colors | forest and sea expeditions |
 | Fish-man | 12% more max HP | Catches food, whatever its job | coast and sea |
 | Mink | 8% more dodging | Expeditions back 20% sooner | forest and sea |
@@ -112,11 +116,25 @@ Every race has stats, a fight move, a passive in every fight, and a specialty at
 | Skypiean | 10% more critical hits | Expeditions twice as likely to find someone | sky island |
 | Devil | Heals whenever a foe goes down | A gem every 4 hours, whatever its job | sea, very rarely, Adventure level 27 |
 | Vampire | 15% more max HP, poison-proof, heals whenever a foe goes down. Pale, with drops of blood | A gem every 2 hours, whatever its job | stone ruins (Bizarre) |
-| Pillar Man | Takes 20% less damage, 15% more max HP, drawn bigger, a pillar behind it | Digs 75% more colors | stone ruins, rarely |
+| Pillar Man | All three Modes as moves (Divine Sandstorm, Boiling Blood, Shining Blades). Takes 30% less damage, 30% more max HP, heals 15% of the damage it deals, and once a fight below 30% health becomes the Ultimate Life Form: full health, 40% harder hits, unstoppable. Drawn bigger, a pillar behind it | Twice the colors, a gem every 2 hours | stone ruins, rarely |
 | Dragon | 10% less damage, 10% more critical hits, further reach. Green scales, red wings | Twice as many gems | rift in the sky, rarely |
 | Cursed Alien | 12% more dodging and 12% more critical hits. Green, with a flying saucer | Expeditions three times as likely to find someone | rift in the sky |
 
-The last four are the strongest, and only come from Bizarre expeditions. Like every race, they mix: a baby can be half or a quarter of one.
+The last four are the strongest born in the light world, and only come from Bizarre expeditions. Like every race, they mix: a baby can be half or a quarter of one. The Codex lists every race's stats and every move it brings, and What it has shows them for each creature.
+
+**The races of the Negative Dimension** are stronger still, and only exist after a universe reset (below). Each one is also the only blood that wounds what lives in Chapter ???.
+
+| Race | In a fight | Its move | At home |
+| --- | --- | --- | --- |
+| Voidling | 18% more dodging, even sure hits; 30% faster; drawn smaller | Void Step | expeditions 35% sooner, twice as likely to find someone |
+| Antiseraph | heals 25% of the damage it deals, 10% more crits, poison-proof | Black Halo | 2.5x gems |
+| Abyssal Titan | 25% less damage, 40% more max HP, below half health 60% harder hits; drawn much bigger | Abyss Crush | 2.5x colors |
+| Hexborn | every hit curses for 3 seconds, 8% more crits | Grand Hex | a gem an hour |
+| Mirrorkin | throws 35% of every hit back, 6% more dodging | Shatter | works 50% harder |
+| Entropy Wraith | everything near it rots every second, poison-proof | Heat Death | farms twice as much |
+| Chimera | each hit 4% stronger for the fight, heals 25% when a foe falls | Devour | 6 food an hour |
+| Homunculus | two extra lives, heals 1.5% a second | Ouroboros | twice the gems |
+| Dreadwyrm | 15% less damage, 15% more crits at 3x, more reach | Null Breath | 3x gems |
 
 ## The Nursery
 
@@ -138,7 +156,28 @@ Everyone not out on your screen lives in the village and works for the pool you 
 
 ## Adventure
 
-Fight, Adventure: 30 levels in two acts for a party of three, fought in a ring on your screen. Nobody can die. Every fifth level a deadly monster leads the enemy: The Last Dragon ends Act 1 at level 20, and in Act 2 the enemy carries forged weapons, up to The First Dragon at level 30. The first win of each level pays gems, and some pay ore, items, or a rare creature that wants to join you.
+Fight, Adventure: 60 levels in five acts for a party of three, fought in a ring on your screen. Nobody can die. Every fifth level a deadly monster leads the enemy: The Last Dragon ends Act 1 at level 20, in Act 2 the enemy carries forged weapons, in Act 3 Legendary mutations, and Act 4 ends with The First Beast at level 50. The first win of each level pays gems, and some pay ore, items, or a rare creature that wants to join you.
+
+**Act 5** (levels 51 to 60) is meant to feel impossible. Every enemy is an Elder trained to the limit, born with two gifts, armed, and carrying three Legendary mutations, and the levels climb far faster. Every other level has a boss that fights like nothing before it: The Hollow Kraken (can't be stopped, heals, calls shadows), Rex Eternal (can't be stopped, heals from its bites, twice as hard below half health), The Starving Leviathan (gets back up twice, rots everything near it), two Thunder Tigers at once, and The End of All Things at level 60, which does all of it, stops time and silences everything around it.
+
+## The universe reset
+
+Beating level 60 cracks the universe. The Adventure note can then **reset the universe**: every creature you have dies, and everything is wiped, gems, ore, weapons, the village, the altar, the breeders and every level of Adventure. An egg falls, the same as the very first time. What it opens:
+
+- **The Negative Dimension**, from a button at the bottom of the menu. A reset never touches it.
+- **Chapter ???**, 25 more levels in the Adventure note, each 1.17 times harder than the one before, starting past the end of Act 5. Everything there is void-touched: a creature without Negative blood only lands 10% of its damage, a quarter Negative about half, half or more in full. The only way through is a creature from the Negative.
+- **Creature boosts**, in the Nursery's Boosts tab: sacrifice a creature, and every gem you earn for an hour, from anything, is multiplied by what it was worth (more for power, rebirths, trophies, and most of all Negative blood). Up to 3 run at once, and they multiply each other.
+- **The Deluxe Breeder**, in the Nursery, for 100,000 gems: the only way Negative blood breeds, with another or with anyone from the light world. Every egg from it can carry 3 more things.
+
+## The Negative Dimension
+
+A world of its own on its own rules, saved in `world/data/negative.json`. No mutations, no jobs, no Stands, techniques, fruits or Quirks. Its creatures hatch from its own eggs (the first 3 free, then Void Shards), are one of its 9 races, can be born with its 10 gifts (Inverted Heart, Event Horizon, Null Field, Entropy, Abyssal Gaze, Hollow Clock, Black Sun, Mirror Soul, Godslayer, Equivalent Exchange), and have six ability scores in the hundreds. They level up to 60 by fighting, and fight with ten times the health and hits of the light world. Each one is attuned in three ways:
+
+- **A class**, Dungeons & Dragons style, picked for good: Fighter, Barbarian, Rogue, Monk, Paladin, Wizard, Cleric or Warlock. It decides how its scores grow, its health, a feature in every fight, and four spells that unlock as it levels, of which it prepares one, plus one more every 20 levels.
+- **Nen**, Hunter x Hunter style. Water divination shows its Nen type, and the hexagon says how well it uses the others. It spreads 100 points of aura over Ten, Ren, Gyo, En and Zetsu, can turn on Ko, designs a Hatsu of its own (a type and a form, and a name), and can swear up to 3 vows that multiply the Hatsu for a price: only when cornered, paid in blood, spoken aloud, only up close, patience, or a death oath that costs a level for every loss.
+- **Alchemy**, Fullmetal Alchemist style. Up to 3 circles, each a move it designs: a shape, an element, and what it pays every use, in health, in time before it comes back, and in toll on its own strength. The more it pays, the stronger it is.
+
+Its own Adventure has 30 levels and pays XP and Void Shards. A creature that wins level 30 can **cross over**: it leaves the Negative for good and arrives in your village as a Hatchling of its race, with its gifts and nothing else. From there it can go on the Bloodline Altar so eggs hatch as its race, be given up for a creature boost, or be bred with the Deluxe Breeder.
 
 ## The forge
 
@@ -149,7 +188,7 @@ Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blad
 - **Battle plan:** every move it knows, which to use, and how it fights, when it is hurt, and who it goes for.
 - **Challenges:** training monsters can't kill it; deadly ones can, forever, and each win is a trophy. A dead creature's file moves to `world/graveyard`. Old Rex also gives a Malevolent Soul, and The Last Dragon a Twin Soul.
 - **Legendary road:** four more monsters to the death. No trophies: each gives one Legendary mutation and nothing else.
-- **Ultimate road:** five more, just as deadly, once it has won any 2 on the Legendary road. They open in a note of their own, beside Challenges. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time.
+- **Ultimate road:** five more, just as deadly, once it has won any 2 on the Legendary road. They open in a note of their own, beside Challenges. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time. But every rebirth makes the ultimate monsters 1.5 times as strong for it again, in health and in hits: 1.5 times after one, 2.25 after two, 3.4 after three.
 - **Arena:** a free-for-all with any `.creature` files.
 
 ## The art

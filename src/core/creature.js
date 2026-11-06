@@ -14,10 +14,10 @@ import {
   TRAITS, BORN_TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, OFA_ID, ofaLevelFor, ofaStats, ofaLimitBonus, OFA_MOVES,
 } from '../data/powers.js';
 import { DEADLY_MONSTERS, LEGEND_IDS, TROPHY_POINTS } from '../data/monsters.js';
-import { RACES, DEFAULT_RACE, RACE_PICTURES, RACE_BACKS, SKIN_MIX, WILD_RACES, RACE_FULL_SHARE } from '../data/races.js';
+import { RACES, DEFAULT_RACE, RACE_PICTURES, RACE_BACKS, SKIN_MIX, WILD_RACES, RACE_FULL_SHARE, raceMovesOf } from '../data/races.js';
 import { FRUITS, FRUIT_VIGOR } from '../data/fruits.js';
 import { STANCES, HURT_PLANS, TARGET_PLANS, defaultBattlePlan } from '../data/battle.js';
-import { CHARMS, CHARM_SLOTS, PAINTS, CROP_IDS, BANK_KEYS, MAX_BANK, familyOfBin } from '../data/crafting.js';
+import { CHARMS, CHARM_SLOTS, PAINTS, CROP_IDS, BANK_KEYS, MAX_BANK, bankMax, familyOfBin } from '../data/crafting.js';
 import { emptyBank, bankColor } from './craft.js';
 
 export const FORMAT = 'creature/1';
@@ -83,6 +83,8 @@ export function newCreature(name, now = Date.now()) {
     race: DEFAULT_RACE,
     heritage: null,
     pureBlood: false,
+    // 'negative' for one that crossed over from the Negative Dimension (core/negative.js).
+    origin: null,
     trophies: [],
     // The Legendary road monsters it has beaten (data/monsters.js). They give no trophy.
     legendWins: [],
@@ -330,11 +332,19 @@ export function raceStats(c) {
   return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, Math.round(v)]).filter(([, v]) => v));
 }
 
-// A race brings its move at half or more. Less than all Devil makes a Half-devil's move instead.
+// A race brings its moves at half or more. Less than all Devil makes a Half-devil's move instead.
 export function raceMoves(c) {
   return raceParts(c)
-    .filter(([id, share]) => RACES[id].move && (c.pureBlood || share >= 0.5))
-    .map(([id, share]) => (id === 'devil' && share < 1 && !c.pureBlood ? RACES.halfdevil.move : RACES[id].move));
+    .filter(([id, share]) => raceMovesOf(id).length && (c.pureBlood || share >= 0.5))
+    .flatMap(([id, share]) => (id === 'devil' && share < 1 && !c.pureBlood ? [RACES.halfdevil.move] : raceMovesOf(id)));
+}
+
+// How much of it is from the Negative Dimension, from 0 to 1. A Pure-blood with any Negative race in
+// it counts as all of it. Only Negative blood can wound what lives in Chapter ???.
+export function negativeShare(c) {
+  const parts = raceParts(c).filter(([id]) => RACES[id].negative);
+  if (!parts.length) return 0;
+  return c.pureBlood ? 1 : Math.min(1, parts.reduce((s, [, share]) => s + share, 0));
 }
 
 export const raceSize = (c) => raceParts(c).reduce((m, [id, share]) => m * (1 + ((RACES[id].size ?? 1) - 1) * raceShare(c, share)), 1);
@@ -342,25 +352,57 @@ export const raceSize = (c) => raceParts(c).reduce((m, [id, share]) => m * (1 + 
 // The races it is enough of to have their passive and specialty: half or more, or pure-blooded.
 const fullRaces = (c) => raceParts(c).filter(([, share]) => c.pureBlood || share >= RACE_FULL_SHARE).map(([id]) => RACES[id]);
 
-function addPassive(out, passive) {
+// What a passive can hold, everywhere: races, Legendary mutations, gifts of the Negative, classes,
+// Nen and bosses all use these, and sim/arena.js makes each one work.
+//   taken, hp, dodge, crit, speed, reach, feast   as they always were
+//   absorb      heals this share of all the damage it deals
+//   reflect     this share of every hit it takes goes back to whoever landed it
+//   regen       heals this share of its max HP every second
+//   echo        each move it uses has this chance to go off twice
+//   execute     this much more damage against anything below half its health
+//   frenzy      each hit it lands adds this much damage for the rest of the fight, up to 60%
+//   evolve      once below 30% health: back to full, and this much harder hits from then on
+//   lives       this many times it gets back up with half its health
+//   critMul     critical hits land this much harder on top of twice
+//   cooldown    its moves come back this much sooner
+//   damage      everything it does lands this much harder
+//   monsterDmg  this much more damage against monsters
+//   aura        everything on the other side within auraRange takes this share of its hit every second
+//   decay       every hit it lands leaves them hurting: this share of its hit a second, for 3 seconds
+//   enrage      below half its health it hits this much harder, and swings faster
+//   twice       this share of its swings land twice
+//   poisonproof, unstoppable (no stun, confusion or silence), horizon (even sure hits can miss it),
+//   nullField (every 6 seconds, silences what is near it)   yes or no
+const PASSIVE_FLAGS = new Set(['poisonproof', 'unstoppable', 'horizon', 'nullField']);
+export const emptyPassive = () => ({
+  taken: 0, hp: 0, dodge: 0, crit: 0, speed: 0, reach: 0, poisonproof: false, feast: 0, absorb: 0, reflect: 0, regen: 0, unstoppable: false,
+  echo: 0, execute: 0, frenzy: 0, evolve: 0, lives: 0, critMul: 0, cooldown: 0, damage: 0, monsterDmg: 0, aura: 0, auraRange: 0, nullField: false,
+  decay: 0, enrage: 0, horizon: false, twice: 0,
+});
+
+export function addPassive(out, passive) {
   for (const [k, v] of Object.entries(passive ?? {})) {
     if (k === 'text') continue;
-    if (k === 'poisonproof') out.poisonproof = out.poisonproof || !!v;
-    else out[k] += v;
+    if (PASSIVE_FLAGS.has(k)) out[k] = out[k] || !!v;
+    else if (k === 'auraRange') out[k] = Math.max(out[k] ?? 0, v);
+    else out[k] = (out[k] ?? 0) + v;
   }
+  return out;
 }
 
 // What its races do for it in a fight, all added together.
 export function racePassive(c) {
-  const out = { taken: 0, hp: 0, dodge: 0, crit: 0, speed: 0, reach: 0, poisonproof: false, feast: 0 };
+  const out = emptyPassive();
   for (const race of fullRaces(c)) addPassive(out, race.passive);
   return out;
 }
 
-// Its races and its Legendary mutations, together: everything that works in every fight.
+// Its races, its Legendary mutations and its gifts of the Negative, together: everything that works
+// in every fight.
 export function fightPassive(c) {
   const out = racePassive(c);
   c.souls.forEach((id) => addPassive(out, LEGENDARY[id].passive));
+  (c.traits ?? []).forEach((id) => addPassive(out, TRAITS[id]?.passive));
   return out;
 }
 
@@ -598,6 +640,7 @@ export function movesOf(c) {
   if (c.powers.technique) TECHNIQUES[c.powers.technique].moves.forEach((id) => list.push({ id, from: TECHNIQUES[c.powers.technique].name }));
   if (c.powers.technique2) TECHNIQUES[c.powers.technique2].moves.forEach((id) => list.push({ id, from: `${TECHNIQUES[c.powers.technique2].name} (Cursed Body)` }));
   if (c.powers.fruit) FRUITS[c.powers.fruit].moves.forEach((id) => list.push({ id, from: FRUITS[c.powers.fruit].name }));
+  c.souls.filter((id) => LEGENDARY[id]?.move).forEach((id) => list.push({ id: LEGENDARY[id].move, from: LEGENDARY[id].name }));
   (c.traits ?? []).filter((id) => TRAITS[id]?.move).forEach((id) => list.push({ id: TRAITS[id].move, from: TRAITS[id].name }));
   const level = ofaLevel(c);
   c.powers.quirks.forEach((id) => {
@@ -737,6 +780,7 @@ export function sanitizeCreature(raw, now = Date.now()) {
     if (parts.length && Math.abs(parts.reduce((n, [, s]) => n + s, 0) - 1) < 1e-9) c.heritage = Object.fromEntries(parts);
   }
   c.pureBlood = raw.pureBlood === true;
+  c.origin = raw.origin === 'negative' ? 'negative' : null;
   c.powers = sanitizePowers(raw.powers, c);
   c.ofa = c.powers.quirks.includes(OFA_ID)
     ? { stockpile: safeNum(raw.ofa?.stockpile, 0, 1e6), holders: Array.isArray(raw.ofa?.holders) ? raw.ofa.holders.slice(-12).map((n) => safeStr(n, 60)) : [] }
@@ -791,7 +835,7 @@ function sanitizeGear(raw) {
 }
 
 function sanitizeBank(raw) {
-  return Object.fromEntries(BANK_KEYS.map((k) => [k, safeNum(raw[k], 0, MAX_BANK)]));
+  return Object.fromEntries(BANK_KEYS.map((k) => [k, safeNum(raw[k], 0, bankMax(k))]));
 }
 
 // A save from before the bank existed still gets to spend everything it already mined.
@@ -886,6 +930,7 @@ export function serializeCreature(c) {
     race: c.race,
     heritage: c.heritage ?? null,
     pureBlood: c.pureBlood === true,
+    origin: c.origin ?? null,
     born: c.born,
     lastSeen: c.lastSeen,
     summary: {

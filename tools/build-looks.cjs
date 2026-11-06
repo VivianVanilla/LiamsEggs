@@ -30,6 +30,31 @@ const EXTRA = {
     credit: '`1fabd.svg` from Twemoji 15.1.0, recolored red',
     colors: { '#CAD4DB': '#d9452b', '#97A8B3': '#8e2316' },
   },
+  // For the races of the Negative.
+  'wing-ash': {
+    url: `${TWEMOJI_15}1fabd.svg`,
+    file: 'twemoji-15.1.0-1fabd.svg',
+    credit: '`1fabd.svg` from Twemoji 15.1.0, recolored ash grey',
+    colors: { '#CAD4DB': '#6e6878', '#97A8B3': '#3a3542' },
+  },
+  'wing-void': {
+    url: `${TWEMOJI_15}1fabd.svg`,
+    file: 'twemoji-15.1.0-1fabd.svg',
+    credit: '`1fabd.svg` from Twemoji 15.1.0, recolored void purple',
+    colors: { '#CAD4DB': '#3d3466', '#97A8B3': '#1f1a33' },
+  },
+  'ring-black': {
+    url: `${TWEMOJI}2b55.svg`,
+    file: '2b55.svg',
+    credit: '`2b55.svg`, recolored black',
+    colors: { '#DD2E44': '#1d1030' },
+  },
+  'fire-void': {
+    url: `${TWEMOJI}1f525.svg`,
+    file: '1f525.svg',
+    credit: '`1f525.svg`, recolored purple',
+    colors: { '#F4900C': '#5a3ad0', '#FFCC4D': '#b89cff' },
+  },
 };
 
 function recolor(svg, colors) {
@@ -132,6 +157,19 @@ const LOOKS = {
   'races/dragon-back.png': [['wing-red', 384, 158, 214], ['wing-red', 128, 158, 214, 0, true]],
   'races/devil.png': [['1f531', 350, 300, 132]],
   'races/halfdevil.png': [['1fa9a', 352, 300, 104, -30]],
+  // The races of the Negative.
+  'races/voidling.png': [['1f573', 256, 500, 196], ['1f311', 160, 96, 44], ['1f311', 352, 130, 32]],
+  'races/antiseraph.png': [['ring-black', 256, 26, [118, 40]]],
+  'races/antiseraph-back.png': [['wing-ash', 384, 158, 214], ['wing-ash', 128, 158, 214, 0, true]],
+  'races/abyssaltitan.png': [['26d3', 256, 228, 128], ['26d3', 256, 228, 128, 0, true], ['1faa8', 166, 350, 80], ['1faa8', 346, 350, 80, 0, true]],
+  'races/hexborn.png': [['1f52e', 350, 335, 82], ['1f578', 150, 150, 84]],
+  'races/mirrorkin.png': [['1fa9e', 350, 310, 110, 15], ['2728', 160, 120, 46]],
+  'races/entropywraith.png': [['23f3', 256, 222, 70], ['1f342', 140, 470, 56, -20], ['1f342', 372, 452, 48, 30, true]],
+  'races/chimera.png': [['1f356', 350, 335, 86, -20]],
+  'races/chimera-back.png': [['1f40d', 372, 452, 128, -10, true]],
+  'races/homunculus.png': [['1f534', 256, 212, 40], ['2697', 352, 330, 86]],
+  'races/dreadwyrm.png': [['fire-void', 186, 196, 58, -15], ['fire-void', 326, 196, 58, 15, true]],
+  'races/dreadwyrm-back.png': [['wing-void', 392, 150, 236], ['wing-void', 120, 150, 236, 0, true]],
 
   // nurse jobs
   'jobs/nurse.png': [['1fa7a', 256, 232, 118]],
@@ -316,7 +354,7 @@ function updateCredits() {
     '',
     `The mutation, job, Stand, Quirk, technique, crafting and monster pictures below are Twemoji pictures (same credit and license as above), turned, mirrored, cropped (the helmets lose their chin straps) and placed on a transparent canvas by \`tools/build-looks.cjs\`. The Stands and the Dark Shadow also use the AIGA figure above, recolored. To swap one for your own drawing, save over the file and remove it from \`LOOKS\` in that tool and from this list.`,
     '',
-    'The Lunarian\'s wings are the wing picture from Twemoji 15.1.0, the version of Twemoji its community keeps going at [jdecked/twemoji](https://github.com/jdecked/twemoji), under the same CC-BY 4.0 license. Recolored from grey to black.',
+    'The wings (Lunarian, Dragon, Antiseraph, Dreadwyrm) are the wing picture from Twemoji 15.1.0, the version of Twemoji its community keeps going at [jdecked/twemoji](https://github.com/jdecked/twemoji), under the same CC-BY 4.0 license, recolored for each race. The Antiseraph\'s halo and the Dreadwyrm\'s flames are Twemoji pictures recolored too.',
     '',
     'Stands, Quirks and cursed techniques borrow their names and powers from *JoJo\'s Bizarre Adventure*, *My Hero Academia* and *Jujutsu Kaisen*. None of the pictures come from those shows.',
     '',
