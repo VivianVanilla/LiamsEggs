@@ -9,7 +9,7 @@
     "titanshifter"
   ],
   "parents": [],
-  "bredAt": 0,
+  "bredAt": 1793983072702,
   "household": true,
   "race": "human",
   "heritage": null,
@@ -17,12 +17,12 @@
   "born": 1793937166244,
   "lastSeen": 1793937166244,
   "summary": {
-    "stage": "Hatchling",
+    "stage": "Grown",
     "race": "Human",
     "job": "No job yet",
     "finalForm": false,
-    "power": 15,
-    "maxHp": 253,
+    "power": 45,
+    "maxHp": 406,
     "colors": {
       "body": "#fbfaf6",
       "accent": "#ff6b5e",
@@ -42,14 +42,14 @@
     "weapon": null
   },
   "stats": {
-    "might": 3,
-    "guard": 3,
-    "speed": 3,
-    "wits": 3,
-    "vigor": 3
+    "might": 9,
+    "guard": 9,
+    "speed": 9,
+    "wits": 9,
+    "vigor": 9
   },
-  "growth": 0,
-  "fullness": 35,
+  "growth": 90,
+  "fullness": 75,
   "essence": {
     "bone": 0,
     "sap": 0,
@@ -205,7 +205,10 @@
     "arenaWins": 0,
     "arenaLosses": 0,
     "monstersBeaten": 0,
-    "monstersLost": 0
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
   },
   "farm": {
     "fields": [],

@@ -3,12 +3,12 @@
   "bottomOnly": false,
   "calm": false,
   "dark": true,
-  "scale": 1,
-  "opacity": 0.75,
+  "scale": 0.5,
+  "opacity": 0.5,
   "team": [
-    "Iggy",
     "Lillonia",
-    "Flygon"
+    "GOAT",
+    "Satoru"
   ],
-  "active": "Lillonia"
+  "active": "GOAT"
 }

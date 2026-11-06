@@ -15,17 +15,17 @@
   "heritage": null,
   "pureBlood": false,
   "born": 1793933845024,
-  "lastSeen": 1793938598193,
+  "lastSeen": 1793978982751,
   "summary": {
-    "stage": "Scrapper",
+    "stage": "Grown",
     "race": "Human",
     "job": "Titan Driller",
     "finalForm": true,
-    "power": 72,
-    "maxHp": 490,
+    "power": 91,
+    "maxHp": 541,
     "colors": {
-      "body": "#f6dc38",
-      "accent": "#f6282f",
+      "body": "#f7a48a",
+      "accent": "#f6d928",
       "tinted": true
     },
     "stand": null,
@@ -42,14 +42,14 @@
     "weapon": null
   },
   "stats": {
-    "might": 29,
-    "guard": 10,
-    "speed": 9,
-    "wits": 11,
-    "vigor": 13
+    "might": 36,
+    "guard": 12,
+    "speed": 15,
+    "wits": 13,
+    "vigor": 15
   },
-  "growth": 66.85,
-  "fullness": 80.26,
+  "growth": 94.45,
+  "fullness": 49.47,
   "essence": {
     "bone": 0,
     "sap": 0,
@@ -63,10 +63,10 @@
   "palette": {
     "hues": [
       {
-        "r": 177,
-        "g": 125,
-        "b": 107,
-        "n": 15.17
+        "r": 237,
+        "g": 162,
+        "b": 139,
+        "n": 340.29
       },
       {
         "r": 238,
@@ -135,13 +135,13 @@
         "n": 188.16
       }
     ],
-    "grey": 62.33,
-    "total": 958.33
+    "grey": 165.64,
+    "total": 1386.76
   },
   "training": {
-    "might": 6.278769808220806,
+    "might": 7.608089480351947,
     "guard": 0,
-    "speed": 1.7311858197195167,
+    "speed": 5.600458983224226,
     "wits": 1.5839999999999996,
     "vigor": 0
   },
@@ -151,7 +151,7 @@
       "excavator",
       "driller"
     ],
-    "xp": 394.4977813970148
+    "xp": 654.4274231788095
   },
   "powers": {
     "stand": null,
@@ -201,21 +201,24 @@
   },
   "fruits": {},
   "record": {
-    "mined": 245,
-    "gems": 20,
+    "mined": 484,
+    "gems": 26,
     "harvested": 0,
     "duelsWon": 1,
     "duelsLost": 9,
     "arenaWins": 0,
     "arenaLosses": 0,
     "monstersBeaten": 0,
-    "monstersLost": 0
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
   },
   "farm": {
     "fields": [],
     "animals": [],
     "store": 0,
-    "lastTick": 1793938597835,
+    "lastTick": 1793978982510,
     "wateredAt": 0,
     "nextId": 1
   },
