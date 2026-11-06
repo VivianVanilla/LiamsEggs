@@ -1,10 +1,9 @@
-// Everything on screen besides the creature: dropped files, fields, the arena, the societies.
+// Everything on screen besides the creature: dropped files, fields and the arena.
 // Pictures all come from the art folder. The only things drawn here are plain game marks:
 // text, health bars, border lines, and squares showing colors actually mined from your screen.
 
-import { clamp, hexToRgb, rgbToHex } from '../lib/util.js';
+import { clamp } from '../lib/util.js';
 import { TILE, growMs, tilePos } from '../sim/farm.js';
-import { COLS, ROWS } from '../sim/society.js';
 import { drawArt, drawTinted, drawCreature, drawStand, drawAfterimages, drawAnimal, drawMonster, monsterHeight, heightOf, hasArt } from './art.js';
 
 const TEXT_EDGE = 'rgba(10,12,20,0.72)';
@@ -240,7 +239,7 @@ export function drawFighter(ctx, f, bout) {
   } else if (f.c) {
     if (f.alive && f.trail) drawAfterimages(ctx, f.c, f.trail, f.x, f.y);
     if (f.alive && f.stand) drawStand(ctx, f.c, f.stand.x, f.stand.y, f.stand.dir);
-    drawCreature(ctx, f.c, f.x, f.y, { dir: f.dir, flat: !f.alive, alpha: f.alive ? 1 : clamp(1.2 - f.deadT / 8, 0.4, 1) });
+    drawCreature(ctx, f.c, f.x, f.y, { dir: f.dir, flat: !f.alive, alpha: f.alive ? 1 : clamp(1.2 - f.deadT / 8, 0.4, 1), grow: f.grow ?? 1 });
   } else if (f.monster) {
     drawMonster(ctx, f.monster, f.x, f.y, { dir: f.dir, flat: !f.alive, alpha: f.alive ? 1 : clamp(1.2 - f.deadT / 8, 0.4, 1) });
   }
@@ -259,7 +258,7 @@ export function drawHealthBar(ctx, f, bout) {
   if (f.minion || !f.alive || !(f.c || f.monster)) return;
   const w = 46;
   const x = f.x - w / 2;
-  const y = f.y - (f.c ? heightOf(f.c) : monsterHeight(f.monster)) - 8;
+  const y = f.y - (f.c ? heightOf(f.c) * (f.grow ?? 1) : monsterHeight(f.monster)) - 8;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(x, y, w, 3.6);
   const k = clamp(f.hp / f.maxHp, 0, 1);
@@ -270,130 +269,3 @@ export function drawHealthBar(ctx, f, bout) {
   if (tag) label(ctx, tag[0], f.x, y - 17, 11, tag[1]);
 }
 
-// ---------- society ----------
-
-const HUT_SIZE = 22;
-const KEEP_SIZE = 40;
-const CITIZEN_SIZE = 18;
-
-export class SocietyView {
-  constructor() {
-    this.people = new Map();
-    this.clashes = [];
-  }
-
-  addBattle(world, ev, rect) {
-    const { x, y } = cellCentre(rect, ev.cell);
-    this.clashes.push({ x, y, t: 0, a: world.tribes[ev.a].color, b: world.tribes[ev.b].color });
-    if (this.clashes.length > 14) this.clashes.shift();
-  }
-
-  update(world, dt, rect) {
-    for (const tribe of world.tribes) {
-      if (!this.people.has(tribe.i)) this.people.set(tribe.i, []);
-      const crowd = this.people.get(tribe.i);
-      const want = tribe.alive ? clamp(Math.round(Math.sqrt(tribe.pop) * 1.35), 1, 14) : 0;
-      while (crowd.length > want) crowd.pop();
-      if (!tribe.alive) continue;
-      const land = [];
-      world.cells.forEach((c, i) => { if (c.o === tribe.i) land.push(i); });
-      if (!land.length) continue;
-      const home = cellCentre(rect, tribe.capital);
-      while (crowd.length < want) {
-        crowd.push({ x: home.x, y: home.y, tx: home.x, ty: home.y, wait: Math.random() * 3, carry: 0 });
-      }
-      for (const p of crowd) {
-        const dx = p.tx - p.x;
-        const dy = p.ty - p.y;
-        const d = Math.hypot(dx, dy);
-        if (d < 3) {
-          p.wait -= dt;
-          if (p.wait <= 0) {
-            // Out to work, then home with what they found.
-            if (p.carry === 0 && land.length > 1 && Math.random() < 0.8) {
-              const cell = land[Math.floor(Math.random() * land.length)];
-              const to = cellCentre(rect, cell);
-              p.tx = to.x + (Math.random() - 0.5) * rect.w / COLS * 0.75;
-              p.ty = to.y + (Math.random() - 0.5) * rect.h / ROWS * 0.75;
-              p.carry = 1;
-              const rgb = world.cells[cell].rgb;
-              p.tint = rgbToHex(rgb[0], rgb[1], rgb[2]);
-            } else {
-              p.tx = home.x + (Math.random() - 0.5) * 24;
-              p.ty = home.y + (Math.random() - 0.5) * 16;
-              p.carry = p.carry === 1 ? 2 : 0;
-            }
-            p.wait = 1 + Math.random() * 4;
-          }
-        } else {
-          p.x += (dx / d) * 15 * dt;
-          p.y += (dy / d) * 15 * dt;
-        }
-      }
-    }
-    this.clashes.forEach((c) => { c.t += dt; });
-    this.clashes = this.clashes.filter((c) => c.t < 3.2);
-  }
-
-  draw(ctx, world, rect) {
-    if (world.showBorders) drawBorders(ctx, world, rect);
-    world.cells.forEach((cell, i) => {
-      if (cell.o < 0) return;
-      const tribe = world.tribes[cell.o];
-      const { x, y } = cellCentre(rect, i);
-      if (tribe.capital === i) {
-        drawTinted(ctx, 'society/keep.png', x, y, KEEP_SIZE, tribe.color);
-        label(ctx, tribe.name, x, y + 13, 10);
-      } else if ((i * 7) % 3 !== 0) {
-        drawTinted(ctx, 'society/hut.png', x + ((i * 13) % 19) - 9, y + ((i * 5) % 11) - 5, HUT_SIZE, tribe.color);
-      }
-    });
-    for (const tribe of world.tribes) {
-      for (const p of this.people.get(tribe.i) ?? []) {
-        drawTinted(ctx, 'society/citizen.png', p.x, p.y, CITIZEN_SIZE, tribe.color);
-        // What they are carrying home is a square of the land's real color.
-        if (p.carry === 2 && p.tint) {
-          ctx.fillStyle = p.tint;
-          ctx.fillRect(p.x + 4, p.y - 14, 4.5, 4.5);
-        }
-      }
-    }
-    // A fight on the border: one citizen from each side, face to face.
-    for (const c of this.clashes) {
-      ctx.globalAlpha = c.t < 2.6 ? 1 : (3.2 - c.t) / 0.6;
-      drawTinted(ctx, 'society/citizen.png', c.x - 8, c.y, CITIZEN_SIZE, c.a);
-      drawTinted(ctx, 'society/citizen.png', c.x + 8, c.y, CITIZEN_SIZE, c.b);
-      ctx.globalAlpha = 1;
-    }
-  }
-}
-
-function cellCentre(rect, cell) {
-  const col = cell % COLS;
-  const row = Math.floor(cell / COLS);
-  return { x: rect.x + ((col + 0.5) * rect.w) / COLS, y: rect.y + ((row + 0.5) * rect.h) / ROWS };
-}
-
-function drawBorders(ctx, world, rect) {
-  const cw = rect.w / COLS;
-  const ch = rect.h / ROWS;
-  world.cells.forEach((cell, i) => {
-    if (cell.o < 0) return;
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
-    const x = rect.x + col * cw;
-    const y = rect.y + row * ch;
-    const [r, g, b] = hexToRgb(world.tribes[cell.o].color);
-    ctx.fillStyle = `rgba(${r},${g},${b},0.05)`;
-    ctx.fillRect(x, y, cw, ch);
-    ctx.strokeStyle = `rgba(${r},${g},${b},0.55)`;
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    const owner = (c, ro) => (c < 0 || ro < 0 || c >= COLS || ro >= ROWS ? -2 : world.cells[ro * COLS + c].o);
-    if (owner(col, row - 1) !== cell.o) { ctx.moveTo(x, y); ctx.lineTo(x + cw, y); }
-    if (owner(col, row + 1) !== cell.o) { ctx.moveTo(x, y + ch); ctx.lineTo(x + cw, y + ch); }
-    if (owner(col - 1, row) !== cell.o) { ctx.moveTo(x, y); ctx.lineTo(x, y + ch); }
-    if (owner(col + 1, row) !== cell.o) { ctx.moveTo(x + cw, y); ctx.lineTo(x + cw, y + ch); }
-    ctx.stroke();
-  });
-}

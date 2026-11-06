@@ -1,14 +1,13 @@
 {
-  "quiet": true,
-  "bottomOnly": true,
+  "quiet": false,
+  "bottomOnly": false,
   "calm": false,
+  "dark": true,
   "scale": 0.5,
-  "opacity": 0.44999999999999996,
+  "opacity": 0.8,
   "team": [
-    "UltiLiam",
-    "Jotaro",
-    "LiamBody"
+    "Test egg"
   ],
-  "display": 55167590,
-  "active": "Jotaro"
+  "active": "Test egg",
+  "display": 1083108159
 }

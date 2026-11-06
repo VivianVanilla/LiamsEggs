@@ -7,11 +7,9 @@ import { statText } from './sheet.js';
 import { MUTATIONS, MAX_MUTATIONS } from '../data/mutations.js';
 import { QUIRKS, TRAITS, MAX_HP_GIVEN, OFA_ID, ofaLevelFor, TECHNIQUES } from '../data/powers.js';
 import { PATHS } from '../data/paths.js';
-import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_REST_HOURS, BREED_GIFTS, MAX_CARE_REST } from '../data/family.js';
+import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER } from '../data/family.js';
 import { PURE_BLOOD_CHANCE, MIN_SHARE, DEFAULT_RACE } from '../data/races.js';
 import { heritageOf } from './creature.js';
-
-const HOUR = 3600 * 1000;
 
 // ---------- the nurse ----------
 
@@ -20,24 +18,39 @@ export const isNurse = (c) => PATHS[c.path.line[0]]?.activity === 'care';
 // What the most trained nurse among these creatures adds to breeding. Without one, nothing.
 export function nurseHelp(creatures) {
   const best = creatures.filter((c) => c && !c.dead && isNurse(c)).sort((a, b) => pathNodes(b).length - pathNodes(a).length)[0];
-  if (!best) return { nurse: null, picks: 0, rest: 0, growth: 0 };
+  if (!best) return { nurse: null, picks: 0, save: 0, growth: 0 };
   const p = perksOf(best);
-  return { nurse: best, picks: p.carePicks, rest: Math.min(MAX_CARE_REST, p.careRest), growth: p.hatchGrowth };
+  return { nurse: best, picks: p.carePicks, save: Math.min(MAX_CARE_SAVE, p.careSave), growth: p.hatchGrowth };
+}
+
+// ---------- the Mega Breeder ----------
+
+// Why the household can't buy one, or null if it can.
+export function megaBreederProblem(house) {
+  if (house.megaBreeder) return 'You already have the Mega Breeder';
+  if (house.bank.gems < MEGA_BREEDER.cost) return `It costs ${MEGA_BREEDER.cost} gems`;
+  return null;
+}
+
+export function buyMegaBreeder(house) {
+  if (megaBreederProblem(house)) return false;
+  house.bank.gems -= MEGA_BREEDER.cost;
+  house.megaBreeder = true;
+  return true;
 }
 
 // ---------- breeding ----------
 
-export const giftLimit = (help) => BREED_GIFTS + (help?.picks ?? 0);
-export const restHours = (help) => BREED_REST_HOURS * (1 - (help?.rest ?? 0));
-export const restLeft = (c, now, help) => (c.bredAt ? Math.max(0, c.bredAt + restHours(help) * HOUR - now) : 0);
+// help is what helps this egg along: the nurse's help, plus mega: true with the Mega Breeder.
+export const giftLimit = (help) => BREED_GIFTS + (help?.picks ?? 0) + (help?.mega ? MEGA_BREEDER.gifts : 0);
+// The fullness each parent spends, after the nurse's help.
+export const breedCost = (help) => Math.round(BREED_COST * (1 - (help?.save ?? 0)));
 
 // Why this one can't be a parent right now, or null if it can.
-export function breedProblem(c, now = Date.now(), help = null) {
+export function breedProblem(c) {
   if (c.dead) return `${c.name} is gone`;
   if (stageIndex(c) < BREED_STAGE) return `${c.name} has to be a ${STAGES[BREED_STAGE].name} first (growth ${Math.floor(c.growth)} of ${STAGES[BREED_STAGE].at})`;
   if (c.fullness < BREED_FULLNESS) return `${c.name} is too hungry`;
-  const rest = restLeft(c, now, help);
-  if (rest > 0) return `${c.name} is resting for ${Math.ceil(rest / 60000)} more min`;
   return null;
 }
 
@@ -96,7 +109,7 @@ export const mainRace = (heritage) => Object.entries(heritage).filter(([id]) => 
 // Returns { baby } and spends both parents' fullness, or { problem } and changes nothing.
 export function breed(a, b, choice, name, now = Date.now(), help = null, rng = Math.random) {
   if (!a || !b || a.id === b.id) return { problem: 'It takes two' };
-  const problem = breedProblem(a, now, help) ?? breedProblem(b, now, help) ?? choiceProblem(a, b, choice, help);
+  const problem = breedProblem(a) ?? breedProblem(b) ?? choiceProblem(a, b, choice, help);
   if (problem) return { problem };
   const pick = (who) => (who === 'b' ? b : a);
   const first = pick(choice.family);
@@ -120,7 +133,7 @@ export function breed(a, b, choice, name, now = Date.now(), help = null, rng = M
   baby.parents = [{ id: a.id, name: fullName(a) }, { id: b.id, name: fullName(b) }];
   baby.growth = help?.growth ?? 0;
   for (const p of [a, b]) {
-    p.fullness = Math.max(0, p.fullness - BREED_COST);
+    p.fullness = Math.max(0, p.fullness - breedCost(help));
     p.bredAt = now;
   }
   return { baby };

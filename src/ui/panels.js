@@ -1,4 +1,4 @@
-// The creature menu, naming, feeding, job choices, the farm and the creature list.
+// The creature menu, naming and renaming, feeding, job choices, the farm and settings.
 
 import { toast, glow, newBadge, markSeen, rich } from './flair.js';
 import { G, api, saveCreature, creatureText } from '../state.js';
@@ -6,12 +6,13 @@ import { h, fill, button, openNote, closeNote, getNote, isTopNote, pickRect, not
 import {
   newCreature, parseCreature, serializeCreature, computeStats, stageOf, growthProgress,
   STAT_KEYS, STAT_LABELS, pathTitle, pathChoice, choosePath, nextTierProgress, isFinalForm, powerOf,
-  maxHpOf, powerReady, statLimits, STAT_LIMITS, fullName, ofaLevel, raceName,
+  maxHpOf, powerReady, statLimits, STAT_LIMITS, fullName, ofaLevel, raceName, mutationCap,
 } from '../core/creature.js';
 import { TEAM_MAX } from '../data/family.js';
 import { FOODS } from '../data/foods.js';
-import { MAX_MUTATIONS } from '../data/mutations.js';
 import { PATHS, ABILITIES } from '../data/paths.js';
+import { WEAPONS } from '../data/forge.js';
+import { EXPEDITIONS } from '../data/village.js';
 import { STANDS, QUIRKS, TECHNIQUES, LEGENDARY, TRAITS, OFA_ID } from '../data/powers.js';
 import { FRUITS } from '../data/fruits.js';
 import { RACES, DEFAULT_RACE } from '../data/races.js';
@@ -19,16 +20,17 @@ import { CROPS, CROP_IDS } from '../data/crafting.js';
 import { addField, removeField, farmCounts, fieldCap, animalCap, ANIMALS, adoptAnimal, animalUnlocked, TILE, setFieldCrop, waterFields, waterReadyIn } from '../sim/farm.js';
 import { dropRig, drawPortrait, hasArt, artUrl, setPictureScale } from '../draw/art.js';
 import { openDuel } from './duel.js';
-import { openArena, openSociety } from './boards.js';
+import { openArena } from './boards.js';
 import { openPowers } from './powers.js';
 import { openChallenges } from './challenges.js';
 import { openGuide } from './guide.js';
 import { openPlan } from './plan.js';
 import { openSheet } from './sheet.js';
 import { openWorkshop } from './workshop.js';
-import { openBreed } from './breed.js';
-import { openRoll } from './roll.js';
-import { openVillage } from './village.js';
+import { openNursery } from './nursery.js';
+import { openVillage, expeditionClock, tickClocks } from './village.js';
+import { openCreatures, renameCreature } from './creatures.js';
+import { openAdventure } from './adventure.js';
 import { nextStep } from '../core/advice.js';
 
 // ---------- naming ----------
@@ -113,8 +115,9 @@ function powerSummary(c) {
     technique2 && TECHNIQUES[technique2].name,
     fruit && FRUITS[fruit].name,
     ...quirks.map((id) => (id === OFA_ID ? `One For All ${ofaLevel(c)}` : QUIRKS[id].name)),
+    c.weapon && WEAPONS[c.weapon]?.name,
   ].filter(Boolean);
-  const mutations = `${c.mutations.length} of ${MAX_MUTATIONS} mutations`;
+  const mutations = `${c.mutations.length} of ${mutationCap(c)} mutations`;
   return names.length ? `${names.join(', ')}. ${mutations}.` : `${mutations}.`;
 }
 
@@ -140,12 +143,21 @@ export function openMenu() {
       const [best, second, third, fourth, worst] = STAT_LIMITS;
 
       // Who it is, at a glance. The details live in the What it has note.
+      // The household at a glance, beside who it is.
+      const count = G.everyone.length || G.team.length;
+      const household = [
+        `${Math.floor(G.house.bank.gems)} gems`,
+        `${Math.floor(G.house.ore)} ore`,
+        `${count} creature${count === 1 ? '' : 's'}`,
+        G.house.adventure.best > 0 && `Adventure ${G.house.adventure.best}/20`,
+      ].filter(Boolean).join(', ');
       fill(body, h('div', { class: 'row nowrap' },
         canvas,
         h('div', { class: 'grow' },
           note.refs.stage,
           h('div', { class: 'small' }, `Power ${powerOf(c)}, max HP ${maxHpOf(c)}`),
           h('div', { class: 'small' }, powerSummary(c)),
+          h('div', { class: 'small household' }, household),
           meter('Fullness', '', note.refs.food),
           meter('Growth', 'green', note.refs.grow),
           tier && meter(`Next job`, '', h('i', { style: `width:${Math.min(100, (tier.xp / tier.at) * 100)}%;background:#8a5ad0`, title: `${Math.floor(tier.xp)} of ${tier.at} XP` }))),
@@ -173,10 +185,19 @@ export function openMenu() {
           tip.go && glow(button('Go', () => openAny(tip.go), 'mini'))));
       }
 
+      // The next expedition home, counting down.
+      note.refs.clocks = [];
+      const next = G.house.expeditions.slice().sort((x, y) => x.end - y.end)[0];
+      if (next) {
+        fill(body,
+          h('div', { class: 'small', style: 'margin-top:4px' }, `${G.house.expeditions.length === 1 ? 'Expedition' : `${G.house.expeditions.length} expeditions out. Next one`} back from ${EXPEDITIONS[next.where].name.toLowerCase()}:`),
+          expeditionClock(note, next));
+      }
+
       fill(body,
         h('div', { class: 'gap', style: 'display:grid;gap:3px;margin-top:6px' }, STAT_KEYS.map((k) => statRow(k, stats[k], limits[k]))),
         h('div', { class: 'small', style: 'margin-top:3px' }, `Only one stat can reach ${best}, one ${second}, one ${third}, one ${fourth}, one ${worst}.`),
-        actionRow('Raise it',
+        actionRow('Look after it',
           act('Feed', leaveMenu(openFeed), 'Free snacks, and the plants your farms grew'),
           mining
             ? act('Stop mining', () => {
@@ -185,34 +206,37 @@ export function openMenu() {
             }, 'Stop the mining run it is on', 'hot')
             : act('Mine colors', leaveMenu(beginMine), 'Draw a box on your screen and it digs the colors out'),
           act('Farm', leaveMenu(openFarm), 'Fields, plants and animals'),
-          act('Workshop', leaveMenu(openWorkshop), 'Spend the shared bank on dye, charms and paint')),
+          act('Workshop', leaveMenu(openWorkshop), 'Dye, charms, paint, and the forge for weapons')),
+        actionRow('Its build',
+          act('Powers', leaveMenu(openPowers), 'Stands, speedster powers, cursed techniques, Quirks, One For All'),
+          act('Battle plan', leaveMenu(openPlan), 'Its moves, and how it fights'),
+          act('What it has', leaveMenu(openSheet), 'Everything it has, and what each thing does')),
         actionRow('Fight',
-          act('Puzzle duel', leaveMenu(openDuel), 'Play a puzzle against it'),
+          newBadge(act('Adventure', leaveMenu(openAdventure), 'A 20-level campaign for a party of three', '', !!G.challenge), 'adventure'),
           act('Challenges', leaveMenu(openChallenges), 'Training monsters, and fights to the death'),
           act('Arena', leaveMenu(openArena), 'A free-for-all with any .creature files', '', !!G.challenge),
-          act('Society', leaveMenu(() => openVillage('map')), 'Your village as a people on your screen')),
-        actionRow('Its build',
-          act('Battle plan', leaveMenu(openPlan), 'Its moves, and how it fights'),
-          act('Powers', leaveMenu(openPowers), 'Stands, speedster powers, cursed techniques, Quirks, One For All'),
-          act('What it has', leaveMenu(openSheet), 'Everything it has, and what each thing does'),
-          act('Guide', leaveMenu(() => openGuide()), 'Where to start, how stats grow, every chance, breeding')),
-        actionRow('Family',
-          newBadge(act('Village', leaveMenu(openVillage), 'Every creature you have, expeditions, waves and raids'), 'village'),
-          newBadge(act('Breed', leaveMenu(openBreed), 'Two creatures make an egg, and you choose what it gets'), 'breed'),
-          newBadge(act('Roll eggs', leaveMenu(openRoll), 'See an egg\'s family and gifts before you keep it'), 'roll')),
+          act('Puzzle duel', leaveMenu(openDuel), 'Play a puzzle against it')),
+        actionRow('Your creatures',
+          newBadge(act('Creatures', leaveMenu(openCreatures), 'Every creature you have, in one place'), 'creatures'),
+          newBadge(act('Nursery', leaveMenu(() => openNursery()), 'Breed, hatch eggs, use items, the Mega Breeder'), 'nursery'),
+          newBadge(act('Village', leaveMenu(() => openVillage()), 'Work, the Legendary Mine, and expeditions'), 'village')),
         h('div', { class: 'menufoot' },
+          footButton('Guide', leaveMenu(() => openGuide())),
+          footButton('Rename', leaveMenu(openRename)),
           footButton('Settings', leaveMenu(openSettings)),
           footButton('Export', () => exportCreature(), !isFinalForm(c), isFinalForm(c) ? '' : 'It can be exported once it reaches a final form'),
           footButton('Close game', () => api.closeGame())),
       );
       // The button for the next step glows too, wherever it is in the grid.
-      const target = tip && ({ feed: 'Feed', farm: 'Farm', mine: 'Mine colors', workshop: 'Workshop', challenges: 'Challenges', roll: 'Roll eggs', breed: 'Breed', expeditions: 'Village', village: 'Village', powers: 'Powers' }[tip.go] ?? (String(tip.go).startsWith('guide') ? 'Guide' : null));
+      const goKey = String(tip?.go ?? '').split(':')[0];
+      const target = tip && ({ feed: 'Feed', farm: 'Farm', mine: 'Mine colors', workshop: 'Workshop', challenges: 'Challenges', nursery: 'Nursery', expeditions: 'Village', village: 'Village', creatures: 'Creatures', adventure: 'Adventure', powers: 'Powers' }[goKey] ?? null);
       if (target) glow([...body.querySelectorAll('.actions .btn')].find((b) => b.textContent === target));
       note.spec.tick(note);
     },
     tick(note) {
       const { canvas, food, grow, stage } = note.refs;
       if (!canvas) return;
+      tickClocks(note);
       drawPortrait(canvas, c);
       food.style.width = `${c.fullness}%`;
       grow.style.width = `${growthProgress(c) * 100}%`;
@@ -244,17 +268,22 @@ export function toggleMenu() {
 // Opens anything by name: from the taskbar and its jump list, the menu's tip, and the guide.
 // Something that needs a creature opens the village instead when nobody is being looked after.
 const OPEN = {
-  village: (tab) => openVillage(tab || 'creatures'),
-  creatures: () => openVillage('creatures'),
+  village: (tab) => openVillage(tab || 'work'),
+  mine: () => openVillage('mine'),
   expeditions: () => openVillage('expeditions'),
-  raids: () => openVillage('raids'),
-  breed: () => openBreed(),
-  roll: () => openRoll(),
+  creatures: () => openCreatures(),
+  nursery: (tab) => openNursery(tab || 'breed'),
+  breed: () => openNursery('breed'),
+  roll: () => openNursery('eggs'),
+  eggs: () => openNursery('eggs'),
+  items: () => openNursery('bag'),
+  adventure: () => openAdventure(),
   settings: () => openSettings(),
   arena: () => openArena(),
-  society: () => openSociety(),
 };
 const FOR_ONE = {
+  rename: () => openRename(),
+  forge: () => openWorkshop('forge'),
   menu: () => openMenu(),
   feed: () => openFeed(),
   farm: () => openFarm(),
@@ -272,7 +301,7 @@ export function openAny(what = 'menu') {
   const [key, page] = String(what).split(':');
   if (key === 'guide') openGuide(page || 'start');
   else if (OPEN[key]) OPEN[key](page);
-  else if (!G.creature) openVillage();
+  else if (!G.creature) openCreatures();
   else (FOR_ONE[key] ?? FOR_ONE.menu)();
 }
 G.open = openAny;
@@ -335,6 +364,10 @@ export async function openSettings() {
         toggle('quiet', 'Quiet mode (no speech bubbles)'),
         toggle('bottomOnly', 'Stay near the bottom of the screen'),
         toggle('calm', 'Calm mode (no big popups or flashing hints)'),
+        h('div', { class: 'sect' }, 'Look'),
+        toggle('dark', 'Dark mode (night paper)'),
+        h('div', { class: 'sect' }, 'Taskbar'),
+        h('div', { class: 'small' }, 'To keep it on your taskbar: start the game with Creature.exe, right-click Creature on the taskbar, and choose Pin to taskbar.'),
         h('div', { class: 'row gap' }, button('Close the game', () => api.closeGame(), 'big')),
       );
     },
@@ -586,7 +619,45 @@ async function digField() {
   openFarm();
 }
 
-// ---------- your creatures ----------
+// ---------- renaming ----------
 
-// They live in the village note now: the three out on your screen, and everyone else.
-export const openCreatures = () => openVillage('creatures');
+// The creature list moved to a note of its own; it can still be opened from here.
+export { openCreatures };
+
+// A new name for the one being looked after. Its .creature file is renamed to match.
+export function openRename() {
+  const c = G.creature;
+  if (!c) return;
+  openNote('rename', {
+    title: `Rename ${c.name}`,
+    cls: 'paper',
+    width: 290,
+    focus: true,
+    message: '',
+    build(body, note) {
+      const input = h('input', { type: 'text', maxLength: 24, spellcheck: false, value: c.name });
+      const go = async () => {
+        const before = c.name;
+        const res = await renameCreature(G.base, c, input.value);
+        if (res.problem) {
+          note.spec.message = res.problem;
+          note.rebuild();
+          return;
+        }
+        note.close();
+        if (before !== c.name) toast(`${before.toUpperCase()} IS NOW ${c.name.toUpperCase()}!`, 'good');
+      };
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      fill(body,
+        h('div', { class: 'small' }, 'Its .creature file gets the new name too. Its family name stays the same.'),
+        h('div', { class: 'row gap' }, input),
+        note.spec.message && h('div', { class: 'warning' }, note.spec.message),
+        h('div', { class: 'row gap' }, button('Rename it', go, 'big hot')),
+      );
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 60);
+    },
+  });
+}

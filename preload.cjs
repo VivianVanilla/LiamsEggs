@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
   listCreatures: () => ipcRenderer.invoke('creature:list'),
   saveCreature: (base, text) => ipcRenderer.invoke('creature:save', base, text),
   buryCreature: (base, text) => ipcRenderer.invoke('creature:bury', base, text),
+  renameCreature: (base, name, text) => ipcRenderer.invoke('creature:rename', base, name, text),
   listGraves: () => ipcRenderer.invoke('creature:graves'),
   newCreatureBase: (name) => ipcRenderer.invoke('creature:newBase', name),
   readDroppedCreature: (file) => ipcRenderer.invoke('creature:readDropped', file),

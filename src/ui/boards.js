@@ -1,6 +1,6 @@
-// The arena board and the society board: both start from a roster of .creature files.
+// The arena board: a free-for-all from a roster of .creature files.
 
-import { G, api, saveCreature, saveWorld } from '../state.js';
+import { G, api, saveCreature } from '../state.js';
 import { h, fill, button, openNote, getNote } from './notes.js';
 import { parseCreature, serializeCreature, wildCreature, stageOf, pathTitle, powerOf, ofaLevel, raceName } from '../core/creature.js';
 import { STANDS, QUIRKS, TECHNIQUES, TRAITS, OFA_ID } from '../data/powers.js';
@@ -9,9 +9,7 @@ import { RACES, DEFAULT_RACE } from '../data/races.js';
 import { useUpPrep } from '../core/craft.js';
 import { coachRow } from './plan.js';
 import { Bout } from '../sim/arena.js';
-import { newWorld, COLS, ROWS } from '../sim/society.js';
 import { drawPortrait } from '../draw/art.js';
-import { SocietyView } from '../draw/scene.js';
 
 const MAX_ROSTER = 8;
 
@@ -146,7 +144,6 @@ function ringLayout() {
 // A creature that dies doesn't get to fight on in anyone's line-up.
 export function forgetFighter(id) {
   arena.roster = arena.roster.filter((c) => c.id !== id);
-  society.roster = society.roster.filter((c) => c.id !== id);
 }
 
 export async function openArena({ importPaths = [] } = {}) {
@@ -245,114 +242,4 @@ export function onBoutEnded(bout) {
     saveCreature(m.c);
   }
   getNote('arena')?.rebuild();
-}
-
-// ---------- society ----------
-
-const society = { roster: [] };
-
-export function openSociety() {
-  openNote('society', {
-    title: 'The Societies',
-    cls: 'parch',
-    width: 374,
-    corner: 'right',
-    build(body, note) {
-      if (G.society) buildWorldView(body, note);
-      else buildWorldSetup(body, note);
-    },
-    tick(note) {
-      tickPortraits(note);
-      if (G.society && note.refs.table) paintWorld(note);
-    },
-  });
-}
-
-function buildWorldSetup(body, note) {
-  fill(body, h('div', { class: 'small', style: 'margin-bottom:6px' },
-    'Each creature founds a people on your screen. The land is read from the colors on your screen right now: bright areas are farmland, dark areas hold ore, vivid colors hold chroma. Then they grow, research and slowly fight for it. It takes hours, and keeps going while you work.'));
-  rosterEditor(body, note, society.roster);
-  fill(body, h('div', { class: 'row gap' }, button(society.roster.length < 2 ? 'Add at least two' : 'Found the world', () => foundWorld(note), 'big hot', society.roster.length < 2)));
-}
-
-async function foundWorld(note) {
-  const { work } = G.screen;
-  let colors = null;
-  try {
-    const grid = await api.sampleScreen({ x: work.x, y: work.y, w: work.w, h: work.h, cols: COLS, rows: ROWS });
-    if (grid.cols === COLS && grid.rows === ROWS) colors = grid.colors;
-  } catch (err) {
-    console.error(err);
-  }
-  G.society = newWorld(society.roster.map((c) => parseCreature(serializeCreature(c))), { colors, seed: Math.floor(Math.random() * 2 ** 31) });
-  G.societyView = new SocietyView();
-  society.roster = [];
-  saveWorld();
-  note.rebuild();
-}
-
-function buildWorldView(body, note) {
-  const w = G.society;
-  note.refs.head = h('div', { class: 'small', style: 'margin-bottom:4px' });
-  note.refs.table = h('table', { class: 'tribes' });
-  note.refs.chronicle = h('div', { class: 'chronicle' });
-  note.refs.lastLog = -1;
-  const showBtn = button(w.hideView ? 'Show on screen' : 'Hide from screen', () => {
-    w.hideView = !w.hideView;
-    showBtn.textContent = w.hideView ? 'Show on screen' : 'Hide from screen';
-  });
-  const pauseBtn = button(w.paused ? 'Resume' : 'Pause', () => {
-    w.paused = !w.paused;
-    pauseBtn.textContent = w.paused ? 'Resume' : 'Pause';
-  });
-  const borderBtn = button(w.showBorders ? 'Hide borders' : 'Show borders', () => {
-    w.showBorders = !w.showBorders;
-    borderBtn.textContent = w.showBorders ? 'Hide borders' : 'Show borders';
-  });
-  let confirm = false;
-  const endBtn = button('End world', () => {
-    if (!confirm) {
-      confirm = true;
-      endBtn.textContent = 'Really end it?';
-      return;
-    }
-    G.society = null;
-    G.societyView = null;
-    api.saveData('society', 'null');
-    note.rebuild();
-  });
-  fill(body, 
-    note.refs.head,
-    note.refs.table,
-    h('div', { class: 'sect' }, 'Chronicle'),
-    note.refs.chronicle,
-    h('div', { class: 'row gap' }, showBtn, pauseBtn, borderBtn, endBtn),
-  );
-  paintWorld(note);
-}
-
-function paintWorld(note) {
-  const w = G.society;
-  const { head, table, chronicle } = note.refs;
-  head.textContent = w.ended
-    ? `Day ${w.tick}. It is over.`
-    : `Day ${w.tick}${w.paused ? ' (paused)' : ''}. A day is about 10 seconds.`;
-  const order = w.tribes.slice().sort((a, b) => (b.alive - a.alive) || (b.cells - a.cells) || (b.pop - a.pop));
-  table.replaceChildren(
-    h('tr', null, ['People', 'Land', 'Pop', 'Food', 'Ore', 'Tech', 'Wins'].map((t) => h('th', null, t))),
-    ...order.map((t) => h('tr', { class: t.alive ? '' : 'dead' },
-      h('td', { title: `${t.leader}, ${t.job}` }, h('span', { class: 'dot', style: `background:${t.color}` }), t.name),
-      h('td', null, t.cells),
-      h('td', null, Math.round(t.pop)),
-      h('td', null, Math.round(t.food)),
-      h('td', null, Math.round(t.ore)),
-      h('td', null, t.tech.tools + t.tech.walls + t.tech.banners),
-      h('td', null, t.wins))),
-  );
-  const last = w.log[w.log.length - 1];
-  const stamp = last ? `${w.log.length}:${last.t}:${last.text}` : '';
-  if (stamp !== note.refs.lastLog) {
-    note.refs.lastLog = stamp;
-    chronicle.replaceChildren(...w.log.slice(-60).reverse().map((e) => h('div', { class: e.kind }, h('span', { class: 't' }, `Day ${e.t}`), e.text)));
-  }
 }

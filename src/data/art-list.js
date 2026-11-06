@@ -54,11 +54,6 @@ export const ART_GROUPS = [
   { name: 'Food files', size: '128 x 128', note: 'What a food file looks like when it gets dragged onto the creature.' },
   { name: 'Animals', size: '128 x 128', note: 'Facing right, standing at the bottom of the canvas.' },
   { name: 'Farm', size: '64 x 64', note: 'One tile of a field, and the crop that sits on it.' },
-  {
-    name: 'Society',
-    size: '128 x 128',
-    note: 'Standing at the bottom of the canvas. Use pale colors: each people\'s color is tinted over these.',
-  },
   { name: 'Tray icon', size: '32 x 32', note: 'The little icon next to your clock.' },
   {
     name: 'Mutations',
@@ -118,10 +113,6 @@ export const ART_FILES = [
   { file: 'farm/crop-2.png', group: 'Farm', what: 'A crop half grown' },
   { file: 'farm/crop-3.png', group: 'Farm', what: 'A ripe crop' },
   ...CROP_IDS.map((id) => ({ file: `farm/${id}.png`, group: 'Farm', what: `A ripe ${CROPS[id].name}` })),
-
-  { file: 'society/hut.png', group: 'Society', what: 'A hut on land a people owns' },
-  { file: 'society/keep.png', group: 'Society', what: 'A people\'s capital' },
-  { file: 'society/citizen.png', group: 'Society', what: 'One tiny citizen' },
 
   { file: 'icons/tray.png', group: 'Tray icon', what: 'Until this exists, the tray shows the plain Electron icon.' },
 

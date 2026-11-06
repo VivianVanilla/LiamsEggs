@@ -15,8 +15,11 @@ import {
 import { addField, nextJob, doJob, tickFarm, adoptAnimal, eatFromStore, growMs, TILE } from '../src/sim/farm.js';
 import { nimMove, newFour, fourDrop, fourWinner, fourMove, fourLegal, makeLights, lightsPress, lightsSolved, echoRecallChance } from '../src/sim/puzzles.js';
 import { runBout, Bout } from '../src/sim/arena.js';
-import { newWorld, tickWorld, sanitizeWorld, catchUp, COLS, ROWS, TICK_MS } from '../src/sim/society.js';
 import { makeRng } from '../src/lib/util.js';
+
+// An egg's born-with gifts are random, and some change how a fight goes, so the creatures made
+// here have none. traits.test.js tests the gifts themselves.
+const plainCreature = (...args) => Object.assign(newCreature(...args), { traits: [] });
 
 const food = (ext, n, size = 1024) => ({ ext, name: `${ext}${n}`, sha: `${n.toString(16).padStart(8, '0')}abcdef`, size, snippet: 'x' });
 
@@ -25,7 +28,6 @@ test('every path node, ability and mutation in the tree is wired up', () => {
     if (node.parent) assert.ok(PATHS[node.parent].kids.includes(id), `${id} parent link`);
     if (node.tier === 3) {
       assert.ok(ABILITIES[node.ability], `${id} ability`);
-      assert.ok(node.society, `${id} society persona`);
     } else {
       assert.equal(node.kids.length, 2, `${id} has two sub-paths`);
       node.kids.forEach((kid) => assert.ok(PATHS[kid], `${id} kid ${kid}`));
@@ -58,7 +60,7 @@ test('the game never draws pictures of its own: only art files, text and plain m
 });
 
 test('eating files grows it and eventually mutates it', () => {
-  const c = newCreature('Bob');
+  const c = plainCreature('Bob');
   const first = absorbFile(c, food('bone', 1));
   assert.equal(first.mutation, null);
   assert.equal(c.absorbed.length, 1);
@@ -69,7 +71,7 @@ test('eating files grows it and eventually mutates it', () => {
 });
 
 test('the same file twice gives half food and no essence, so copying a file is no shortcut', () => {
-  const c = newCreature('Bob');
+  const c = plainCreature('Bob');
   absorbFile(c, food('ink', 1));
   const again = absorbFile(c, food('ink', 1));
   assert.equal(again.seen, true);
@@ -80,7 +82,7 @@ test('the same file twice gives half food and no essence, so copying a file is n
 test('file contents decide which mutation grows', () => {
   const made = new Set();
   for (let i = 0; i < 40; i++) {
-    const c = newCreature('A');
+    const c = plainCreature('A');
     absorbFile(c, food('goo', i * 977 + 1));
     const r = absorbFile(c, food('goo', i * 1213 + 3));
     made.add(r.mutation.id);
@@ -94,7 +96,7 @@ test('bigger files feed more, up to a cap', () => {
 });
 
 test('path tree: choose root, then sub-paths at XP thresholds, ending in a final form', () => {
-  const c = newCreature('Bob');
+  const c = plainCreature('Bob');
   assert.equal(pathChoice(c), null, 'a hatchling cannot choose yet');
   c.growth = STAGES[1].at;
   assert.deepEqual(pathChoice(c), ROOT_PATHS);
@@ -114,7 +116,7 @@ test('path tree: choose root, then sub-paths at XP thresholds, ending in a final
 });
 
 test('mined colors tint the creature and raise matching stats', () => {
-  const c = newCreature('Bob');
+  const c = plainCreature('Bob');
   const before = computeStats(c);
   const white = creatureColors(c).body;
   addColor(c, 240, 30, 30, 900);
@@ -125,7 +127,7 @@ test('mined colors tint the creature and raise matching stats', () => {
 });
 
 test('a save survives a round trip with its stats intact', () => {
-  const c = newCreature('Round Trip');
+  const c = plainCreature('Round Trip');
   absorbFile(c, food('ember', 1));
   absorbFile(c, food('ember', 2));
   addColor(c, 20, 200, 80, 120);
@@ -178,7 +180,7 @@ test('hostile .creature files are defused, not trusted', () => {
 });
 
 test('farm: till, plant, wait, harvest, then the creature feeds itself', () => {
-  const c = newCreature('Farmer');
+  const c = plainCreature('Farmer');
   const t0 = 1_000_000;
   const f = addField(c, { x: 100, y: 100, w: TILE * 2, h: TILE });
   assert.equal(f.tiles.length, 2);
@@ -208,7 +210,7 @@ test('farm: till, plant, wait, harvest, then the creature feeds itself', () => {
 });
 
 test('farm: crops keep growing while closed, animals lay, and a long gap does not hang', () => {
-  const c = newCreature('Farmer');
+  const c = plainCreature('Farmer');
   const t0 = 2_000_000;
   c.farm.lastTick = t0;
   c.farm.store = 10;
@@ -319,7 +321,7 @@ test('arena: a stronger creature usually beats a weaker one, and upsets still ha
 
 // A creature with exactly these training points, and nothing else raising its stats.
 function trained(amounts, name = 'Trainee') {
-  const c = newCreature(name);
+  const c = plainCreature(name);
   Object.assign(c.training, amounts);
   return c;
 }
@@ -382,7 +384,7 @@ test('its soul decides the Stand: what it leans on picks the group, and the same
   for (const lean of STAT_KEYS) {
     const made = new Set();
     for (let i = 0; i < 40; i++) {
-      const c = newCreature(`S${i}`);
+      const c = plainCreature(`S${i}`);
       c.id = `soul${i}`;
       c.training[lean] = 40;
       assert.equal(soulLean(c), lean);
@@ -397,7 +399,7 @@ test('its soul decides the Stand: what it leans on picks the group, and the same
 });
 
 test('a Stand chart is graded from its real stats', () => {
-  const weak = newCreature('Weak');
+  const weak = plainCreature('Weak');
   const strong = trained({ might: 40 });
   strong.essence.ember = 200;
   const grade = (c, label) => standCard(c).find(([name]) => name === label)[1];
@@ -462,13 +464,13 @@ test('a Quirk takes its share of max HP for good, and there is a floor', () => {
   const back = parseCreature(serializeCreature(c));
   assert.deepEqual(back.powers.quirks, c.powers.quirks);
   assert.equal(maxHpOf(back), maxHpOf(c));
-  const fighter = new Bout([back, newCreature('X')], { seed: 1 }).fighters[0];
+  const fighter = new Bout([back, plainCreature('X')], { seed: 1 }).fighters[0];
   assert.equal(fighter.maxHp, maxHpOf(back), 'the arena uses the same number the menu shows');
   assert.equal(fighter.hp, fighter.maxHp);
 });
 
 test('saves from before powers existed load with none, and old stats are untouched', () => {
-  const c = newCreature('Old Timer');
+  const c = plainCreature('Old Timer');
   c.training.vigor = 6;
   const raw = JSON.parse(serializeCreature(c));
   delete raw.powers;
@@ -496,7 +498,7 @@ test('hostile powers in a .creature file are defused', () => {
 });
 
 test('the same save always costs the same HP: the price can\'t be edited out of a file', () => {
-  const c = newCreature('Editor');
+  const c = plainCreature('Editor');
   gainQuirk(c, 'oneforall');
   const raw = JSON.parse(serializeCreature(c));
   raw.summary.maxHp = 999999;
@@ -565,11 +567,11 @@ test('stopped time holds the other side, not the one who stopped it, and then en
 });
 
 test('a Stand that can move in stopped time is not caught by someone else stopping it', () => {
-  const a = newCreature('A');
-  const b = newCreature('B');
+  const a = plainCreature('A');
+  const b = plainCreature('B');
   a.powers.stand = 'theworld';
   b.powers.stand = 'starplatinum';
-  const c = newCreature('C');
+  const c = plainCreature('C');
   const bout = new Bout([a, b, c], { seed: 1 });
   bout.stopLeft = 2;
   bout.stopTeam = 0;
@@ -614,8 +616,8 @@ test('a Stand rush goes over and lands its hits, then the Stand comes home', () 
 });
 
 test('nobody wastes stopped time on someone it cannot catch', () => {
-  const a = newCreature('A');
-  const b = newCreature('B');
+  const a = plainCreature('A');
+  const b = plainCreature('B');
   a.powers.stand = 'theworld';
   b.powers.stand = 'starplatinum';
   const bout = new Bout([a, b], { seed: 1 });
@@ -629,17 +631,17 @@ test('nobody wastes stopped time on someone it cannot catch', () => {
 });
 
 test('bigger pictures stand further apart in the ring, and fight the same', () => {
-  const small = new Bout([newCreature('A'), newCreature('B')], { seed: 1, sizeMul: 0.5 });
-  const big = new Bout([newCreature('A'), newCreature('B')], { seed: 1, sizeMul: 2 });
+  const small = new Bout([plainCreature('A'), plainCreature('B')], { seed: 1, sizeMul: 0.5 });
+  const big = new Bout([plainCreature('A'), plainCreature('B')], { seed: 1, sizeMul: 2 });
   assert.equal(big.fighters[0].size, small.fighters[0].size * 4);
   assert.equal(big.fighters[0].maxHp, small.fighters[0].maxHp);
   assert.equal(big.fighters[0].atk, small.fighters[0].atk);
 });
 
 test('a stunned user calls its Stand back', () => {
-  const a = newCreature('A');
+  const a = plainCreature('A');
   a.powers.stand = 'starplatinum';
-  const bout = new Bout([a, newCreature('B')], { seed: 5, cx: 500, cy: 400, r: 120 });
+  const bout = new Bout([a, plainCreature('B')], { seed: 5, cx: 500, cy: 400, r: 120 });
   const [user, foe] = bout.fighters;
   user.stand.rush = { target: foe, hits: 6, power: 0.4, every: 0.1, clock: 0 };
   user.stun = 1;
@@ -748,8 +750,8 @@ test('arena: fights with every power still end, with a winner, in time', () => {
 });
 
 test('a double knockout still has a winner', () => {
-  const a = newCreature('A');
-  const b = newCreature('B');
+  const a = plainCreature('A');
+  const b = plainCreature('B');
   const bout = new Bout([a, b], { seed: 1 });
   const [fa, fb] = bout.fighters;
   fa.damageDone = 10;
@@ -764,6 +766,8 @@ test('powers are worth having, without deciding every fight', () => {
   const plain = (seed) => {
     const c = wildCreature(seed, 3);
     c.powers = { stand: null, speedster: false, quirks: [] };
+    // Born-with gifts are tested on their own, in traits.test.js.
+    c.traits = [];
     c.battle.stance = 'close';
     return c;
   };
@@ -791,103 +795,6 @@ test('powers are worth having, without deciding every fight', () => {
     const r = rate((c) => { c.powers.quirks.push(id); });
     assert.ok(r > 0.42 && r < 0.85, `${id} won ${r}: too ${r > 0.5 ? 'good' : 'bad'} for ${QUIRKS[id].cost}% of its health`);
   }
-});
-
-test('society: a leader\'s powers reach its people, and survive a reload', () => {
-  const leader = wildCreature(1, 3);
-  leader.legendary = 'twinsoul'; // it takes a Legendary mutation to hold both of these
-  leader.powers = { stand: 'theworld', speedster: true, technique: null, quirks: ['oneforall'] };
-  const rival = wildCreature(2, 3);
-  rival.powers = { stand: null, speedster: false, quirks: [] };
-  const world = newWorld([leader, rival], { seed: 3 });
-  const [mine, theirs] = world.tribes;
-  assert.equal(mine.stand, 'The World');
-  assert.ok(mine.fightEdge > theirs.fightEdge);
-  assert.ok(mine.settleEdge > theirs.settleEdge);
-  assert.ok(mine.roomLeft < theirs.roomLeft);
-  const back = sanitizeWorld(JSON.parse(JSON.stringify(world)));
-  assert.equal(back.tribes[0].stand, 'The World');
-  assert.equal(back.tribes[0].fightEdge, mine.fightEdge);
-  tickWorld(world, 400);
-  tickWorld(back, 400);
-  assert.deepEqual(back.cells.map((c) => c.o), world.cells.map((c) => c.o), 'same future after reload');
-  // A world saved before powers existed loads too.
-  const old = JSON.parse(JSON.stringify(newWorld([rival, wildCreature(4, 2)], { seed: 5 })));
-  old.tribes.forEach((t) => { delete t.creature.powers; delete t.fightEdge; delete t.settleEdge; delete t.roomLeft; delete t.stand; });
-  const loaded = sanitizeWorld(old);
-  tickWorld(loaded, 50);
-  assert.equal(loaded.tribes[0].fightEdge, 1);
-});
-
-test('society: worlds run, people gather and research, and a save reloads', () => {
-  const roster = [wildCreature(1, 3), wildCreature(2, 3), wildCreature(3, 2), wildCreature(4, 1)];
-  const world = newWorld(roster, { seed: 77 });
-  assert.equal(world.cells.length, COLS * ROWS);
-  tickWorld(world, 400);
-  const living = world.tribes.filter((t) => t.alive);
-  assert.ok(living.length >= 1);
-  assert.ok(world.cells.filter((c) => c.o >= 0).length > roster.length, 'they expanded');
-  assert.ok(world.log.length > 1, 'the chronicle has entries');
-
-  const reloaded = sanitizeWorld(JSON.parse(JSON.stringify(world)));
-  assert.equal(reloaded.tick, world.tick);
-  assert.deepEqual(reloaded.cells.map((c) => c.o), world.cells.map((c) => c.o));
-  tickWorld(world, 25);
-  tickWorld(reloaded, 25);
-  assert.deepEqual(reloaded.cells.map((c) => c.o), world.cells.map((c) => c.o), 'same future after reload');
-});
-
-test('society: stats and numbers stay finite and tribes that hold land are alive', () => {
-  for (let seed = 0; seed < 6; seed++) {
-    const roster = [0, 1, 2].map((i) => wildCreature(seed * 10 + i, 1 + i));
-    const world = newWorld(roster, { seed });
-    tickWorld(world, 3000);
-    for (const t of world.tribes) {
-      for (const k of ['pop', 'food', 'ore', 'chroma']) assert.ok(Number.isFinite(t[k]), `${k} finite`);
-    }
-    world.cells.forEach((cell) => {
-      if (cell.o >= 0) assert.ok(world.tribes[cell.o].alive, 'land never belongs to a fallen people');
-    });
-  }
-});
-
-test('society: a people never attacks its own land', () => {
-  for (let seed = 0; seed < 8; seed++) {
-    const world = newWorld(Array.from({ length: 6 }, (_, i) => wildCreature(seed * 50 + i, 1 + (i % 3))), { seed });
-    tickWorld(world, 2500, (ev) => assert.notEqual(ev.a, ev.b, `tick ${world.tick}`));
-    for (const entry of world.log) {
-      const m = entry.text.match(/^(.+) took the .+ from (.+).$/);
-      if (m) assert.notEqual(m[1], m[2], entry.text);
-    }
-  }
-});
-
-test('society: most days a people has food, and ore stays a sane stockpile', () => {
-  const world = newWorld([wildCreature(11, 3), wildCreature(12, 3), wildCreature(13, 2)], { seed: 4 });
-  let fedDays = 0;
-  let total = 0;
-  for (let i = 0; i < 800; i++) {
-    tickWorld(world, 1);
-    for (const tribe of world.tribes) {
-      if (!tribe.alive) continue;
-      total++;
-      if (tribe.food > 0) fedDays++;
-      assert.ok(tribe.ore <= 80 + 144 * 6 + 20, `ore ${tribe.ore}`);
-    }
-  }
-  assert.ok(fedDays / total > 0.6, `fed ${Math.round((100 * fedDays) / total)}% of days`);
-});
-
-test('society: closing the game for a long time catches up, capped', () => {
-  const world = newWorld([wildCreature(1, 2), wildCreature(2, 2)], { seed: 2, now: 0 });
-  const ran = catchUp(world, TICK_MS * 100000, 1, 720);
-  assert.equal(ran, world.tick);
-  assert.ok(ran <= 720);
-});
-
-test('society: rejects a corrupt save', () => {
-  assert.throws(() => sanitizeWorld({ format: 'society/1', cells: [], tribes: [] }));
-  assert.throws(() => sanitizeWorld(null));
 });
 
 test('food definitions match their keys', () => {

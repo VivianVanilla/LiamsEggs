@@ -203,7 +203,9 @@ async function run() {
   ok('non-food is refused and left alone', fs.existsSync(path.join(HOME, 'important.txt')) && await js(`window.__game.G.meals.length === 0`));
 
   // --- he is a still picture ---
-  await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { G } = window.__game; G.pet.cancel(); G.pet.still = true; G.pet.text = ''; G.pet.x = 600; G.pet.y = 600; G.pet.dir = 1; return true; })()`);
+  // The CLICK ME over a creature whose menu was never opened bounces on purpose; the creature
+  // under it is what has to keep still.
+  await js(`(async () => { localStorage.setItem('creature-seen:menu', '1'); const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { G } = window.__game; G.pet.cancel(); G.pet.still = true; G.pet.text = ''; G.pet.x = 600; G.pet.y = 600; G.pet.dir = 1; return true; })()`);
   await fastForward(4);
   const still = () => js(`(() => { window.__game.draw(); return document.getElementById('world').toDataURL(); })()`);
   const frameA = await still();
@@ -287,6 +289,15 @@ async function run() {
   ok('quiet mode toggles from the panel', savedSettings().quiet === true && await js(`window.__game.G.settings.quiet === true`));
   await js(`document.querySelector('.note .toggle input').click()`);
   await sleep(200);
+  // Dark mode: night paper, from the panel, and remembered.
+  const darkToggle = `[...document.querySelectorAll('.note .toggle')].find((t) => t.textContent.includes('Dark mode')).querySelector('input')`;
+  await js(`${darkToggle}.click()`);
+  await sleep(200);
+  ok('dark mode turns the notes into night paper', savedSettings().dark === true && await js(`document.documentElement.classList.contains('dark') && getComputedStyle(document.querySelector('.note')).backgroundColor !== 'rgb(251, 250, 244)'`));
+  await shot('06c-dark-settings');
+  await js(`${darkToggle}.click()`);
+  await sleep(200);
+  ok('and back to day paper', savedSettings().dark === false && await js(`!document.documentElement.classList.contains('dark')`));
   const monitors = await js(`window.api.listDisplays()`);
   ok('it lists the monitors, with exactly one selected', monitors.length >= 1 && monitors.filter((d) => d.current).length === 1, JSON.stringify(monitors));
   if (monitors.length > 1) {
@@ -441,15 +452,19 @@ async function run() {
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); })()`);
 
   // --- powers: real buttons, real saves, real pixels ---
-  // Only the part of the screen around the creature, since by now its farm animals are wandering.
+  // Only the creature itself, with its Stand and afterimages, drawn on a canvas of its own: by now
+  // its farm animals wander and its crops grow, and either can pass close by.
   const petPicture = () => js(`(() => {
-    const { G, draw } = window.__game;
+    const { G } = window.__game;
     G.pet.text = '';
-    G.fx.floats.length = 0;
-    draw();
-    const s = window.devicePixelRatio;
     const size = G.pet.hitRect().h;
-    const d = document.getElementById('world').getContext('2d').getImageData((G.pet.x - size * 1.2) * s, (G.pet.y - size * 1.3) * s, size * 2.4 * s, size * 1.4 * s).data;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(size * 2.4);
+    canvas.height = Math.ceil(size * 1.4);
+    const ctx = canvas.getContext('2d');
+    ctx.translate(-(G.pet.x - size * 1.2), -(G.pet.y - size * 1.3));
+    G.pet.draw(ctx);
+    const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     let hash = 0;
     for (let i = 0; i < d.length; i++) hash = (hash * 31 + d[i]) | 0;
     return hash;
@@ -612,7 +627,13 @@ async function run() {
   await sleep(150);
   ok('the menu sums up its powers', await js(`[...document.querySelectorAll('.note .small')].some((e) => e.textContent.includes('Speedster') && e.textContent.includes('One For All') && /\\d of 8 mutations/.test(e.textContent))`));
   ok('the menu is compact', await js(`document.querySelector('.note').offsetHeight < 620`), await js(`String(document.querySelector('.note').offsetHeight)`));
-  ok('every label fits its button', await js(`[...document.querySelectorAll('.actions .btn')].length === 15 && [...document.querySelectorAll('.actions .btn')].every((b) => b.scrollWidth <= b.clientWidth)`));
+  ok('every label fits its button', await js(`[...document.querySelectorAll('.actions .btn')].length === 14 && [...document.querySelectorAll('.actions .btn')].every((b) => {
+    const glowing = b.classList.contains('glow');
+    b.classList.remove('glow');
+    const fits = b.scrollWidth <= b.clientWidth;
+    if (glowing) b.classList.add('glow');
+    return fits;
+  })`));
   ok('every menu button says what it does when the mouse rests on it', await js(`[...document.querySelectorAll('.actions .btn')].every((b) => b.title.length > 10)`));
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); window.__game.G.pet.still = false; return true; })()`);
 
@@ -675,7 +696,7 @@ async function run() {
     Object.assign(c.bank, { red: 300, yellow: 300, green: 300, blue: 300, purple: 300, dust: 500, gems: 5 });
     return true;
   })()`);
-  await js(`(async () => { const { openWorkshop } = await import('./ui/workshop.js'); openWorkshop(); })()`);
+  await js(`(async () => { const { openWorkshop } = await import('./ui/workshop.js'); openWorkshop('charms'); })()`);
   await sleep(150);
   const shopNote = `document.querySelector('.note.kraft')`;
   ok('the workshop shows what can be spent', await js(`${shopNote}.textContent.includes('Red 300') && ${shopNote}.textContent.includes('Gems 5')`));
@@ -687,6 +708,8 @@ async function run() {
   ok('it can be taken off and kept', await js(`(() => { const c = window.__game.G.creature; return c.gear.owned.includes('ruby') && !c.gear.worn.includes('ruby'); })()`));
   await js(`[...${shopNote}.querySelectorAll('.way')].find((w) => w.textContent.includes('Ruby Charm')).querySelector('button').click()`);
   await sleep(120);
+  await clickText('.note.kraft', 'Dye');
+  await sleep(120);
   const bodyBefore = await js(`(async () => { const { creatureColors } = await import('./core/creature.js'); return creatureColors(window.__game.G.creature).body; })()`);
   await js(`${shopNote}.querySelector('.swatch.dye').click()`);
   await sleep(120);
@@ -694,10 +717,25 @@ async function run() {
   await clickText('.note.kraft', 'Wash it off');
   await sleep(120);
   ok('and washes off', await js(`window.__game.G.creature.look.dye === null`));
+  await clickText('.note.kraft', 'Paint');
+  await sleep(120);
   await js(`[...${shopNote}.querySelectorAll('.way')].find((w) => w.textContent.includes('War Paint')).querySelector('button').click()`);
   await sleep(120);
   ok('a paint goes on for one fight', await js(`window.__game.G.creature.prep.paint === 'war'`));
   await shot('16i-workshop');
+  // The forge: Legendary ore and gems into a weapon, and the weapon into its hand.
+  await js(`(() => { window.__game.G.house.ore = 20; window.__game.G.house.bank.gems = 50; return true; })()`);
+  await clickText('.note.kraft', 'Forge');
+  await sleep(120);
+  ok('the forge shows the ore and the weapons', await js(`${shopNote}.textContent.includes('Legendary ore') && ${shopNote}.textContent.includes('Starforged Blade')`));
+  await clickText('.note.kraft', 'Forge: 6 ore');
+  ok('forging takes ore and gems into the armory', await waitFor(`window.__game.G.house.armory.starblade === 1 && window.__game.G.house.ore === 14 && window.__game.G.house.bank.gems === 45`));
+  await clickText('.note.kraft', 'Give it to');
+  ok('and a creature can carry it', await waitFor(`window.__game.G.creature.weapon === 'starblade' && !window.__game.G.house.armory.starblade`));
+  await shot('16i2-forge');
+  await clickText('.note.kraft', 'Put it back');
+  ok('and put it back in the armory', await waitFor(`window.__game.G.creature.weapon === null && window.__game.G.house.armory.starblade === 1`));
+  await js(`(() => { window.__game.G.house.bank.gems = 5; return true; })()`);
   const savedShop = await savedPowers();
   const sharedBank = () => JSON.parse(fs.readFileSync(path.join(HOME, 'data', 'household.json'), 'utf8')).bank;
   ok('crafting is saved: the charm in its file, what it cost in the shared bank', savedShop.gear.owned[0] === 'ruby' && savedShop.prep.paint === 'war' && sharedBank().red < 300 && savedShop.bank.red === 0, JSON.stringify(savedShop.gear));
@@ -866,16 +904,18 @@ async function run() {
   ok('Bobbo was not touched', fs.existsSync(file));
   await clickText('.note', 'Raise Bobbo');
   ok('it can raise another creature', await waitFor(`window.__game.G.creature?.name === 'Bobbo' && !!window.__game.G.pet`));
-  await js(`(async () => { const { openCreatures } = await import('./ui/panels.js'); await openCreatures(); })()`);
+  await js(`(async () => { const { openCreatures } = await import('./ui/creatures.js'); await openCreatures(); })()`);
   await sleep(200);
-  const rosterNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Village')`;
+  const rosterNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Your creatures')`;
+  await js(`[...${rosterNote}.querySelectorAll('button')].find((b) => b.textContent === 'Show').click()`);
+  await sleep(100);
   ok('the graveyard lists it', await js(`${rosterNote}.textContent.includes('Graveyard') && ${rosterNote}.textContent.includes('Killed by The Last Dragon')`));
-  ok('and it can\'t be raised', await js(`[...${rosterNote}.querySelectorAll('.rosterrow .name')].every((n) => !n.textContent.startsWith('Doomed'))`));
+  ok('and it can\'t be raised', await js(`[...${rosterNote}.querySelectorAll('.card .name')].every((n) => !n.textContent.startsWith('Doomed'))`));
   // Even a dead file put back by hand stays dead.
   fs.copyFileSync(graveFile, path.join(HOME, 'creatures', 'Ghost.creature'));
-  await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { openCreatures } = await import('./ui/panels.js'); await openCreatures(); })()`);
+  await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { openCreatures } = await import('./ui/creatures.js'); await openCreatures(); })()`);
   await sleep(200);
-  ok('moving a gravestone back does not bring it back', await js(`[...${rosterNote}.querySelectorAll('.rosterrow .name')].every((n) => !n.textContent.startsWith('Doomed'))`));
+  ok('moving a gravestone back does not bring it back', await js(`[...${rosterNote}.querySelectorAll('.card .name')].every((n) => !n.textContent.startsWith('Doomed'))`));
   fs.rmSync(path.join(HOME, 'creatures', 'Ghost.creature'));
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); })()`);
 
@@ -958,32 +998,6 @@ async function run() {
   ok('a blank .creature gets a friendly message', await js(`document.querySelector('.note.chalk').textContent.includes('empty')`));
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); })()`);
 
-  // --- society ---
-  await js(`(async () => { const { openSociety } = await import('./ui/boards.js'); openSociety(); })()`);
-  await sleep(200);
-  await shot('20-society-setup');
-  await clickText('.note.parch', 'Add Bobbo');
-  await sleep(40);
-  for (const lv of ['Lv 3', 'Lv 3', 'Lv 2']) {
-    await clickText('.note.parch', lv);
-    await sleep(40);
-  }
-  await clickText('.note.parch', 'Found the world');
-  ok('world founded', await waitFor('window.__game.G.society'));
-  ok('its land came from the screen sampler', await js(`(() => { const w = window.__game.G.society; const r = new Set(w.cells.map(c => c.rgb.join())); return r.size > 50; })()`));
-  await js(`(async () => {
-    const { tickWorld } = await import('./sim/society.js');
-    tickWorld(window.__game.G.society, 520, (ev) => window.__game.G.societyView.addBattle(window.__game.G.society, ev, window.__game.G.screen.work));
-  })()`);
-  await fastForward(16);
-  await sleep(100);
-  await shot('21-society');
-  ok('chronicle is filling in', await js(`window.__game.G.society.log.length > 2`));
-  await js(`(async () => { const { saveWorld } = await import('./state.js'); await saveWorld(); })()`);
-  await sleep(80);
-  const worldSave = path.join(HOME, 'data', 'society.json');
-  ok('world save written', fs.existsSync(worldSave), `${Math.round(fs.statSync(worldSave).size / 1024)} KB`);
-
   // --- persistence: save, then reload the page as if restarting ---
   await js(`(async () => { const { saveCreature } = await import('./state.js'); await saveCreature(); })()`);
   const before = await js(`JSON.stringify({ n: window.__game.G.creature.name, m: window.__game.G.creature.mutations.length, g: window.__game.G.creature.growth > 0, f: window.__game.G.creature.farm.fields.length })`);
@@ -993,7 +1007,7 @@ async function run() {
   ok('page reloads', await waitFor('window.__game && window.__game.G.pet'));
   const after = await js(`JSON.stringify({ n: window.__game.G.creature.name, m: window.__game.G.creature.mutations.length, g: window.__game.G.creature.growth > 0, f: window.__game.G.creature.farm.fields.length })`);
   ok('creature came back the same', before === after, after);
-  ok('society came back', await js(`!!window.__game.G.society && window.__game.G.society.tick > 500`));
+  ok('the household came back with it', await js(`window.__game.G.house.armory.starblade === 1 && window.__game.G.house.ore === 14`));
 
   // --- click-through wiring ---
   const ignoring = await js(`(() => { window.api.setRects([]); return true; })()`);
@@ -1237,12 +1251,12 @@ async function run() {
   })()`);
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { openBreed } = await import('./ui/breed.js'); await openBreed(); return true; })()`);
   await sleep(200);
-  const breedNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Breed')`;
+  const breedNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Nursery')`;
   await js(`(async () => {
     const { getNote } = await import('./ui/notes.js');
-    const note = getNote('breed');
+    const note = getNote('nursery');
     const base = (name) => window.__game.G.team.find((m) => m.c.name === name).base;
-    note.spec.picked = [base('Bobbo'), base('Digger')];
+    note.spec.breed.picked = [base('Bobbo'), base('Digger')];
     note.rebuild();
     return true;
   })()`);
@@ -1263,7 +1277,9 @@ async function run() {
   ok('hatching makes its .creature file', await waitFor(`${breedNote}.textContent.includes('Pebble') && ${breedNote}.textContent.includes('hatched')`) && fs.existsSync(pebbleFile), lastNames);
   const pebble = JSON.parse(fs.readFileSync(pebbleFile, 'utf8'));
   ok('with what was chosen, and nothing else', pebble.traits.join() === 'cursedbody' && pebble.mutations.map((m) => m.id).join() === 'moss' && pebble.parents.length === 2 && !pebble.powers.quirks.includes('oneforall'), JSON.stringify({ t: pebble.traits, m: pebble.mutations, q: pebble.powers.quirks }));
-  ok('both parents paid for it', await js(`window.__game.G.team.filter((m) => ['Bobbo', 'Digger'].includes(m.c.name)).every((m) => m.c.fullness <= 60 && m.c.fullness > 55 && m.c.bredAt > 0)`));
+  // Sprouty, the nurse out on the screen, saves each parent half of what an egg costs.
+  ok('both parents paid for it, less with a nurse out', await js(`window.__game.G.team.filter((m) => ['Bobbo', 'Digger'].includes(m.c.name)).every((m) => m.c.fullness <= 75 && m.c.fullness > 70 && m.c.bredAt > 0)`), await js(`window.__game.G.team.map((m) => m.c.name + ' ' + Math.round(m.c.fullness)).join(', ')`));
+  ok('and there is no waiting: they could go again', await js(`(async () => { const { breedProblem } = await import('./core/family.js'); return window.__game.G.team.filter((m) => ['Bobbo', 'Digger'].includes(m.c.name)).every((m) => breedProblem(m.c) === null); })()`));
   ok('and the nurse that was out helped, and learned from it', pebble.growth === 0 && await js(`window.__game.G.team.find((m) => m.c.name === 'Sprouty').c.path.xp`) >= 25);
   await shot('25-hatched');
   await clickText('.note.paper', 'Bring it out');
@@ -1337,36 +1353,50 @@ async function run() {
     return true;
   })()`);
   await sleep(150);
-  await js(`[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Breed').querySelector('.note-help').click()`);
+  await js(`[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Nursery').querySelector('.note-help').click()`);
   await sleep(150);
-  ok('the ? on the breed note opens the breeding guide', await js(`(() => { const n = ${chanceNote}; return !!n && n.querySelector('.tabs .hot')?.textContent === 'Breeding'; })()`));
+  ok('the ? on the nursery opens the breeding guide', await js(`(() => { const n = ${chanceNote}; return !!n && n.querySelector('.tabs .hot')?.textContent === 'Breeding'; })()`));
 
   // --- the menu: a next step, and a family row ---
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); window.__game.G.creature.fullness = 10; const { openMenu } = await import('./ui/panels.js'); openMenu(); return true; })()`);
   await sleep(150);
-  ok('the menu has a family row: village, breeding and rolling eggs', await js(`['Village', 'Breed', 'Roll eggs'].every((label) => [...document.querySelectorAll('.actions .btn')].some((b) => b.textContent === label))`));
+  ok('the menu has a row for your creatures: the roster, the nursery and the village', await js(`['Creatures', 'Nursery', 'Village', 'Adventure'].every((label) => [...document.querySelectorAll('.actions .btn')].some((b) => b.textContent === label))`));
+  ok('and a line for the household', await js(`document.querySelector('.note .household')?.textContent.includes('gems')`));
   ok('and suggests what to do next', await js(`!!document.querySelector('.note .tip') && document.querySelector('.note .tip').textContent.startsWith('Next:')`));
   ok('the button for it glows, with a CLICK! on it', await js(`document.querySelector('.note .tip').classList.contains('loud') && [...document.querySelectorAll('.actions .btn.glow')].some((b) => b.textContent === 'Feed')`));
-  ok('new things say NEW! until they are tried', await js(`['Village', 'Breed', 'Roll eggs'].some((label) => [...document.querySelectorAll('.actions .btn.isnew')].some((b) => b.textContent === label))`));
+  ok('new things say NEW! until they are tried', await js(`['Creatures', 'Nursery', 'Village', 'Adventure'].some((label) => [...document.querySelectorAll('.actions .btn.isnew')].some((b) => b.textContent === label))`));
   ok('and the creature stops saying CLICK ME once its menu has been opened', await js(`localStorage.getItem('creature-seen:menu') === '1'`));
   await shot('30-menu');
 
-  // --- the village: who is out, who is home, and what home brings in ---
-  const villageNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Village')`;
-  await clickText('.note', 'Village');
-  await waitFor(`!!${villageNote}`);
+  // --- your creatures: everyone in one place ---
+  const creaturesNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Your creatures')`;
+  await clickText('.note', 'Creatures');
+  await waitFor(`!!${creaturesNote}`);
   await sleep(150);
-  ok('the village shows the mains and everyone at home, working', await js(`(() => { const t = ${villageNote}.textContent; return t.includes('Out on your screen') && t.includes('At home in the village') && t.includes('Each hour the village brings in'); })()`));
-  await shot('31-village');
-  // Getting rid of one: two presses, and it goes to the graveyard.
-  const ridOf = `[...${villageNote}.querySelectorAll('.rosterrow')].find((r) => r.querySelector('.name').textContent.startsWith('Extra')).querySelector('.row .btn:last-child')`;
+  ok('your creatures shows everyone, out on the screen and at home', await js(`(() => { const n = ${creaturesNote}; const names = [...n.querySelectorAll('.card .name')].map((x) => x.textContent); return names.some((t) => t.startsWith('Digger')) && names.some((t) => t.startsWith('Extra')) && !!n.querySelector('.badge.out') && !!n.querySelector('.badge.home'); })()`));
+  await shot('31-creatures');
+  await js(`[...${creaturesNote}.querySelectorAll('.toolbar button.chip')].find((b) => b.textContent === 'On screen').click()`);
+  await sleep(80);
+  ok('it can show only those out on your screen', await js(`(() => { const cards = [...${creaturesNote}.querySelectorAll('.card')]; return cards.length === window.__game.G.team.length && cards.every((c) => c.querySelector('.badge.out')); })()`));
+  await js(`[...${creaturesNote}.querySelectorAll('.toolbar button.chip')].find((b) => b.textContent === 'All').click()`);
+  await sleep(80);
+  // Letting one go: two presses, and it goes to the graveyard.
+  const ridOf = `[...${creaturesNote}.querySelectorAll('.card')].find((r) => r.querySelector('.name').textContent.startsWith('Extra')).querySelector('.acts .btn:last-child')`;
   await js(`${ridOf}.click()`);
   await sleep(60);
-  ok('getting rid of one asks first', await js(`${ridOf}.textContent === 'Forever?'`) && fs.existsSync(path.join(HOME, 'creatures', 'Extra.creature')));
+  ok('letting one go asks first', await js(`${ridOf}.textContent === 'Forever?'`) && fs.existsSync(path.join(HOME, 'creatures', 'Extra.creature')));
   await js(`${ridOf}.click()`);
   const extraGrave = path.join(HOME, 'graveyard', 'Extra.creature');
-  ok('and then it is gone for good', await waitFor(`![...${villageNote}.querySelectorAll('.rosterrow .name')].some((n) => n.textContent.startsWith('Extra'))`) && fs.existsSync(extraGrave) && !fs.existsSync(path.join(HOME, 'creatures', 'Extra.creature')));
-  ok('its gravestone says you did it', JSON.parse(fs.readFileSync(extraGrave, 'utf8')).dead?.by === 'you' && await js(`${villageNote}.textContent.includes('You got rid of it')`));
+  ok('and then it is gone for good', await waitFor(`![...${creaturesNote}.querySelectorAll('.card .name')].some((n) => n.textContent.startsWith('Extra'))`) && fs.existsSync(extraGrave) && !fs.existsSync(path.join(HOME, 'creatures', 'Extra.creature')));
+  ok('its gravestone says you did it', JSON.parse(fs.readFileSync(extraGrave, 'utf8')).dead?.by === 'you' && await js(`${creaturesNote}.textContent.includes('gone for good')`));
+
+  // --- the village: what home brings in ---
+  const villageNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Village')`;
+  await js(`(async () => { const { openVillage } = await import('./ui/village.js'); await openVillage(); return true; })()`);
+  await waitFor(`!!${villageNote}`);
+  await sleep(150);
+  ok('the village shows everyone at home, working', await js(`(() => { const t = ${villageNote}.textContent; return t.includes('Each hour the village brings in') && t.includes('Oldie'); })()`));
+  await shot('31b-village');
 
   // --- expeditions ---
   await clickText('.note', 'Expeditions');
@@ -1377,6 +1407,7 @@ async function run() {
   await js(`${sendCoast}.click()`);
   ok('an expedition sets off with who you picked', await waitFor(`window.__game.G.house.expeditions.length === 1 && window.__game.G.house.expeditions[0].party[0].name.startsWith('Oldie')`));
   ok('and they are away from the village', await js(`!window.__game.G.village.some((r) => r.c.name === 'Oldie')`));
+  ok('and a clock counts down until they are back', await waitFor(`/^\\d+:\\d\\d/.test(${villageNote}.querySelector('.clockline .when')?.textContent ?? '')`), await js(`${villageNote}.querySelector('.clockline .when')?.textContent ?? 'no clock'`));
   await shot('32-expedition');
   const gemsBefore = await js('window.__game.G.house.bank.gems');
   await js(`(() => { window.__game.G.house.expeditions[0].end = Date.now() - 1; return true; })()`);
@@ -1392,78 +1423,77 @@ async function run() {
   })()`);
   await sleep(150);
   ok('a creature they found waits for a name', await js(`${villageNote}.textContent.includes('A Devil!')`));
-  await js(`(() => { const i = [...${villageNote}.querySelectorAll('.way input')][0]; i.value = 'Pochita'; i.dispatchEvent(new Event('input')); return true; })()`);
-  await clickText('.note', 'Take it in');
+  ok('and while it waits, the game can take typing for its name', main.getWindow().isFocusable());
+  // The expedition itself may have found someone too, so this names the Devil, wherever it is.
+  const devilWay = `[...${villageNote}.querySelectorAll('.way')].find((w) => w.textContent.includes('A Devil!'))`;
+  await js(`(() => { const i = ${devilWay}.querySelector('input'); i.value = 'Pochita'; i.dispatchEvent(new Event('input')); return true; })()`);
+  await js(`[...${devilWay}.querySelectorAll('button')].find((b) => b.textContent === 'Take it in').click()`);
   const pochitaFile = path.join(HOME, 'creatures', 'Pochita.creature');
-  ok('and comes home to the village as that race', await waitFor(`window.__game.G.village.some((r) => r.c.name === 'Pochita')`) && fs.existsSync(pochitaFile) && JSON.parse(fs.readFileSync(pochitaFile, 'utf8')).race === 'devil');
+  ok('and comes home to the village as that race', await waitFor(`window.__game.G.village.some((r) => r.c.name === 'Pochita')`) && fs.existsSync(pochitaFile) && JSON.parse(fs.readFileSync(pochitaFile, 'utf8')).race === 'devil', await js(`window.__game.G.everyone.map((r) => r.c.name + ':' + r.c.race).join(', ')`));
 
-  // --- hostile mode and raids ---
-  await clickText('.note', 'Raids');
-  await sleep(100);
-  ok('hostile mode starts off', await js(`${villageNote}.textContent.includes('Hostile mode: off') && window.__game.G.house.hostile.villages.length === 0`));
-  await clickText('.note', 'Turn it on');
+  // --- the Legendary Mine ---
+  await js(`(async () => {
+    const { G } = window.__game;
+    const row = G.village.find((r) => r.c.name === 'Pochita');
+    row.c.path = { line: ['miner', 'prospector', 'hoarder'], xp: 400 };
+    row.c.growth = 100;
+    const { creatureText } = await import('./state.js');
+    await window.api.saveCreature(row.base, creatureText(row.c));
+    const { openVillage } = await import('./ui/village.js');
+    await openVillage('mine');
+    return true;
+  })()`);
   await sleep(150);
-  ok('turning it on brings hostile villages, with odds for each', await js(`window.__game.G.house.hostile.villages.length === 3 && ${villageNote}.textContent.includes('of the time')`));
-  await shot('33-raids');
-  await js(`[...${villageNote}.querySelectorAll('.way')][0].querySelector('button').click()`);
-  await sleep(150);
-  ok('raiding one gets a result, and the raiders rest', await js(`window.__game.G.house.hostile.log.length >= 2 && window.__game.G.house.hostile.restUntil > Date.now()`));
-  await js(`(() => { window.__game.G.house.hostile.nextRaid = 1; return true; })()`);
-  const logBefore = await js('window.__game.G.house.hostile.log.length');
+  ok('the Legendary Mine lists the legendary Miners at home', await js(`${villageNote}.textContent.includes('Legendary ore') && [...${villageNote}.querySelectorAll('.rosterrow .name')].some((n) => n.textContent.startsWith('Pochita'))`));
+  await clickText('.note', 'Send down');
+  ok('one goes down the mine', await waitFor('window.__game.G.house.mine.length === 1'));
+  const oreBefore = await js('window.__game.G.house.ore');
+  await js(`(() => { window.__game.G.house.village.lastTick = Date.now() - 3 * 3600 * 1000; return true; })()`);
   await fastForward(22);
-  ok('they raid the village while the game is open', await waitFor(`window.__game.G.house.hostile.log.length > ${logBefore} && window.__game.G.house.hostile.nextRaid > Date.now()`));
-  await clickText('.note', 'Turn it off');
-  await sleep(100);
-  ok('and turning it off clears them away', await js(`window.__game.G.house.hostile.villages.length === 0`));
+  ok('and brings up Legendary ore', await waitFor(`window.__game.G.house.ore > ${oreBefore}`), String(await js('window.__game.G.house.ore')));
+  await shot('33-legendary-mine');
 
-  // --- holding the line against waves ---
-  await clickText('.note', 'Defend');
-  await sleep(100);
-  await clickText('.note', 'Start at wave 1');
-  ok('a wave starts in a ring, the village on one side and the raiders on the other', await waitFor('window.__game.G.bout && window.__game.G.bout.wave === 1') && await js(`(() => { const b = window.__game.G.bout; return b.fighters.some((f) => f.team === 0) && b.fighters.some((f) => f.team === 1); })()`));
+  // --- Adventure ---
+  const adventureNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Adventure')`;
+  await js(`(async () => {
+    const { closeAllNotes } = await import('./ui/notes.js');
+    closeAllNotes();
+    const { openAdventure } = await import('./ui/adventure.js');
+    await openAdventure();
+    return true;
+  })()`);
+  await sleep(150);
+  ok('adventure shows twenty levels, only the first open', await js(`(() => { const lv = [...${adventureNote}.querySelectorAll('.lvl')]; return lv.length === 20 && !lv[0].disabled && lv[1].disabled; })()`));
+  ok('and the party starts as whoever is out', await js('window.__game.G.house.adventure.party.length >= 1'));
+  await shot('34-adventure');
+  await clickText('.note', 'Fight level 1');
+  ok('a level starts in a ring, the party on one side and the enemy on the other', await waitFor('window.__game.G.bout && window.__game.G.bout.adventure === 1') && await js(`(() => { const b = window.__game.G.bout; return b.fighters.some((f) => f.team === 0) && b.fighters.some((f) => f.team === 1); })()`));
   await fastForward(1);
-  await shot('34-wave');
-  const bestBefore = await js('window.__game.G.house.waves.best');
-  const gemsWave = await js('window.__game.G.house.bank.gems');
-  await js(`(() => { const b = window.__game.G.bout; b.fighters.filter((f) => f.team !== 0).forEach((f) => b.hurt(f, 1e9, b.fighters[0], { silent: true })); return true; })()`);
+  await shot('34b-adventure-fight');
+  const gemsLevel = await js('window.__game.G.house.bank.gems');
+  await js(`(() => { const b = window.__game.G.bout; b.fighters.filter((f) => f.team !== 0).forEach((f) => { for (let i = 0; i < 3 && f.alive; i++) b.hurt(f, 1e9, b.fighters[0], { silent: true }); }); return true; })()`);
   await fastForward(1);
-  ok('holding it sets a new best and pays for it', await waitFor(`${villageNote}.textContent.includes('Wave 1 held')`) && await js(`window.__game.G.house.waves.best === 1 && window.__game.G.house.bank.gems === ${gemsWave} + ${bestBefore < 1 ? 1 : 0}`));
+  ok('winning it pays the first time, and opens level 2', await waitFor(`${adventureNote}.textContent.includes('Level 1 beaten')`) && await js(`window.__game.G.house.adventure.best === 1 && window.__game.G.house.bank.gems >= ${gemsLevel} + 2`));
   await sleep(2400);
   ok('and the ring clears', await js('window.__game.G.bout === null'));
-
-  // --- the village on the map, and moving it ---
-  await js(`(() => { const { G } = window.__game; G.society = null; G.societyView = null; return true; })()`);
-  await clickText('.note', 'Map');
-  await sleep(100);
-  await clickText('.note', 'Across the whole screen');
-  ok('the village goes on the map as a people', await waitFor('window.__game.G.society && window.__game.G.society.village') && await js(`window.__game.G.society.tribes[0].name === 'Your village'`));
-  await waitFor(`[...${villageNote}.querySelectorAll('button')].some((b) => b.textContent === 'Move or resize it')`);
-  await clickText('.note', 'Move or resize it');
-  ok('it can be moved: a box to draw opens', await waitFor(`document.querySelector('.picker')`));
-  await dragBox(300, 200, 640, 380);
-  ok('and the village sits in that box', await waitFor('window.__game.G.society.area && window.__game.G.society.area.w === 640'));
-  await fastForward(2);
-  await shot('35-village-map');
-  await js(`(async () => { const { saveWorld } = await import('./state.js'); await saveWorld(); return true; })()`);
-  await sleep(100);
-  ok('where it sits is saved with it', JSON.parse(fs.readFileSync(path.join(HOME, 'data', 'society.json'), 'utf8')).area?.w === 640);
+  ok('level 2 is open now', await js(`!${adventureNote}.querySelectorAll('.lvl')[1].disabled`));
 
   // --- rolling eggs ---
   await js(`(async () => {
     const { closeAllNotes } = await import('./ui/notes.js');
     closeAllNotes();
-    window.__game.G.house.bank.gems = 200;
+    window.__game.G.house.bank.gems = 400;
     const { openRoll } = await import('./ui/roll.js');
-    openRoll();
+    await openRoll();
     return true;
   })()`);
   await sleep(150);
-  const rollNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Roll an egg')`;
-  ok('the roll note shows the egg on offer, its family and gifts', await js(`(() => { const t = ${rollNote}.textContent; return t.includes('Born with') && t.includes('Gems: 200'); })()`));
+  const rollNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Nursery')`;
+  ok('the eggs tab shows the egg on offer, its family and gifts', await js(`(() => { const t = ${rollNote}.textContent; return t.includes('Born with') && t.includes('Gems: 400') && !!${rollNote}.querySelector('.egg'); })()`));
   const eggBefore = await js('window.__game.G.house.egg.id');
   await clickText('.note.paper', 'Roll again');
   await sleep(100);
-  ok('rolling again costs a gem and brings a new egg', await js(`window.__game.G.house.bank.gems === 199 && window.__game.G.house.egg.id !== ${JSON.stringify(eggBefore)}`));
+  ok('rolling again costs a gem and brings a new egg', await js(`window.__game.G.house.bank.gems === 399 && window.__game.G.house.egg.id !== ${JSON.stringify(eggBefore)}`));
   await js(`[...${rollNote}.querySelectorAll('button.chip')].find((b) => b.textContent === 'Gojo').click()`);
   await sleep(60);
   await js(`[...${rollNote}.querySelectorAll('button.chip')].find((b) => b.textContent === '100 gems').click()`);
@@ -1492,6 +1522,20 @@ async function run() {
   const rollyId = JSON.parse(fs.readFileSync(rollyFile, 'utf8')).id;
   ok('and a new egg is on offer', await waitFor(`!!window.__game.G.house.egg && window.__game.G.house.egg.id !== ${JSON.stringify(rollyId)}`));
 
+  // --- the Mega Breeder and the bag ---
+  await clickText('.note.paper', 'Buy: 150 gems');
+  ok('the Mega Breeder is bought once, for gems', await waitFor('window.__game.G.house.megaBreeder === true') && await js(`${rollNote}.textContent.includes('Mega Breeder:')`));
+  await js(`(() => { window.__game.G.house.items = { chamber: 1, expander: 1 }; return true; })()`);
+  await clickText('.note.paper', 'Items');
+  await sleep(120);
+  ok('the bag shows what Adventure and expeditions bring home', await js(`(() => { const t = ${rollNote}.textContent; return t.includes('Time Chamber Key') && t.includes('Limit Expander'); })()`));
+  await shot('36b-items');
+  const chamberRow = `[...${rollNote}.querySelectorAll('.itemrow')].find((r) => r.textContent.includes('Time Chamber'))`;
+  await js(`(() => { const sel = ${chamberRow}.querySelector('select'); const opt = [...sel.options].find((o) => o.textContent.startsWith('Rolly')); sel.value = opt.value; sel.dispatchEvent(new Event('change')); return true; })()`);
+  await js(`[...${chamberRow}.querySelectorAll('button')].find((b) => b.textContent === 'Use it').click()`);
+  ok('a Time Chamber Key grows a hatchling up, ready to breed', await waitFor(`(() => { const r = window.__game.G.everyone.find((x) => x.c.name === 'Rolly'); return !!r && r.c.growth >= 90 && r.c.fullness >= 40; })()`) && await (async () => { await sleep(200); return JSON.parse(fs.readFileSync(rollyFile, 'utf8')).growth >= 90; })());
+  ok('and it is used up', await js('window.__game.G.house.items.chamber === 0'));
+
   // --- a Devil Fruit ---
   await js(`(async () => {
     const { closeAllNotes } = await import('./ui/notes.js');
@@ -1515,6 +1559,17 @@ async function run() {
   ok('eating it takes it from the pool, for good', await js(`window.__game.G.creature.powers.fruit === 'gomu' && !window.__game.G.house.fruits.gomu`));
   ok('and nothing else fits now', await js(`[...${fruitNote}.querySelectorAll('button')].filter((b) => ['Awaken its Stand', 'Become a speedster', 'Awaken its technique'].includes(b.textContent)).every((b) => b.disabled)`));
   await shot('37-devil-fruit');
+
+  // --- renaming: the name and its file ---
+  await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { openCreatures } = await import('./ui/creatures.js'); await openCreatures(); return true; })()`);
+  await sleep(150);
+  await js(`[...[...${creaturesNote}.querySelectorAll('.card')].find((r) => r.querySelector('.name').textContent.startsWith('Pochita')).querySelectorAll('button')].find((b) => b.textContent === 'Rename').click()`);
+  await sleep(100);
+  await js(`(() => { const i = ${creaturesNote}.querySelector('.renamebox input'); i.value = 'Denji'; i.dispatchEvent(new Event('input')); return true; })()`);
+  await clickText('.note.paper', 'Save');
+  ok('renaming one renames its file too', await waitFor(`window.__game.G.everyone.some((r) => r.c.name === 'Denji')`) && fs.existsSync(path.join(HOME, 'creatures', 'Denji.creature')) && !fs.existsSync(pochitaFile));
+  ok('and it keeps its place in the Legendary Mine', await js(`window.__game.G.house.mine.includes(window.__game.G.everyone.find((r) => r.c.name === 'Denji').c.id)`));
+  await shot('38-renamed');
 
   ok('no console errors in the page', pageErrors.length === 0, pageErrors.slice(0, 5).join(' | '));
 }

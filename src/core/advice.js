@@ -28,7 +28,7 @@ export function nextStep(c, { out = 1, home = 0, away = 0 } = {}) {
     return { text: `${STAT_LABELS[stat]} ${s[stat]} of ${need}: it is close to ${what}. The guide shows how to raise it.`, go: `guide:${stat}` };
   }
   if (home > 0 && away === 0) return { text: 'Send someone from the village on an expedition. They always come back with gems.', go: 'expeditions' };
-  if (out < TEAM_MAX) return { text: `Up to ${TEAM_MAX} creatures can be out at once. Roll an egg for a miner, a farmer or a nurse to keep it company.`, go: 'roll' };
-  if (stage >= BREED_STAGE) return { text: 'It is old enough to breed. Breed shows what it could pass on.', go: 'breed' };
-  return { text: 'Train it against a monster in Challenges. Training monsters can\'t kill it.', go: 'challenges' };
+  if (out < TEAM_MAX) return { text: `Up to ${TEAM_MAX} creatures can be out at once. Hatch an egg in the Nursery for a miner, a farmer or a nurse to keep it company.`, go: 'nursery:eggs' };
+  if (stage >= BREED_STAGE) return { text: 'It is old enough to breed. The Nursery shows what it could pass on.', go: 'nursery' };
+  return { text: 'Take it on an Adventure with two friends: 20 levels, and nobody can die there.', go: 'adventure' };
 }

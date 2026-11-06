@@ -1,6 +1,10 @@
-// The workshop: spend what it has mined on dyes, charms and paints.
+// The workshop: spend what it has mined on dyes, charms and paints, and forge weapons from the
+// Legendary Mine's ore.
 
-import { G, saveCreature } from '../state.js';
+import { toast } from './flair.js';
+import { G, saveCreature, saveHouse } from '../state.js';
+import { forgeProblem, forgeWeapon, equipWeapon, unequipWeapon, armoryCount } from '../core/forge.js';
+import { WEAPONS, WEAPON_IDS } from '../data/forge.js';
 import { h, fill, button, openNote } from './notes.js';
 import { topSwatches, wearable } from '../core/creature.js';
 import { hexToRgb } from '../lib/util.js';
@@ -105,20 +109,75 @@ function paintSection(body, note) {
   );
 }
 
-export function openWorkshop() {
+// ---------- the forge ----------
+
+function forgeSection(body, note) {
+  const c = G.creature;
+  const house = G.house;
+  const now = c.weapon && WEAPONS[c.weapon];
+  fill(body,
+    h('div', { class: 'purse' },
+      h('span', null, 'Legendary ore: ', h('b', null, Math.floor(house.ore))),
+      h('span', null, 'Gems: ', h('b', null, Math.floor(house.bank.gems)))),
+    h('div', { class: 'small', style: 'margin-top:4px' }, 'Ore comes up out of the Legendary Mine in the village, where only legendary Miners can dig, and off Adventure bosses. A weapon goes into the armory everyone shares, and each creature carries one.'),
+    h('div', { class: 'sect' }, `${c.name} carries`),
+    now
+      ? h('div', { class: 'itemrow', style: `--c:${now.color}` },
+        h('div', { class: 'grow' }, h('div', { class: 'what' }, now.name), h('div', { class: 'small' }, `In every fight, it ${now.text}.`)),
+        button('Put it back', async () => {
+          unequipWeapon(house, c);
+          await saveHouse();
+          changed(note);
+        }, 'mini'))
+      : h('div', { class: 'small' }, 'Nothing yet.'),
+    h('div', { class: 'sect' }, 'Weapons'),
+    h('div', { class: 'ways', style: 'max-height:280px' }, WEAPON_IDS.map((id) => {
+      const w = WEAPONS[id];
+      const have = armoryCount(house, id);
+      const problem = forgeProblem(house, id);
+      return h('div', { class: 'way', style: `border-left:5px solid ${w.color}` },
+        h('div', { class: 'top' },
+          h('span', { class: 'plain' }, w.name, have ? ` (${have} in the armory)` : ''),
+          button(`Forge: ${w.ore} ore, ${w.gems} gems`, async () => {
+            if (!forgeWeapon(house, id)) return;
+            await saveHouse();
+            toast(`FORGED: ${w.name.toUpperCase()}!`, 'rare');
+            note.rebuild();
+          }, 'mini', !!problem)),
+        h('div', { class: 'small' }, `It ${w.text}.`),
+        have > 0 && c.weapon !== id && h('div', { class: 'row', style: 'margin-top:3px' }, button(`Give it to ${c.name}`, async () => {
+          if (!equipWeapon(house, c, id)) return;
+          await saveHouse();
+          G.pet?.say(`a ${w.name.toLowerCase()}!`, 3, true);
+          changed(note);
+        }, 'mini hot')));
+    })),
+  );
+}
+
+const TABS = [['dye', 'Dye'], ['charms', 'Charms'], ['paint', 'Paint'], ['forge', 'Forge']];
+
+export function openWorkshop(tab = 'dye') {
   if (!G.creature) return;
   openNote('workshop', {
-    title: 'Color workshop',
+    title: 'Workshop',
     cls: 'kraft',
-    width: 360,
+    width: 370,
+    tab,
     build(body, note) {
+      const { spec } = note;
       fill(body,
-        h('div', { class: 'small' }, 'Every color any of your creatures mines lands here, in one bank they all share. Dull colors turn into Dust.'),
+        h('div', { class: 'small' }, 'Every color any of your creatures mines lands in one bank they all share. Dull colors turn into Dust.'),
         bankRow(G.creature),
+        h('div', { class: 'tabs' }, TABS.map(([id, label]) => button(label, () => {
+          spec.tab = id;
+          note.rebuild();
+        }, spec.tab === id ? 'hot' : ''))),
       );
-      dyeSection(body, note);
-      charmSection(body, note);
-      paintSection(body, note);
+      if (spec.tab === 'charms') charmSection(body, note);
+      else if (spec.tab === 'paint') paintSection(body, note);
+      else if (spec.tab === 'forge') forgeSection(body, note);
+      else dyeSection(body, note);
     },
   });
 }

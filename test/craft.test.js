@@ -28,14 +28,18 @@ import { practiceStances } from '../src/sim/practice.js';
 import { settleChallenge } from '../src/sim/challenges.js';
 import { addField, doJob, nextJob, tickFarm, growMs, setFieldCrop, waterFields, waterReadyIn, eatPlant, TILE } from '../src/sim/farm.js';
 
+// An egg's born-with gifts are random, and some change how a fight goes, so the creatures made
+// here have none. traits.test.js tests the gifts themselves.
+const plainCreature = (...args) => Object.assign(newCreature(...args), { traits: [] });
+
 const NONE = () => ({ stand: null, speedster: false, technique: null, quirks: [] });
 
 // ---------- behaviour in a fight ----------
 
 // Two tough fighters who can't finish each other, so what is measured is only how the fight goes.
 function sparring(myStance, { mySpeed = 0, foeSpeed = 0, seconds = 20, foeStance = 'close' } = {}) {
-  const me = newCreature('Me');
-  const foe = newCreature('Foe');
+  const me = plainCreature('Me');
+  const foe = plainCreature('Foe');
   me.battle.stance = myStance;
   foe.battle.stance = foeStance;
   me.essence.spark = mySpeed;
@@ -94,7 +98,7 @@ test('backing up always stays inside the ring', () => {
 });
 
 test('holding its ground stands still, takes less, and only walks in if nothing comes', () => {
-  const bout = new Bout([newCreature('A'), newCreature('B')], { seed: 3, cx: 500, cy: 400, r: 300 });
+  const bout = new Bout([plainCreature('A'), plainCreature('B')], { seed: 3, cx: 500, cy: 400, r: 300 });
   const [a, b] = bout.fighters;
   a.plan.stance = 'hold';
   b.plan.stance = 'hold';
@@ -107,7 +111,7 @@ test('holding its ground stands still, takes less, and only walks in if nothing 
   assert.ok(moved() > 5, 'then it gets bored and walks in');
 
   const hurtBy = (holding) => {
-    const fresh = new Bout([newCreature('A'), newCreature('B')], { seed: 3 });
+    const fresh = new Bout([plainCreature('A'), plainCreature('B')], { seed: 3 });
     const f = fresh.fighters[0];
     f.holding = holding;
     fresh.hurt(f, 100, null, { silent: true });
@@ -117,7 +121,7 @@ test('holding its ground stands still, takes less, and only walks in if nothing 
 });
 
 test('what it does when hurt', () => {
-  const bout = new Bout([newCreature('A'), newCreature('B')], { seed: 3 });
+  const bout = new Bout([plainCreature('A'), plainCreature('B')], { seed: 3 });
   const [a] = bout.fighters;
   a.plan.hurt = 'backoff';
   assert.equal(bout.stanceNow(a), 'close');
@@ -125,7 +129,7 @@ test('what it does when hurt', () => {
   assert.equal(bout.stanceNow(a), 'mid', 'badly hurt, it backs off');
 
   const taken = (rule, hp) => {
-    const fresh = new Bout([newCreature('A'), newCreature('B')], { seed: 3 });
+    const fresh = new Bout([plainCreature('A'), plainCreature('B')], { seed: 3 });
     const f = fresh.fighters[0];
     f.plan.hurt = rule;
     f.hp = f.maxHp * hp;
@@ -139,7 +143,7 @@ test('what it does when hurt', () => {
   const dealt = (rule) => {
     let total = 0;
     for (let seed = 1; seed < 200; seed++) {
-      const fresh = new Bout([newCreature('A'), newCreature('B')], { seed });
+      const fresh = new Bout([plainCreature('A'), plainCreature('B')], { seed });
       const [f, foe] = fresh.fighters;
       f.plan.hurt = rule;
       f.crit = 0;
@@ -155,7 +159,7 @@ test('what it does when hurt', () => {
 });
 
 test('who it goes for', () => {
-  const bout = new Bout([newCreature('Me'), newCreature('Hurt'), newCreature('Healthy')], { seed: 3, r: 200 });
+  const bout = new Bout([plainCreature('Me'), plainCreature('Hurt'), plainCreature('Healthy')], { seed: 3, r: 200 });
   const [me, hurt, healthy] = bout.fighters;
   hurt.hp = hurt.maxHp * 0.2;
   me.plan.target = 'weak';
@@ -168,7 +172,7 @@ test('a move switched off is never used, and every stance can finish a fight', (
   const c = wildCreature(4, 3);
   c.powers = NONE();
   c.battle.off = abilitiesOf(c);
-  const bout = new Bout([c, newCreature('X')], { seed: 1 });
+  const bout = new Bout([c, plainCreature('X')], { seed: 1 });
   assert.equal(bout.fighters[0].abilities.length, 0);
   assert.ok(abilitiesOf(c).length > 0, 'it still knows them');
   for (const stance of STANCE_IDS) {
@@ -185,7 +189,7 @@ test('a move switched off is never used, and every stance can finish a fight', (
 });
 
 test('a battle plan survives saving, and a hostile one is defused', () => {
-  const c = newCreature('Planner');
+  const c = plainCreature('Planner');
   c.battle = { stance: 'bounce', hurt: 'berserk', target: 'weak', off: ['zap'] };
   assert.deepEqual(parseCreature(serializeCreature(c)).battle, c.battle);
   const evil = sanitizeCreature({ format: 'creature/1', battle: { stance: '__proto__', hurt: 'constructor', target: 5, off: ['zap', 'zap', '__proto__', 7, 'nothing'] } });
@@ -231,7 +235,7 @@ test('no stance beats every other for an ordinary creature', () => {
 
 // Past the line for all three: Wits, Speed and Might in its top three.
 function readyForAll() {
-  const c = newCreature('Ready');
+  const c = plainCreature('Ready');
   c.essence.ink = 100;
   c.essence.spark = 90;
   c.essence.ember = 80;
@@ -324,7 +328,7 @@ test('a Malevolent Soul holds a Stand and one other, but never the other two tog
   assert.equal(powersHeld(fine), 2);
 
   // Its bonus really counts, and the sheet explains it.
-  const plain = newCreature('Plain');
+  const plain = plainCreature('Plain');
   const cruel = parseCreature(serializeCreature(plain));
   cruel.legendary = MALEVOLENT_ID;
   assert.equal(computeStats(cruel).might, computeStats(plain).might + LEGENDARY[MALEVOLENT_ID].stats.might);
@@ -345,7 +349,7 @@ test('a file can\'t hold more powers than it has places for', () => {
 });
 
 test('a cursed technique takes enough Might, a real choice, and gives its moves and stats', () => {
-  const weak = newCreature('Weak');
+  const weak = plainCreature('Weak');
   weak.essence.ember = (TECHNIQUE_MIGHT - 4) * 4;
   assert.equal(computeStats(weak).might, TECHNIQUE_MIGHT - 1);
   assert.equal(learnTechnique(weak), false);
@@ -363,7 +367,7 @@ test('a cursed technique takes enough Might, a real choice, and gives its moves 
 });
 
 test('its last name decides its technique, for good, and nobody picks it', () => {
-  const c = newCreature('Heir');
+  const c = plainCreature('Heir');
   assert.equal(fullName(c), `Heir ${lastName(c)}`);
   assert.equal(TECHNIQUES[lineageOf(c)].family, lastName(c));
   const back = parseCreature(serializeCreature(c));
@@ -373,7 +377,7 @@ test('its last name decides its technique, for good, and nobody picks it', () =>
   // Every family turns up, each with its own name and technique.
   const seen = new Set();
   for (let i = 0; i < 400; i++) {
-    const x = newCreature(`N${i}`);
+    const x = plainCreature(`N${i}`);
     x.id = `family${i}`;
     seen.add(lineageOf(x));
   }
@@ -398,11 +402,11 @@ test('every technique is wired up, and Black Flash really happens', () => {
   }
   assert.ok(fs.existsSync(`art/legendary/${LEGENDARY_ID}.png`));
 
-  const c = newCreature('Sorcerer');
+  const c = plainCreature('Sorcerer');
   c.powers.technique = 'ratio';
   let flashes = 0;
   const swings = 2000;
-  const bout = new Bout([c, newCreature('Dummy')], { seed: 9 });
+  const bout = new Bout([c, plainCreature('Dummy')], { seed: 9 });
   const [me, foe] = bout.fighters;
   foe.hp = foe.maxHp = 1e9;
   foe.dodge = 0;
@@ -413,7 +417,7 @@ test('every technique is wired up, and Black Flash really happens', () => {
   }
   const share = flashes / swings;
   assert.ok(Math.abs(share - BLACK_FLASH.chance) < 0.03, `flash rate ${share}`);
-  const plain = new Bout([newCreature('Plain'), newCreature('Dummy')], { seed: 9 });
+  const plain = new Bout([plainCreature('Plain'), plainCreature('Dummy')], { seed: 9 });
   plain.swing(plain.fighters[0], plain.fighters[1]);
   assert.ok(!plain.events.some((e) => e.name === 'BLACK FLASH'), 'only technique holders');
 });
@@ -423,7 +427,7 @@ test('the Legendary mutation is rare, comes from the file, and doesn\'t take a m
   let found = 0;
   const N = 3000;
   for (let i = 0; i < N; i++) {
-    const c = newCreature('Lucky');
+    const c = plainCreature('Lucky');
     const hex = (n) => n.toString(16).padStart(8, '0');
     absorbFile(c, { ext: 'ink', name: 'a', sha: `${hex(i * 2654435761 >>> 0)}${hex((i * 40503 + 7) >>> 0)}aa`, size: 32 * 1024, snippet: '' });
     if (c.legendary) {
@@ -434,7 +438,7 @@ test('the Legendary mutation is rare, comes from the file, and doesn\'t take a m
   const share = found / N;
   assert.ok(share > (1 / LEGENDARY_ONE_IN) * 0.5 && share < (1 / LEGENDARY_ONE_IN) * 1.8, `share ${share}`);
 
-  const c = newCreature('Twice');
+  const c = plainCreature('Twice');
   c.legendary = LEGENDARY_ID;
   for (let i = 0; i < MAX_MUTATIONS + 3; i++) c.mutations.push({ id: MUTATION_IDS[i], from: '', at: 0 });
   c.mutations.length = MAX_MUTATIONS;
@@ -446,20 +450,20 @@ test('the Legendary mutation is rare, comes from the file, and doesn\'t take a m
 });
 
 test('winning to the death can grow it, and The Last Dragon always does', () => {
-  const dragon = newCreature('Slayer');
+  const dragon = plainCreature('Slayer');
   const res = settleChallenge(dragon, 'dragon', true, 0.99);
   assert.equal(res.legendary, LEGENDARY_ID);
   assert.equal(dragon.legendary, LEGENDARY_ID);
   assert.equal(settleChallenge(dragon, 'rex', true, 0).legendary, null, 'only once');
 
-  const lucky = newCreature('Lucky');
+  const lucky = plainCreature('Lucky');
   assert.equal(settleChallenge(lucky, 'rat', true, 0.01).legendary, MALEVOLENT_ID, 'an ordinary kill can only leave a Malevolent Soul');
   assert.equal(settleChallenge(lucky, 'scorpion', true, 0.01).legendary, null, 'and a creature only ever has one soul');
   assert.equal(settleChallenge(lucky, 'dragon', true, 0.01).legendary, null);
   assert.equal(lucky.legendary, MALEVOLENT_ID);
-  const unlucky = newCreature('Unlucky');
+  const unlucky = plainCreature('Unlucky');
   assert.equal(settleChallenge(unlucky, 'rat', true, 0.99).legendary, null);
-  const training = newCreature('Student');
+  const training = plainCreature('Student');
   assert.equal(settleChallenge(training, 'crab', true, 0).legendary, null, 'training monsters never give it');
 });
 
@@ -485,7 +489,7 @@ test('color families line up with the stats those colors raise', () => {
 });
 
 test('whatever it mines also lands in the bank to spend', () => {
-  const c = newCreature('Miner');
+  const c = plainCreature('Miner');
   addColor(c, 230, 60, 40, 10);
   addColor(c, 40, 90, 230, 7);
   addColor(c, 128, 128, 128, 5);
@@ -503,7 +507,7 @@ test('whatever it mines also lands in the bank to spend', () => {
 });
 
 test('a save from before the bank gets to spend what it already mined', () => {
-  const c = newCreature('Old');
+  const c = plainCreature('Old');
   addColor(c, 230, 60, 40, 30);
   addColor(c, 128, 128, 128, 12);
   c.record.gems = 3;
@@ -524,7 +528,7 @@ test('a save from before the bank gets to spend what it already mined', () => {
 });
 
 test('charms cost what they say, are kept, and only two can be worn', () => {
-  const c = newCreature('Crafter');
+  const c = plainCreature('Crafter');
   assert.equal(craftCharm(c, 'ruby'), false, 'it can\'t afford one');
   c.bank = { ...emptyBank(), red: 200, blue: 200, dust: 300, gems: 5 };
   const before = computeStats(c).might;
@@ -554,7 +558,7 @@ test('charms in a file have to be owned, real and within the limit', () => {
 });
 
 test('charms still count against stat limits', () => {
-  const c = newCreature('Capped');
+  const c = plainCreature('Capped');
   STAT_KEYS.forEach((k) => { c.training[k] = 40; });
   Object.keys(c.essence).forEach((k) => { c.essence[k] = 500; });
   c.bank = { ...emptyBank(), red: 100, dust: 100, gems: 5 };
@@ -566,7 +570,7 @@ test('charms still count against stat limits', () => {
 });
 
 test('a dye costs that color, shows on it, and washes off', () => {
-  const c = newCreature('Dyed');
+  const c = plainCreature('Dyed');
   const natural = creatureColors(c).body;
   assert.equal(applyDye(c, '#ff0000', 'red'), false, 'it can\'t afford it');
   c.bank.red = DYE_COST;
@@ -584,13 +588,13 @@ test('a dye costs that color, shows on it, and washes off', () => {
 });
 
 test('a paint changes the next fight and then it is gone', () => {
-  const c = newCreature('Painted');
+  const c = plainCreature('Painted');
   c.bank = { ...emptyBank(), red: 100, green: 100, blue: 100, dust: 100 };
-  const plain = new Bout([parseCreature(serializeCreature(c)), newCreature('X')], { seed: 1 }).fighters[0];
+  const plain = new Bout([parseCreature(serializeCreature(c)), plainCreature('X')], { seed: 1 }).fighters[0];
   assert.ok(craftPaint(c, 'war'));
   assert.equal(craftPaint(c, 'shell'), false, 'one paint at a time');
   assert.equal(c.bank.red, 100 - PAINTS.war.cost.red);
-  const painted = new Bout([parseCreature(serializeCreature(c)), newCreature('X')], { seed: 1 }).fighters[0];
+  const painted = new Bout([parseCreature(serializeCreature(c)), plainCreature('X')], { seed: 1 }).fighters[0];
   assert.ok(Math.abs(painted.atk / plain.atk - (1 + PAINTS.war.effect.damage)) < 1e-9);
   useUpPrep(c);
   assert.equal(c.prep.paint, null);
@@ -598,9 +602,9 @@ test('a paint changes the next fight and then it is gone', () => {
 
   // Each kind of effect reaches the fighter.
   const effectOf = (prep) => {
-    const x = newCreature('E');
+    const x = plainCreature('E');
     x.prep = prep;
-    return new Bout([x, newCreature('X')], { seed: 1 }).fighters[0];
+    return new Bout([x, plainCreature('X')], { seed: 1 }).fighters[0];
   };
   const base = effectOf({ paint: null });
   assert.ok(effectOf({ paint: 'life' }).maxHp > base.maxHp);
@@ -631,7 +635,7 @@ test('everything craftable has its picture', () => {
 // ---------- the farm ----------
 
 function farmWith(crop) {
-  const c = newCreature('Grower');
+  const c = plainCreature('Grower');
   const field = addField(c, { x: 0, y: 0, w: TILE, h: TILE });
   setFieldCrop(c, field.id, crop);
   doJob(c, nextJob(c, 0, 0), 1000); // till
@@ -655,7 +659,7 @@ test('a harvest gives farmed food, plus a little for its store, and seeds cost n
 });
 
 test('a new field already grows something, and a crop from an older save still pays out', () => {
-  const c = newCreature('Old');
+  const c = plainCreature('Old');
   const field = addField(c, { x: 0, y: 0, w: TILE, h: TILE });
   assert.equal(field.crop, CROP_IDS[0]);
   field.tiles[0] = { s: 3, t: 0 }; // planted before plants had kinds
@@ -667,7 +671,7 @@ test('a new field already grows something, and a crop from an older save still p
 });
 
 test('a snack is free, fills it and grows it, and never changes it', () => {
-  const c = newCreature('Snacker');
+  const c = plainCreature('Snacker');
   c.fullness = 40;
   const stats = computeStats(c);
   const res = eatSnack(c);
@@ -691,7 +695,7 @@ test('a snack is free, fills it and grows it, and never changes it', () => {
 });
 
 test('snacks alone can get a new creature to its first job', () => {
-  const c = newCreature('Starter');
+  const c = plainCreature('Starter');
   let snacks = 0;
   let stageUp = false;
   while (c.growth < STAGES[1].at) {
@@ -736,7 +740,7 @@ test('watering pushes crops ahead, and has to wait before the next time', () => 
   assert.equal(waterFields(c, now + 1000), 0, 'too soon');
   assert.equal(tile.t, t - WATER_PUSH_MS);
   assert.equal(waterFields(c, now + WATER_EVERY_MS), 1);
-  const empty = newCreature('Dry');
+  const empty = plainCreature('Dry');
   assert.equal(waterFields(empty, now), 0, 'nothing to water');
   assert.equal(waterReadyIn(empty, now), 0, 'and it does not use up the wait');
 });
@@ -744,7 +748,7 @@ test('watering pushes crops ahead, and has to wait before the next time', () => 
 test('eating farmed food grows mutations of its family', () => {
   for (const id of CROP_IDS) {
     const { family } = CROPS[id];
-    const c = newCreature('Eater');
+    const c = plainCreature('Eater');
     c.larder[id] = 3;
     c.fullness = 0;
     const first = eatPlant(c, id, 1000);
@@ -762,7 +766,7 @@ test('eating farmed food grows mutations of its family', () => {
 });
 
 test('eating plants raises the stat its family raises, and it needs room to eat', () => {
-  const c = newCreature('Picky');
+  const c = plainCreature('Picky');
   c.larder.melon = 40;
   const wits = computeStats(c).wits;
   for (let i = 0; i < 20; i++) {
@@ -782,7 +786,7 @@ test('eating plants raises the stat its family raises, and it needs room to eat'
 });
 
 test('plants respect the mutation limit, and can bring a Legendary mutation', () => {
-  const c = newCreature('Full');
+  const c = plainCreature('Full');
   let legendary = 0;
   for (const id of CROP_IDS) {
     c.larder[id] = 60;
@@ -811,7 +815,7 @@ test('every move in the game has a sentence that reads properly', () => {
 });
 
 test('the sheet lists what it has and what each thing does', () => {
-  const c = newCreature('Shown');
+  const c = plainCreature('Shown');
   c.growth = 40;
   c.mutations.push({ id: 'mindgem', from: '', at: 0 }, { id: 'bigbrain', from: '', at: 0 });
   c.path.line = ['fighter', 'tactician', 'grandmaster'];
@@ -848,7 +852,7 @@ test('the sheet lists what it has and what each thing does', () => {
   assert.ok(STANDS.theworld.moves.every((m) => titled('Powers').rows[0].detail.includes(ABILITIES[m].name)));
 
   // Some eggs hatch with a gift, which gets its own section, so this one is made giftless.
-  const plain = newCreature('Empty');
+  const plain = plainCreature('Empty');
   plain.traits = [];
   const none = buildSheet(plain);
   assert.equal(none.length, 1, 'an empty creature only has the mutation section');
@@ -856,19 +860,19 @@ test('the sheet lists what it has and what each thing does', () => {
 });
 
 test('the sheet says when a limit means something adds nothing', () => {
-  const c = newCreature('Limited');
+  const c = plainCreature('Limited');
   STAT_KEYS.forEach((k) => { c.training[k] = 40; });
   Object.keys(c.essence).forEach((k) => { c.essence[k] = 500; });
   c.mutations.push({ id: 'claws', from: '', at: 0 });
   const row = buildSheet(c).find((s) => s.title.startsWith('Mutations')).rows[0];
   assert.ok(row.limited.includes('Might'));
-  const free = newCreature('Free');
+  const free = plainCreature('Free');
   free.mutations.push({ id: 'claws', from: '', at: 0 });
   assert.equal(buildSheet(free)[0].rows[0].limited, '');
 });
 
 test('the full mutation list covers every mutation, once, with its effect', () => {
-  const c = newCreature('Curious');
+  const c = plainCreature('Curious');
   c.mutations.push({ id: 'horns', from: '', at: 0 });
   const families = allMutations(c);
   const rows = families.flatMap((f) => f.rows);
@@ -881,7 +885,7 @@ test('the full mutation list covers every mutation, once, with its effect', () =
 });
 
 test('the moves list shows which are on, and where each came from', () => {
-  const c = newCreature('Mover');
+  const c = plainCreature('Mover');
   c.mutations.push({ id: 'horns', from: '', at: 0 }, { id: 'plates', from: '', at: 0 });
   c.powers.stand = 'hierophant';
   const moves = moveList(c);
@@ -905,7 +909,7 @@ test('perks read properly on every job', () => {
 
 test('the training plan includes plants and crafting, and still reads properly', () => {
   for (const stat of STAT_KEYS) {
-    const plan = trainingPlan(newCreature('Plan'), stat);
+    const plan = trainingPlan(plainCreature('Plan'), stat);
     assert.ok(plan.some((r) => r.title === 'Wear a charm'), stat);
     const plant = CROPS[CROP_IDS.find((id) => FOODS[CROPS[id].family].stat === stat)];
     assert.ok(plan.some((r) => r.title === `Feed it ${plant.name}`), stat);

@@ -15,8 +15,8 @@ export const G = {
   // Every living creature, and those of them at home in the village: { base, c }.
   everyone: [],
   village: [],
-  // A run of village-defence waves, while one is on.
-  waveRun: null,
+  // The Adventure level being fought, while one is on.
+  adventureRun: null,
   creature: null,
   base: null,
   pet: null,
@@ -35,8 +35,6 @@ export const G = {
   bout: null,
   // Creatures fighting in the ring right now, whose picture leaves the screen while they do.
   boutHide: new Set(),
-  society: null,
-  societyView: null,
   dragHover: 0,
   challenge: null,
   veins: [],
@@ -66,8 +64,3 @@ export const saveTeam = () => Promise.all(G.team.map((m) => saveCreature(m.c)));
 
 // Remembers who is out and who is being looked after, for the next time the game starts.
 export const rememberTeam = () => api.setTeam(G.team.map((m) => m.base), G.base ?? G.team[0]?.base ?? '');
-
-export function saveWorld() {
-  if (!G.society) return Promise.resolve();
-  return api.saveData('society', JSON.stringify(G.society));
-}

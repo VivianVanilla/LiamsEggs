@@ -39,7 +39,7 @@ export const STAT_GUIDE = {
     unlocks: 'stand',
   },
   vigor: {
-    does: 'Health, and how many people its society can hold.',
+    does: 'Health, so it lasts longer in a fight.',
     food: 'sap',
     colors: 'green and teal',
     sample: [40, 200, 110],

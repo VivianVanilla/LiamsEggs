@@ -154,10 +154,12 @@ function spriteOf(c) {
   return rig.sprite;
 }
 
-// Draws it standing on (x, y). flat lays the picture on its side, for a knocked-out fighter.
-export function drawCreature(ctx, c, x, y, { dir = 1, alpha = 1, flat = false } = {}) {
-  const { canvas, w } = spriteOf(c);
-  const size = heightOf(c);
+// Draws it standing on (x, y). flat lays the picture on its side, for a knocked-out fighter. grow
+// draws it bigger than usual, for a Titan.
+export function drawCreature(ctx, c, x, y, { dir = 1, alpha = 1, flat = false, grow = 1 } = {}) {
+  const { canvas, w: baseW } = spriteOf(c);
+  const size = heightOf(c) * grow;
+  const w = baseW * grow;
   ctx.save();
   if (alpha !== 1) ctx.globalAlpha = alpha;
   ctx.translate(x, y);

@@ -2,24 +2,25 @@
 
 import { toast, calm, seen } from './ui/flair.js';
 import { clamp } from './lib/util.js';
-import { G, api, saveCreature, saveTeam, saveWorld, saveHouse, creatureText, memberOf, inBout, rememberTeam } from './state.js';
+import { G, api, saveCreature, saveTeam, saveHouse, creatureText, memberOf, inBout, rememberTeam } from './state.js';
 import { emptyHouse, sanitizeHouse, joinHouse } from './core/house.js';
 import { Pet } from './pet.js';
 import { parseCreature, digestTime, pathChoice, canAwakenStand, canBecomeSpeedster, canLearnTechnique, canLearnSecondTechnique, fullName } from './core/creature.js';
 import { TILE, tickFarm, ANIMALS } from './sim/farm.js';
-import { tickWorld, catchUp, sanitizeWorld, TICK_MS } from './sim/society.js';
 import { TEAM_MAX } from './data/family.js';
 import { loadArt, drawArt, drawAnimal, dropRig, setPictureScale, heightOf } from './draw/art.js';
-import { drawFields, drawFileSprite, drawArenaFloor, drawFighter, drawHealthBar, drawBolts, drawVeins, drawHint, SocietyView } from './draw/scene.js';
+import { drawFields, drawFileSprite, drawArenaFloor, drawFighter, drawHealthBar, drawBolts, drawVeins, drawHint } from './draw/scene.js';
 import { closeNotesOf, noteRects, tickNotes, getNote, syncFocus, cancelPicking, showNotesFor } from './ui/notes.js';
 import { openMenu, toggleMenu, openAny, openSettings, openNaming, createCreature, feedPaths, openFeed, openPathChoice, refreshMenu } from './ui/panels.js';
 import { onBoutEnded, forgetFighter } from './ui/boards.js';
 import { onChallengeEnded } from './ui/challenges.js';
-import { loadVillage, onWaveEnded } from './ui/village.js';
+import { loadVillage } from './ui/village.js';
+import { onLevelEnded } from './ui/adventure.js';
 import { takeEgg } from './ui/roll.js';
-import { hoursDue, runVillage, finishExpeditions, growHostile, raidDue, incomingRaid, putOffRaids, villageDefense } from './core/village.js';
+import { hoursDue, runVillage, finishExpeditions, tidyMine } from './core/village.js';
 import { FRUITS } from './data/fruits.js';
 import { RACES } from './data/races.js';
+import { ITEMS } from './data/items.js';
 
 const canvas = document.getElementById('world');
 const ctx = canvas.getContext('2d');
@@ -28,8 +29,6 @@ let lastFrame = performance.now();
 let rectClock = 0;
 let saveClock = 0;
 let farmClock = 0;
-let worldClock = 0;
-let worldSaveClock = 0;
 let noteClock = 0;
 let villageClock = 0;
 let sinceDraw = 0;
@@ -45,6 +44,8 @@ function applySettings(settings) {
   G.settings = settings;
   setPictureScale(settings.scale ?? 1);
   document.documentElement.style.setProperty('--see', settings.opacity ?? 0.75);
+  // Dark mode turns every note into night paper.
+  document.documentElement.classList.toggle('dark', !!settings.dark);
 }
 
 // Blanks or brings back everything on screen. The window itself stays where it is.
@@ -345,25 +346,7 @@ function update(dt) {
     const wasDone = bout.done;
     bout.tick(dt);
     handleBoutEvents(bout);
-    if (bout.done && !wasDone) (G.challenge ? onChallengeEnded : bout.wave ? onWaveEnded : onBoutEnded)(bout);
-  }
-
-  const world = G.society;
-  if (world) {
-    worldClock += dt * G.speed;
-    if (worldClock * 1000 >= TICK_MS) {
-      worldClock = 0;
-      if (!world.paused && !world.ended) {
-        tickWorld(world, 1, (ev) => G.societyView?.addBattle(world, ev, mapArea(world)));
-        world.lastTick = Date.now();
-      }
-    }
-    G.societyView?.update(world, dt, mapArea(world));
-    worldSaveClock += dt;
-    if (worldSaveClock > 60) {
-      worldSaveClock = 0;
-      saveWorld();
-    }
+    if (bout.done && !wasDone) (G.challenge ? onChallengeEnded : bout.adventure ? onLevelEnded : onBoutEnded)(bout);
   }
 
   G.fx.update(dt);
@@ -397,17 +380,6 @@ function update(dt) {
   }
 }
 
-// Where the society or village map sits: in the box it was put in, kept on the screen, or across
-// the whole screen.
-function mapArea(world) {
-  const { work } = G.screen;
-  const a = world.area;
-  if (!a) return work;
-  const w = clamp(a.w, 60, work.w);
-  const h = clamp(a.h, 60, work.h);
-  return { x: clamp(a.x, work.x, work.x + work.w - w), y: clamp(a.y, work.y, work.y + work.h - h), w, h };
-}
-
 // Big news gets a popup at the top of the screen, and a shout over whoever you are looking after.
 function shoutNews(text, color, size = 20, kind = 'good') {
   const { work } = G.screen;
@@ -417,31 +389,29 @@ function shoutNews(text, color, size = 20, kind = 'good') {
   toast(text, kind);
 }
 
-// The village works, expeditions come home, and with hostile mode on, raids come in. Raids only
-// happen while the game is open and showing.
+// The village works, the Legendary Mine brings up ore, and expeditions come home.
 function tickVillage() {
   const now = Date.now();
   const home = G.village.map((r) => r.c);
+  // Anyone gone, or no longer a legendary Miner, loses their place in the mine.
+  if (G.everyone.length) tidyMine(G.house, G.everyone.map((r) => r.c));
   const hours = hoursDue(G.house, now);
   const gained = runVillage(G.house, home, hours);
-  growHostile(G.house, hours);
   gained.fruits.forEach((id) => shoutNews(`THE VILLAGE FOUND A DEVIL FRUIT: ${FRUITS[id].name}!!!`, FRUITS[id].color, 22, 'rare'));
   const back = finishExpeditions(G.house, now);
   for (const b of back) {
-    const finds = [b.find && `a ${RACES[b.find].name}`, b.fruit && `the ${FRUITS[b.fruit].name}`].filter(Boolean);
+    const finds = [b.find && `a ${RACES[b.find].name}`, b.fruit && `the ${FRUITS[b.fruit].name}`, ...b.items.map((id) => `a ${ITEMS[id].name}`)].filter(Boolean);
     shoutNews(`EXPEDITION BACK! +${b.gems} gems${finds.length ? `, and ${finds.join(' and ')}!!!` : '!'}`, finds.length ? '#ffd24a' : '#e9ffd9', 20, finds.length ? 'rare' : 'good');
   }
   if (back.length) loadVillage();
-  if (raidDue(G.house, now)) {
-    if (G.hidden) putOffRaids(G.house, now);
-    else {
-      const r = incomingRaid(G.house, villageDefense(home, G.team.map((m) => m.c)), now);
-      shoutNews(r.won ? `RAID! ${r.village} was held off: +${r.gems} gems!` : `RAID! ${r.village} took some of your stuff!`, r.won ? '#8ef06a' : '#ff6b5e', 20, r.won ? 'good' : 'bad');
-      getNote('village')?.rebuild();
-    }
+  if (gained.ore || back.length) {
+    getNote('village')?.rebuild();
+    getNote('menu')?.rebuild();
   }
   saveHouse();
 }
+// A countdown that runs out asks for this straight away, so a party is home on the dot.
+G.tickVillage = () => tickVillage();
 
 const onScreen = () => G.team.filter((m) => !inBout(m.c));
 
@@ -457,9 +427,6 @@ function draw() {
   if (G.hidden) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, G.screen.w, G.screen.h);
-
-  const world = G.society;
-  if (world && !world.hideView) G.societyView?.draw(ctx, world, mapArea(world));
 
   for (const m of G.team) drawFields(ctx, m.c, Date.now(), G.speed);
   G.fx.drawGround(ctx);
@@ -510,8 +477,7 @@ const showClickMe = () => !!G.pet && !calm() && !seen('menu') && !G.hidden;
 function needsDraw(dt) {
   sinceDraw += dt;
   if (showClickMe()) return true;
-  const world = G.society;
-  if (G.bout || G.egg || G.drops.length || G.veins.length || G.fx.busy() || (world && !world.hideView)) return true;
+  if (G.bout || G.egg || G.drops.length || G.veins.length || G.fx.busy()) return true;
   if (G.team.some((m) => m.pet.trailing())) return true;
   let stamp = `${G.dragHover > 0}`;
   for (const m of G.team) {
@@ -666,10 +632,10 @@ api.onCommand((msg) => {
       if (getNote('settings')) openSettings();
       break;
     case 'quit':
-      Promise.all([saveTeam(), saveWorld()]).finally(() => api.quitReady());
+      Promise.all([saveTeam(), saveHouse()]).finally(() => api.quitReady());
       break;
     case 'reloadArt':
-      Promise.all([saveTeam(), saveWorld()]).finally(() => window.location.reload());
+      Promise.all([saveTeam(), saveHouse()]).finally(() => window.location.reload());
       break;
     default:
       break;
@@ -677,25 +643,6 @@ api.onCommand((msg) => {
 });
 
 // ---------- startup ----------
-
-async function loadWorld() {
-  try {
-    const text = await api.loadData('society');
-    if (!text) return;
-    const raw = JSON.parse(text);
-    if (!raw) return;
-    const world = sanitizeWorld(raw);
-    const before = world.log.length;
-    const ran = catchUp(world, Date.now(), G.speed);
-    if (ran > 0 && world.log.length >= before) {
-      world.log.push({ t: world.tick, text: `${ran} days passed while you were away.`, kind: 'era' });
-    }
-    G.society = world;
-    G.societyView = new SocietyView();
-  } catch (err) {
-    console.error('Could not load the society save', err);
-  }
-}
 
 // The pool your creatures share. The first time a creature is seen, whatever it had of its own
 // joins the pool, and its own file is saved without it.
@@ -738,10 +685,7 @@ async function start() {
       console.error(`Skipping ${f.base}.creature: ${err.message}`);
     }
   }
-  await loadWorld();
   await loadHouse(rows);
-  // Raids never come while the game is closed, and the village catches up on its work.
-  putOffRaids(G.house, Date.now());
 
   // Whoever was out last time comes back out.
   const out = (info.settings.team ?? []).map((base) => rows.find((r) => r.base === base)).filter(Boolean).slice(0, TEAM_MAX);

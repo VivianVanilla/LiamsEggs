@@ -1,10 +1,10 @@
 // What the training guide says for one creature and one stat. No DOM here, so tests can read it.
 // Everything is worked out from the same tables and sources the game itself uses.
 
-import { computeStats, statSources, statLimits, rawStats, stageIndex, stageOf, mutationsFull, lineageOf, lastName, STAGES, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
+import { computeStats, statSources, statLimits, rawStats, stageIndex, stageOf, mutationsFull, mutationCap, lineageOf, lastName, STAGES, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
 import { STAT_GUIDE } from '../data/guide.js';
 import { FOODS } from '../data/foods.js';
-import { MUTATIONS, MUTATION_IDS, MAX_MUTATIONS } from '../data/mutations.js';
+import { MUTATIONS, MUTATION_IDS } from '../data/mutations.js';
 import { PATHS } from '../data/paths.js';
 import { TRAINING_MONSTERS, DEADLY_IDS, DEADLY_MONSTERS, TRAINING_CHANCE, TROPHY_POINTS } from '../data/monsters.js';
 import { STAND_WITS, SPEEDSTER_SPEED, TECHNIQUE_MIGHT, TECHNIQUES } from '../data/powers.js';
@@ -98,9 +98,9 @@ export function trainingPlan(c, stat) {
     .sort((a, b) => MUTATIONS[b].stats[stat] - MUTATIONS[a].stats[stat])
     .slice(0, 4);
   rows.push({
-    title: `Mutations (${c.mutations.length} of ${MAX_MUTATIONS})`,
+    title: `Mutations (${c.mutations.length} of ${mutationCap(c)})`,
     detail: mutationsFull(c)
-      ? 'It has no room left for another.'
+      ? 'It has no room left for another. A Limit Expander, from Adventure or an expedition, makes room for 2 more.'
       : `What it eats decides the kind, and which one of that kind is a surprise. Could still grow: ${mutations.map((id) => `${MUTATIONS[id].name} +${MUTATIONS[id].stats[stat]} (${FOODS[MUTATIONS[id].family].label})`).join(', ')}.`,
     have: sources.mutations[stat],
     done: mutationsFull(c),

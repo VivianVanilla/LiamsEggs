@@ -1,7 +1,8 @@
 // In plain words: what each move does, and what everything a creature has is doing to it.
 // No DOM here, so tests can read it. Used by the battle plan note and the "what it has" note.
 
-import { rawStats, statLimits, pathNodes, movesOf, hpGivenUp, ofaLevel, hasTrait, raceName, raceParts, raceStats, raceMoves, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
+import { rawStats, statLimits, pathNodes, movesOf, hpGivenUp, ofaLevel, hasTrait, raceName, raceParts, raceStats, raceMoves, mutationCap, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
+import { WEAPONS } from '../data/forge.js';
 import { MUTATIONS, MAX_MUTATIONS, FAMILY_ABILITY } from '../data/mutations.js';
 import { ABILITIES } from '../data/paths.js';
 import { FOODS } from '../data/foods.js';
@@ -35,7 +36,7 @@ const PERK_WORDS = {
   duelXp: (v) => `+${pct(v)} XP from puzzle duels`,
   duelSkill: (v) => `+${Math.round(v * 100)} puzzle skill`,
   carePicks: (v) => `${v} more thing can pass on when breeding`,
-  careRest: (v) => `parents rest ${pct(v)} less after breeding`,
+  careSave: (v) => `parents spend ${pct(v)} less fullness on an egg`,
   hatchGrowth: (v) => `eggs hatch with ${v} more growth`,
 };
 
@@ -135,7 +136,7 @@ export function buildSheet(c) {
     return row(c, def.name, def.stats, `From eating ${FOODS[def.family].label}. ${note}`);
   });
   sections.push({
-    title: `Mutations (${c.mutations.length} of ${MAX_MUTATIONS})`,
+    title: `Mutations (${c.mutations.length} of ${mutationCap(c)})`,
     empty: 'None yet. Feed it food from your farm to grow some.',
     rows: mutationRows,
   });
@@ -211,6 +212,15 @@ export function buildSheet(c) {
       title: `Charms it wears (${c.gear.worn.length} of ${CHARM_SLOTS})`,
       rows: c.gear.worn.map((id) => row(c, CHARMS[id].name, CHARMS[id].stats, 'Crafted in the workshop.')),
     });
+  }
+
+  if (c.weapon && WEAPONS[c.weapon]) {
+    const w = WEAPONS[c.weapon];
+    sections.push({ title: 'Weapon', rows: [{ name: w.name, effect: '', detail: `Forged from Legendary ore. In every fight, it ${w.text}.`, limited: '' }] });
+  }
+
+  if (c.expanders) {
+    sections.push({ title: 'Limit Expanders', rows: [{ name: `${c.expanders} used`, effect: '', detail: `It can hold ${mutationCap(c)} mutations instead of ${MAX_MUTATIONS}.`, limited: '' }] });
   }
 
   if (c.trophies.length) {

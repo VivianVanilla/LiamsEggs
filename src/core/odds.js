@@ -3,17 +3,21 @@
 
 import { perksOf, hasTrait } from './creature.js';
 import {
-  TRAITS, TRAIT_ODDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, SHARINGAN_COPY, TECHNIQUES, TECHNIQUE_IDS, LEGENDARY, LEGENDARY_ID, MALEVOLENT_ID,
+  TRAITS, TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, SHARINGAN_COPY, TECHNIQUES, TECHNIQUE_IDS, LEGENDARY, LEGENDARY_ID, MALEVOLENT_ID,
   LEGENDARY_ONE_IN, LEGENDARY_FROM_TROPHY, BLACK_FLASH, OFA_LEVEL_AT,
 } from '../data/powers.js';
 import { TRAINING_CHANCE, DEADLY_ROLL, DEADLY_MONSTERS } from '../data/monsters.js';
 import { GEM_CHANCE, VEIN_CHANCE, VEIN_GEM_CHANCE } from '../data/crafting.js';
 import { MUTATION_THRESHOLDS, MAX_MUTATIONS } from '../data/mutations.js';
-import { BREED_GIFTS } from '../data/family.js';
+import { BREED_GIFTS, ROLL_COST, MEGA_BREEDER } from '../data/family.js';
 import { FRUITS, FRUIT_FROM_HARVEST, FRUIT_FROM_EXPEDITION, FRUIT_IDS } from '../data/fruits.js';
 import { RACES, PURE_BLOOD_CHANCE } from '../data/races.js';
-import { EXPEDITIONS, EXPEDITION_IDS, RAID_LOSS, WAVE_BOSS_EVERY } from '../data/village.js';
-import { ROLL_COST } from '../data/family.js';
+import { EXPEDITIONS, EXPEDITION_IDS } from '../data/village.js';
+import { ITEMS } from '../data/items.js';
+import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL } from '../data/adventure.js';
+
+const LEVEL_COUNT = ADVENTURE_LEVELS.length;
+const BOSS_LEVELS = Object.keys(ADVENTURE_BOSSES).map(Number);
 
 const pct = (v) => `${Math.round(v * 100)}%`;
 // Small chances keep their decimal: 0.1%, 1.5%.
@@ -44,12 +48,13 @@ export function chanceSections(c = null) {
           has: born('sharingan'),
           detail: `Of any egg. ${TRAITS.sharingan.blurb} The copy is ${pct(SHARINGAN_COPY)} as strong as the real move.`,
         },
-        {
-          name: TRAITS.cursedbody.name,
-          odds: oneIn(TRAIT_ODDS.cursedbody),
-          has: born('cursedbody'),
-          detail: `Of any egg. ${TRAITS.cursedbody.blurb}`,
-        },
+        // Everything else is the same for any egg.
+        ...TRAIT_IDS.filter((id) => id !== 'sixeyes' && id !== 'sharingan').map((id) => ({
+          name: TRAITS[id].name,
+          odds: oneIn(TRAIT_ODDS[id]),
+          has: born(id),
+          detail: `Of any egg. ${TRAITS[id].blurb}`,
+        })),
         {
           name: 'Its family',
           odds: oneIn(families),
@@ -63,8 +68,23 @@ export function chanceSections(c = null) {
         {
           name: 'A bred baby',
           odds: 'you pick',
-          detail: `It gets the last name you choose and up to ${BREED_GIFTS} things you choose from its parents. Nothing about it is left to chance.`,
+          detail: `It gets the last name you choose and up to ${BREED_GIFTS} things you choose from its parents, ${MEGA_BREEDER.gifts} more with the Mega Breeder. Nothing about it is left to chance.`,
         },
+      ],
+    },
+    {
+      title: 'Loot',
+      rows: [
+        ...EXPEDITION_IDS.flatMap((where) => Object.entries(EXPEDITIONS[where].items).map(([id, chance]) => ({
+          name: `${ITEMS[id].name}, ${EXPEDITIONS[where].name.toLowerCase()}`,
+          odds: fine(chance),
+          detail: `Of every expedition that goes there. ${ITEMS[id].text}`,
+        }))),
+        ...Object.entries(ADVENTURE_DROPS).map(([id, p]) => ({
+          name: `${ITEMS[id].name}, Adventure`,
+          odds: `${fine(p + ADVENTURE_DROPS_PER_LEVEL[id])}-${fine(p + LEVEL_COUNT * ADVENTURE_DROPS_PER_LEVEL[id])}`,
+          detail: `Of every Adventure win, first time or not: the further the level, the better the chance. Some levels also hand one over the first time they are beaten. ${ITEMS[id].text}`,
+        })),
       ],
     },
     {
@@ -111,17 +131,16 @@ export function chanceSections(c = null) {
       ],
     },
     {
-      title: 'The village',
+      title: 'Eggs and Adventure',
       rows: [
-        { name: 'A raid', odds: 'shown', detail: `The Raids tab shows how often your village holds each hostile village off before it comes. A lost raid takes ${pct(RAID_LOSS.colors)} of your colors and ${pct(RAID_LOSS.store)} of your food.` },
-        { name: 'Waves', odds: `every ${WAVE_BOSS_EVERY}th`, detail: `Every ${WAVE_BOSS_EVERY}th wave a monster from the Challenges note leads the raiders.` },
         { name: 'A rolled egg', odds: `${ROLL_COST} gem`, detail: 'Each roll is a brand new egg, with the same chances as any egg above.' },
+        { name: 'Adventure bosses', odds: `${BOSS_LEVELS.length} of ${LEVEL_COUNT}`, detail: `Levels ${andList(BOSS_LEVELS)} are led by a monster from the Challenges note, ending with ${dragon.name}.` },
       ],
     },
     {
       title: 'Not chance: always the same',
       rows: [
-        { name: 'Mutations', odds: 'count', detail: `Its first mutation from one kind of plant grows after eating ${MUTATION_THRESHOLDS[0]} of them, and the next ones after ${andList(MUTATION_THRESHOLDS.slice(1))} eaten in all. Only which one grows is a surprise. ${MAX_MUTATIONS} at most.` },
+        { name: 'Mutations', odds: 'count', detail: `Its first mutation from one kind of plant grows after eating ${MUTATION_THRESHOLDS[0]} of them, and the next ones after ${andList(MUTATION_THRESHOLDS.slice(1))} eaten in all. Only which one grows is a surprise. ${MAX_MUTATIONS} at most, or more with Limit Expanders.` },
         { name: 'Six Eyes', odds: `every ${SIX_EYES_EVERY}s`, detail: `With Limitless, Infinity comes up every ${SIX_EYES_EVERY} seconds, every time.` },
         { name: 'One For All', odds: 'stockpile', detail: `Levels 2 to 7 come at a stockpile of ${OFA_LEVEL_AT.slice(1).join(', ')}.` },
       ],

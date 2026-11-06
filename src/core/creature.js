@@ -5,7 +5,9 @@
 import { clamp, num, hashStr, makeRng, pick, mixHex, hexToRgb, hslToHex, rgbToHex, rgbToHsl, uid } from '../lib/util.js';
 import { FOODS, FOOD_ORDER, SNACK, nutritionOf, essenceOf, fillOf } from '../data/foods.js';
 import { MUTATIONS, MUTATION_THRESHOLDS, MAX_MUTATIONS, familyMutations, FAMILY_ABILITY } from '../data/mutations.js';
-import { PATHS, ROOT_PATHS, TIER_XP, DEFAULT_SOCIETY, ABILITIES } from '../data/paths.js';
+import { PATHS, ROOT_PATHS, TIER_XP, ABILITIES } from '../data/paths.js';
+import { WEAPONS } from '../data/forge.js';
+import { EXPANDER_SLOTS, MAX_EXPANDERS } from '../data/items.js';
 import {
   STANDS, STAND_IDS, STAND_WITS, QUIRKS, QUIRK_IDS, SPEEDSTER, SPEEDSTER_SPEED, MAX_HP_GIVEN,
   TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, POWER_SLOTS, POWER_SLOTS_LEGENDARY, POWER_CATEGORIES, LEGENDARY, LEGENDARY_ID, LEGENDARY_ONE_IN,
@@ -59,6 +61,8 @@ export function newCreature(name, now = Date.now()) {
     essence: Object.fromEntries(FOOD_ORDER.map((k) => [k, 0])),
     absorbed: [],
     mutations: [],
+    // Limit Expanders it has used: each one makes room for more mutations (data/items.js).
+    expanders: 0,
     palette: emptyPalette(),
     training: Object.fromEntries(STAT_KEYS.map((k) => [k, 0])),
     path: { line: [], xp: 0 },
@@ -82,6 +86,8 @@ export function newCreature(name, now = Date.now()) {
     bank: emptyBank(),
     look: { dye: null },
     gear: { owned: [], worn: [] },
+    // The weapon it carries, from the household's armory (core/forge.js).
+    weapon: null,
     prep: { paint: null },
     larder: Object.fromEntries(CROP_IDS.map((id) => [id, 0])),
     // Devil Fruits found and not eaten yet. Shared, like the larder, once it is in the household.
@@ -157,7 +163,9 @@ export function absorbFile(c, food, now = Date.now()) {
   return { seen, nutrition, essence, mutation, legendary, noRoom, stageUp: stageIndex(c) > stageBefore };
 }
 
-export const mutationsFull = (c) => c.mutations.length >= MAX_MUTATIONS;
+// How many mutations it can hold, with any Limit Expanders it has used.
+export const mutationCap = (c) => MAX_MUTATIONS + Math.min(MAX_EXPANDERS, c.expanders ?? 0) * EXPANDER_SLOTS;
+export const mutationsFull = (c) => c.mutations.length >= mutationCap(c);
 
 function maybeMutate(c, family, sha, now) {
   if (mutationsFull(c)) return null;
@@ -502,7 +510,7 @@ export const powerOf = (c) => {
 };
 
 export function perksOf(c) {
-  const p = { gemChance: 0, mineSpeed: 0, growRate: 0, breedRate: 0, animalCap: 0, fieldCap: 0, duelXp: 0, duelSkill: 0, carePicks: 0, careRest: 0, hatchGrowth: 0 };
+  const p = { gemChance: 0, mineSpeed: 0, growRate: 0, breedRate: 0, animalCap: 0, fieldCap: 0, duelXp: 0, duelSkill: 0, carePicks: 0, careSave: 0, hatchGrowth: 0 };
   pathNodes(c).forEach((node) => {
     Object.entries(node.perk ?? {}).forEach(([k, v]) => { p[k] = (p[k] ?? 0) + v; });
   });
@@ -537,17 +545,6 @@ export function movesOf(c) {
 }
 
 export const abilitiesOf = (c) => movesOf(c).map((m) => m.id);
-
-export function societyPersona(c) {
-  const fin = pathNodes(c).find((n) => n.society);
-  if (fin) return { ...fin.society };
-  const root = pathNodes(c)[0];
-  const p = { ...DEFAULT_SOCIETY };
-  if (root?.activity === 'mine') p.mine = 0.8;
-  if (root?.activity === 'farm') p.farm = 0.8;
-  if (root?.activity === 'battle') p.agg = 0.65;
-  return p;
-}
 
 // ---------- path ----------
 
@@ -640,10 +637,11 @@ export function sanitizeCreature(raw, now = Date.now()) {
       snippet: safeStr(a.snippet, 200),
     }));
   }
+  c.expanders = Math.floor(safeNum(raw.expanders, 0, MAX_EXPANDERS));
   if (Array.isArray(raw.mutations)) {
     const seen = new Set();
     for (const m of raw.mutations) {
-      if (seen.size >= MAX_MUTATIONS) break;
+      if (seen.size >= mutationCap(c)) break;
       if (!m || typeof m.id !== 'string' || !Object.hasOwn(MUTATIONS, m.id) || seen.has(m.id)) continue;
       seen.add(m.id);
       c.mutations.push({ id: m.id, from: safeStr(m.from, 12), at: safeNum(m.at, 0, now) });
@@ -682,6 +680,7 @@ export function sanitizeCreature(raw, now = Date.now()) {
   c.battle = sanitizeBattle(raw.battle);
   c.look = { dye: typeof raw.look?.dye === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.look.dye) ? raw.look.dye : null };
   c.gear = sanitizeGear(raw.gear);
+  c.weapon = typeof raw.weapon === 'string' && Object.hasOwn(WEAPONS, raw.weapon) ? raw.weapon : null;
   c.prep = {
     paint: typeof raw.prep?.paint === 'string' && Object.hasOwn(PAINTS, raw.prep.paint) ? raw.prep.paint : null,
   };
@@ -827,12 +826,14 @@ export function serializeCreature(c) {
       devilFruit: c.powers.fruit ? FRUITS[c.powers.fruit].name : null,
       oneForAllLevel: ofaLevel(c) || null,
       bornWith: c.traits.map((id) => TRAITS[id].name),
+      weapon: c.weapon ? WEAPONS[c.weapon].name : null,
     },
     stats: computeStats(c),
     growth: round2(c.growth),
     fullness: round2(c.fullness),
     essence: c.essence,
     mutations: c.mutations,
+    expanders: c.expanders ?? 0,
     palette: {
       hues: c.palette.hues.map((h) => ({ r: Math.round(h.r), g: Math.round(h.g), b: Math.round(h.b), n: round2(h.n) })),
       grey: round2(c.palette.grey),
@@ -849,6 +850,7 @@ export function serializeCreature(c) {
     bank: c.bank,
     look: c.look,
     gear: c.gear,
+    weapon: c.weapon ?? null,
     prep: c.prep,
     larder: c.larder,
     fruits: c.fruits,

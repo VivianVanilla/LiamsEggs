@@ -3,16 +3,19 @@
 // Up to this many creatures can be out on your screen at once.
 export const TEAM_MAX = 3;
 
-// Who can breed: a Scrapper or older, fed enough, and rested since last time.
+// Who can breed: a Scrapper or older, and fed enough. There is no waiting between eggs: what holds
+// breeding back is the fullness each parent spends.
 export const BREED_STAGE = 2;
 export const BREED_FULLNESS = 40;
-// Fullness each parent spends, and how long each rests before it can breed again.
 export const BREED_COST = 30;
-export const BREED_REST_HOURS = 2;
 // How many things the parents can pass on between them: born-with gifts, mutations, or a Quirk.
 export const BREED_GIFTS = 3;
-// A nurse can take this much of the rest away, at most.
-export const MAX_CARE_REST = 0.9;
+// A nurse can save the parents this much of the fullness breeding costs, at most.
+export const MAX_CARE_SAVE = 0.9;
+
+// The Mega Breeder, bought once for the whole household with gems. Every egg after that can carry
+// this many more things from its parents.
+export const MEGA_BREEDER = { cost: 150, gifts: 3 };
 
 // Rolling eggs: the egg on offer is free to keep, and each roll for a different one costs this many
 // gems from the shared bank. Hyper roll keeps rolling until it lands what you asked for, spending at

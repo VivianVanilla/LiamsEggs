@@ -1,4 +1,4 @@
-// Races, Devil Fruits, rolling eggs, the village, expeditions, raids and waves.
+// Races, Devil Fruits, rolling eggs, the village, the Legendary Mine and expeditions.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,20 +11,18 @@ import {
 import { emptyHouse, sanitizeHouse, joinHouse, withoutHouse } from '../src/core/house.js';
 import {
   workOf, villageOutput, runVillage, hoursDue, expeditionProblem, startExpedition, expeditionHaul, finishExpeditions, takeFound, awayBases,
-  villageDefense, winChance, setHostile, incomingRaid, raidVillage, raidProblem, raidDue, putOffRaids,
+  isLegendaryMiner, mineProblem, joinMine, leaveMine, tidyMine,
 } from '../src/core/village.js';
-import { defenders, waveEnemies, startWave, waveHeld, waveReward, waveToughness } from '../src/core/waves.js';
 import { eggFromId, rollEgg, matches, matchChance, hyperRoll, hatchEgg } from '../src/core/roll.js';
-import { breed, racesFor } from '../src/core/family.js';
+import { breed, mixHeritage } from '../src/core/family.js';
 import { nextStep } from '../src/core/advice.js';
 import { breedingGuide } from '../src/core/breedguide.js';
 import { chanceSections } from '../src/core/odds.js';
 import { doJob, addField } from '../src/sim/farm.js';
-import { finishBout } from '../src/sim/arena.js';
-import { RACES, RACE_IDS, babyRaces, RACE_MOVES } from '../src/data/races.js';
+import { RACES, RACE_IDS, RACE_MOVES } from '../src/data/races.js';
 import { FRUITS, FRUIT_IDS, FRUIT_VIGOR, FRUIT_MOVES, FRUIT_FROM_EXPEDITION } from '../src/data/fruits.js';
-import { ABILITIES } from '../src/data/paths.js';
-import { EXPEDITIONS, EXPEDITION_IDS, PARTY_MAX, EXPEDITIONS_AT_ONCE, VILLAGE_WORK, MAX_CARE_BOOST, HOSTILE_VILLAGES, WAVE_FROM_VILLAGE } from '../src/data/village.js';
+import { ABILITIES, TIER_XP } from '../src/data/paths.js';
+import { EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE, VILLAGE_WORK, MAX_CARE_BOOST, LEGENDARY_MINE } from '../src/data/village.js';
 import { TRAIT_ODDS, TECHNIQUE_IDS } from '../src/data/powers.js';
 import { BREED_STAGE } from '../src/data/family.js';
 
@@ -38,6 +36,16 @@ function grown(name, extra = {}) {
   c.fullness = 90;
   c.traits = [];
   return Object.assign(c, extra);
+}
+
+// A Miner all the way to its final form.
+function legendaryMiner(name) {
+  const c = grown(name);
+  choosePath(c, 'miner');
+  c.path.xp = TIER_XP[3];
+  choosePath(c, 'prospector');
+  choosePath(c, 'hoarder');
+  return c;
 }
 
 // ---------- races ----------
@@ -61,19 +69,18 @@ test('every race is wired up: its stats, its move, and its size', () => {
   assert.equal(parseCreature(JSON.stringify(raw)).race, 'human', 'unknown races fall back to Human');
 });
 
-test('a Devil with anything else always makes a Half-devil; other pairs pick a parent', () => {
-  assert.deepEqual(babyRaces('devil', 'human'), ['halfdevil']);
-  assert.deepEqual(babyRaces('mink', 'devil'), ['halfdevil']);
-  assert.deepEqual(babyRaces('devil', 'devil'), ['devil']);
-  assert.deepEqual(babyRaces('giant', 'mink'), ['giant', 'mink']);
-  const a = grown('Dad', { race: 'devil' });
-  const b = grown('Mom');
-  assert.deepEqual(racesFor(a, b), ['halfdevil']);
-  const { baby } = breed(a, b, { family: 'a', look: 'a', style: 'a', race: 'devil', gifts: [] }, 'Hybrid', NOW);
-  assert.equal(baby.race, 'halfdevil', 'a choice outside the rules is ignored');
-  const c = grown('Fish', { race: 'fishman' });
-  const d = grown('Fur', { race: 'mink' });
-  assert.equal(breed(c, d, { family: 'a', look: 'a', style: 'a', race: 'mink', gifts: [] }, 'Mix', NOW).baby.race, 'mink');
+test('a baby is half of each parent\'s races, and its babies are quarters', () => {
+  const devil = grown('Dad', { race: 'devil' });
+  const human = grown('Mom');
+  assert.deepEqual(mixHeritage(devil, human), { devil: 0.5, human: 0.5 });
+  const { baby } = breed(devil, human, { family: 'a', look: 'a', style: 'a', gifts: [] }, 'Hybrid', NOW);
+  assert.deepEqual(baby.heritage, { devil: 0.5, human: 0.5 });
+  assert.equal(baby.race, 'devil', 'its race for short is the one it is most of, after Human');
+  assert.match(raceName(baby), /Devil/);
+  assert.deepEqual(mixHeritage(grown('Half', { heritage: baby.heritage }), grown('Plain')), { devil: 0.25, human: 0.75 });
+  assert.deepEqual(mixHeritage(grown('Fish', { race: 'fishman' }), grown('Fur', { race: 'mink' })), { fishman: 0.5, mink: 0.5 });
+  const back = parseCreature(serializeCreature(baby));
+  assert.deepEqual(back.heritage, baby.heritage);
 });
 
 test('seasoned wild rivals are sometimes another race, the same for a seed', () => {
@@ -198,6 +205,19 @@ test('villagers work by their job, and nurses make everyone work harder, up to a
   assert.ok(workOf(young).colors < VILLAGE_WORK.none.colors, 'a hatchling helps less');
 });
 
+test('fighters in the village go hunting: food, and now and then a gem', () => {
+  const hunter = grown('Hunter');
+  choosePath(hunter, 'fighter');
+  const w = workOf(hunter);
+  assert.equal(w.kind, 'battle');
+  assert.equal(w.store, VILLAGE_WORK.battle.store);
+  assert.ok(w.gems > 0);
+  const house = emptyHouse();
+  runVillage(house, [hunter], 20, () => 0.5);
+  assert.equal(house.store, VILLAGE_WORK.battle.store * 20);
+  assert.ok(house.bank.gems >= 1);
+});
+
 test('village work adds up exactly over many small steps', () => {
   const miner = grown('Digger');
   choosePath(miner, 'miner');
@@ -214,6 +234,58 @@ test('village work adds up exactly over many small steps', () => {
   house.village.lastTick = NOW - 48 * HOUR;
   assert.ok(hoursDue(house, NOW) <= 8);
   assert.equal(hoursDue(house, NOW), 0, 'and it starts counting again from now');
+});
+
+// ---------- the Legendary Mine ----------
+
+test('only legendary Miners can work the Legendary Mine, three at most', () => {
+  const house = emptyHouse();
+  const plainMiner = grown('Plain Miner');
+  choosePath(plainMiner, 'miner');
+  assert.equal(isLegendaryMiner(plainMiner), false);
+  assert.match(mineProblem(house, plainMiner), /legendary Miners/);
+  // A Legendary mutation is enough, even without a final form.
+  const lucky = grown('Lucky');
+  choosePath(lucky, 'miner');
+  lucky.legendary = 'twinsoul';
+  assert.ok(isLegendaryMiner(lucky));
+  const farmer = grown('Farmer');
+  choosePath(farmer, 'farmer');
+  farmer.legendary = 'twinsoul';
+  assert.equal(isLegendaryMiner(farmer), false, 'it has to be a Miner');
+  const crew = [1, 2, 3, 4].map((i) => legendaryMiner(`Deep ${i}`));
+  crew.slice(0, LEGENDARY_MINE.slots).forEach((c) => assert.ok(joinMine(house, c)));
+  assert.match(mineProblem(house, crew[0]), /already works there/);
+  assert.match(mineProblem(house, crew[3]), new RegExp(`room for ${LEGENDARY_MINE.slots}`));
+  leaveMine(house, crew[0].id);
+  assert.ok(joinMine(house, crew[3]));
+  // Anyone gone, or no longer there at all, loses their place.
+  crew[1].dead = { at: NOW, by: 'x' };
+  assert.ok(tidyMine(house, crew));
+  assert.deepEqual(house.mine, [crew[2].id, crew[3].id]);
+  assert.equal(tidyMine(house, [crew[2]]), true);
+  assert.deepEqual(house.mine, [crew[2].id]);
+  assert.deepEqual(sanitizeHouse(JSON.parse(JSON.stringify(house))).mine, house.mine);
+});
+
+test('the Legendary Mine brings up ore instead of colors, and nurses help it too', () => {
+  const house = emptyHouse();
+  const deep = legendaryMiner('Deep');
+  joinMine(house, deep);
+  const w = workOf(deep, true);
+  assert.equal(w.ore, LEGENDARY_MINE.ore);
+  assert.equal(w.colors, 0);
+  runVillage(house, [deep], 6, () => 0.5);
+  assert.equal(house.ore, 6 * LEGENDARY_MINE.ore);
+  assert.equal(house.bank[w.color], 0, 'no colors while it is down the mine');
+  const nurse = grown('Nurse');
+  choosePath(nurse, 'nurse');
+  assert.ok(villageOutput([deep, nurse], house.mine).ore > villageOutput([deep], house.mine).ore);
+  // Out of the mine, it digs colors like any Miner.
+  leaveMine(house, deep.id);
+  runVillage(house, [deep], 1, () => 0.5);
+  assert.equal(house.ore, 6 * LEGENDARY_MINE.ore);
+  assert.ok(house.bank[w.color] > 0);
 });
 
 // ---------- expeditions ----------
@@ -239,8 +311,16 @@ test('an expedition takes its party away until it is back, and brings home gems'
   assert.match(expeditionProblem(house, 'coast', [{ base: 'y', c: grown('y') }]), /at once/);
 });
 
-test('expedition finds and Devil Fruits come up as often as the table says', () => {
+test('a Legendary Miner at work can\'t go on an expedition', () => {
+  const house = emptyHouse();
+  const deep = legendaryMiner('Deep');
+  joinMine(house, deep);
+  assert.match(expeditionProblem(house, 'coast', [{ base: 'Deep', c: deep }]), /Legendary Mine/);
+});
+
+test('expedition finds, loot and Devil Fruits come up as often as the table says', () => {
   const counts = {};
+  const items = {};
   let fruits = 0;
   const N = 20000;
   for (let i = 0; i < N; i++) {
@@ -248,11 +328,22 @@ test('expedition finds and Devil Fruits come up as often as the table says', () 
     const haul = expeditionHaul(exp);
     if (haul.find) counts[haul.find] = (counts[haul.find] ?? 0) + 1;
     if (haul.fruit) fruits += 1;
+    haul.items.forEach((id) => { items[id] = (items[id] ?? 0) + 1; });
   }
   for (const [race, chance] of Object.entries(EXPEDITIONS.sea.finds)) {
     assert.ok(Math.abs((counts[race] ?? 0) / N - chance) < 0.006, `${race}: ${counts[race]} of ${N}`);
   }
+  for (const [id, chance] of Object.entries(EXPEDITIONS.sea.items)) {
+    assert.ok(Math.abs((items[id] ?? 0) / N - chance) < 0.008, `${id}: ${items[id]} of ${N}`);
+  }
   assert.ok(Math.abs(fruits / N - FRUIT_FROM_EXPEDITION) < 0.004, `fruits ${fruits}`);
+  // Loot goes into the bag when they are back.
+  const house = emptyHouse();
+  let i = 0;
+  while (!expeditionHaul({ id: `l${i}`, where: 'sea', start: NOW, end: NOW, party: [] }).items.length) i += 1;
+  house.expeditions.push({ id: `l${i}`, where: 'sea', start: NOW, end: NOW, party: [] });
+  const [back] = finishExpeditions(house, NOW);
+  back.items.forEach((id) => assert.ok(house.items[id] >= 1, id));
 });
 
 test('a creature an expedition found waits to be named, and comes as that race', () => {
@@ -264,93 +355,16 @@ test('a creature an expedition found waits to be named, and comes as that race',
   assert.equal(takeFound(house, 0, 'Nobody', NOW), null);
 });
 
-// ---------- hostile villages ----------
-
-test('hostile mode makes rival villages that raid while the game is open, and turning it off clears them', () => {
-  const house = emptyHouse();
-  assert.equal(raidDue(house, NOW), false, 'nothing raids with it off');
-  setHostile(house, true, 100, NOW, makeRng(3));
-  assert.equal(house.hostile.villages.length, HOSTILE_VILLAGES);
-  assert.ok(house.hostile.nextRaid > NOW);
-  assert.ok(raidDue(house, house.hostile.nextRaid));
-  // Raids that came due while the game was closed are put off, not run.
-  putOffRaids(house, house.hostile.nextRaid + 10 * HOUR, makeRng(4));
-  assert.ok(house.hostile.nextRaid > NOW + 10 * HOUR);
-  setHostile(house, false, 100, NOW);
-  assert.deepEqual(house.hostile.villages, []);
-});
-
-test('a raid held off pays gems, a raid lost takes some of the pool', () => {
-  const house = emptyHouse();
-  setHostile(house, true, 100, NOW, makeRng(5));
-  house.bank.red = 1000;
-  house.store = 100;
-  house.bank.gems = 10;
-  const won = incomingRaid(house, 1e6, NOW, () => 0);
-  assert.ok(won.won && won.gems > 0);
-  const lost = incomingRaid(house, 0, NOW, () => 0.999);
-  assert.ok(!lost.won && lost.colors > 0 && lost.store > 0);
-  assert.ok(house.bank.red < 1000 && house.store < 100);
-  assert.ok(house.hostile.log.length >= 3);
-  house.hostile.log.forEach((l) => assert.ok(clean(l.text)));
-});
-
-test('raiding them back works, and your raiders rest after', () => {
-  const house = emptyHouse();
-  setHostile(house, true, 100, NOW, makeRng(6));
-  const target = house.hostile.villages[0];
-  const before = target.power;
-  const res = raidVillage(house, target.id, 1e6, NOW, () => 0);
-  assert.ok(res.won && res.gems > 0 && target.power < before);
-  assert.match(raidProblem(house, target.id, NOW + 1000), /resting/);
-  assert.equal(raidVillage(house, target.id, 1e6, NOW + 1000), null);
-  assert.ok(winChance(200, 100) > 0.5 && winChance(100, 200) < 0.5 && winChance(0, 10) === 0);
-});
-
-test('fighters guard the village twice over, and mains count half', () => {
-  const guard = grown('Guard');
-  choosePath(guard, 'fighter');
-  const farmer = grown('Farmer');
-  choosePath(farmer, 'farmer');
-  const main = grown('Main');
-  const def = villageDefense([guard, farmer], [main]);
-  assert.ok(def > villageDefense([farmer, farmer], [main]));
-});
-
-// ---------- waves ----------
-
-test('the strongest at home join the mains on the line', () => {
-  const home = [10, 50, 30, 40, 20].map((g) => grown(`h${g}`, { growth: g * 4 }));
-  const line = defenders([grown('Main')], home);
-  assert.equal(line.length, 1 + WAVE_FROM_VILLAGE);
-});
-
-test('waves get bigger and tougher, with a monster every fifth one', () => {
-  assert.equal(waveEnemies(1, 1).raiders.length, 1);
-  assert.ok(waveEnemies(10, 1).raiders.length > waveEnemies(2, 1).raiders.length);
-  assert.ok(waveEnemies(5, 1).boss && !waveEnemies(4, 1).boss);
-  assert.ok(waveToughness(20) > waveToughness(5));
-  const line = [wildCreature(11, 3), wildCreature(12, 3), wildCreature(13, 3)];
-  const bout = startWave(5, line, { seed: 9 });
-  const ours = bout.fighters.filter((f) => f.team === 0);
-  const theirs = bout.fighters.filter((f) => f.team !== 0);
-  assert.equal(ours.length, 3);
-  assert.ok(theirs.length >= 2);
-  assert.ok(ours.every((f) => f.x < bout.cx) && theirs.every((f) => f.x > bout.cx), 'two sides across the ring');
-  // The defenders are copies: fighting changes nothing about the real ones.
-  const growthBefore = line[0].growth;
-  finishBout(bout);
-  assert.equal(line[0].growth, growthBefore);
-  assert.equal(typeof waveHeld(bout), 'boolean');
-  assert.equal(waveReward(3, 2), 3);
-  assert.equal(waveReward(2, 5), 0, 'no pay for a wave already beaten');
-});
-
-test('easy waves are held by a decent village', () => {
-  const line = [wildCreature(21, 3), wildCreature(22, 3), wildCreature(23, 2)];
-  let held = 0;
-  for (let s = 1; s <= 8; s++) if (waveHeld(finishBout(startWave(1, line, { seed: s })))) held += 1;
-  assert.ok(held >= 7, `${held} of 8`);
+test('an old household file loses its raids and waves, and keeps everything else', () => {
+  const house = sanitizeHouse({
+    bank: { gems: 12 }, store: 30, hostile: { on: true, villages: [{ name: 'Redfang Camp', power: 50 }] }, waves: { best: 7 },
+  });
+  assert.equal(house.bank.gems, 12);
+  assert.equal(house.store, 30);
+  assert.equal(house.hostile, undefined);
+  assert.equal(house.waves, undefined);
+  assert.deepEqual(house.adventure, { best: 0, party: [] });
+  assert.equal(house.megaBreeder, false);
 });
 
 // ---------- words ----------
@@ -369,6 +383,8 @@ test('the guide pages and tips read properly', () => {
   c.mutations.push({ id: 'claws', from: '', at: 0 });
   c.palette.total = 10;
   assert.equal(nextStep(c, { out: 1, home: 2, away: 0 }).go, 'expeditions');
+  assert.equal(nextStep(c, { out: 1, home: 0, away: 0 }).go, 'nursery:eggs');
+  assert.equal(nextStep(c, { out: 3, home: 0, away: 0 }).go, 'nursery');
   for (const opts of [{ out: 3 }, { out: 1 }, { out: 3, home: 1, away: 1 }]) {
     const tip = nextStep(c, opts);
     assert.ok(!tip || clean(tip.text));

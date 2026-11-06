@@ -10,8 +10,9 @@
     "test": "node --test \"test/*.test.js\"",
     "art": "node tools/art-list.js",
     "looks": "electron tools/build-looks.cjs",
-    "package": "npx @electron/packager . Creature --platform=win32 --arch=x64 --out=dist --overwrite --ignore=^/world --ignore=^/worlds --ignore=\"^/Play \" --ignore=^/test --ignore=^/dist --ignore=^/tools --ignore=creature.creature",
-    "world": "node tools/world.mjs"
+    "package": "npx @electron/packager . Creature --platform=win32 --arch=x64 --out=dist --overwrite --ignore=^/world --ignore=^/worlds --ignore=\"^/Play \" --ignore=^/test --ignore=^/dist --ignore=^/tools --ignore=^/Creature.exe --ignore=creature.creature",
+    "world": "node tools/world.mjs",
+    "exe": "node tools/build-exe.cjs"
   },
   "devDependencies": {
     "electron": "^45.2.3"

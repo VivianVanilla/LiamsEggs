@@ -56,7 +56,7 @@ export function sureButton(label, onSure, cls = '', disabled = false) {
 }
 
 // Notes that belong to no creature in particular.
-const GLOBAL = new Set(['settings', 'arena', 'society', 'creatures', 'village', 'breed', 'roll', 'farewell', 'naming']);
+const GLOBAL = new Set(['settings', 'arena', 'creatures', 'village', 'nursery', 'adventure', 'farewell', 'naming']);
 
 const notes = new Map();
 let zTop = 10;
@@ -65,8 +65,14 @@ let away = 0;
 const keyFor = (id, cid = G.creature?.id ?? '') => (GLOBAL.has(id) ? id : `${id}@${cid}`);
 const shown = (note) => note.who === null || note.who === (G.creature?.id ?? '');
 
+// The window only takes typing while a note that needs it is showing: one that asks for it, or one
+// with a box to type in, like a name for something an expedition found. Otherwise every key you
+// press goes to your other apps, as it should.
+const TYPED = 'input[type=text], input[type=search], textarea';
+const wantsKeys = (n) => shown(n) && (!!n.spec.focus || !!n.el.querySelector(TYPED));
+
 export function syncFocus() {
-  api.focus([...notes.values()].some((n) => n.spec.focus && shown(n)));
+  api.focus([...notes.values()].some(wantsKeys));
 }
 
 // Brings a note to the front.
@@ -108,6 +114,8 @@ export function openNote(id, spec) {
       this.refs = {};
       this.spec.build(body, this);
       place(this, true);
+      // A box to type in may have come or gone.
+      syncFocus();
     },
     setTitle(text) { titleEl.textContent = text; },
     close() { closeKey(key); },

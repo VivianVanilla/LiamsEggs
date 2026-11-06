@@ -322,16 +322,50 @@ export const TRAITS = {
     name: 'Cursed Body', color: '#8a4fb8',
     blurb: 'Can hold two cursed techniques: its own family\'s, and the one from the other side of its family.',
   },
+  titanshifter: {
+    name: 'Titan Shifter', color: '#c9733e',
+    blurb: 'Once a fight, the moment it drops below half its health, it shifts into a Titan: twice as big, and it hits twice as hard.',
+  },
+  saiyan: {
+    name: 'Saiyan Blood', color: '#ffd23a',
+    blurb: 'Once a fight has gone on for 15 seconds, it goes Super Saiyan: 40% more damage, and 30% faster.',
+  },
+  haki: {
+    name: 'Conqueror\'s Haki', color: '#a33be0',
+    blurb: 'As every fight starts, anything with less max HP than it is stunned for 6 seconds, and everything else flinches for a moment.',
+  },
+  sunbreathing: {
+    name: 'Sun Breathing', color: '#ff7a2f',
+    blurb: 'Breathes through the pain: it heals 1% of its max HP every second of a fight.',
+  },
+  ninetails: {
+    name: 'Nine-Tails Chakra', color: '#ff8c1a',
+    blurb: 'The first time it would be knocked out in a fight, the fox inside wakes up: it stays up with 30% of its health, and hits 30% harder from then on.',
+  },
+  onepunch: {
+    name: 'One Punch', color: '#f2d66b',
+    blurb: 'Every 10th swing is a Serious Punch, for five times the damage.',
+  },
 };
 export const TRAIT_IDS = Object.keys(TRAITS);
 
 // One hatchling in this many is born with each. Six Eyes is only ever born into the Gojo family,
 // though a parent can pass it to anyone.
-export const TRAIT_ODDS = { sixeyes: 5, sharingan: 12, cursedbody: 12 };
+export const TRAIT_ODDS = { sixeyes: 5, sharingan: 12, cursedbody: 12, titanshifter: 25, saiyan: 30, haki: 25, sunbreathing: 20, ninetails: 40, onepunch: 30 };
 export const SIX_EYES_FAMILY = 'limitless';
 export const SIX_EYES_EVERY = 4;
 // A copy is never quite as strong as the real thing.
 export const SHARINGAN_COPY = 0.7;
+
+// What the anime gifts do in a fight. See sim/arena.js.
+export const TITAN = { below: 0.5, size: 2, damage: 2 };
+export const SAIYAN = { after: 15, damage: 0.4, speed: 0.3 };
+// Conqueror's Haki stuns anything with less max HP for this long, and anything else for a moment.
+export const HAKI = { weaker: 6, stronger: 1.5 };
+// Of its max HP, every second.
+export const SUN_BREATHING = 0.01;
+export const NINE_TAILS = { hp: 0.3, damage: 0.3 };
+export const ONE_PUNCH = { every: 10, power: 5 };
 
 // ---------- One For All ----------
 

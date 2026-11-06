@@ -22,9 +22,13 @@ import {
   startChallenge, settleChallenge, payForFight, fightProblem, trainingFull, oddsOfWinning, wonChallenge, deadlyMonsterStats, trainingMonsterStats,
 } from '../src/sim/challenges.js';
 
+// An egg's born-with gifts are random, and some change how a fight goes, so the creatures made
+// here have none. traits.test.js tests the gifts themselves.
+const plainCreature = (...args) => Object.assign(newCreature(...args), { traits: [] });
+
 // A creature pushed absurdly far in everything at once.
 function everything() {
-  const c = newCreature('Everything');
+  const c = plainCreature('Everything');
   c.growth = 5000;
   STAT_KEYS.forEach((k) => { c.training[k] = 40; });
   Object.keys(c.essence).forEach((k) => { c.essence[k] = 500; });
@@ -35,7 +39,7 @@ function everything() {
 // Raises stats through food, in the order given, with far more than any limit in the first ones.
 const FOOD_FOR = { might: 'ember', guard: 'bone', speed: 'spark', wits: 'ink', vigor: 'sap' };
 function buildInOrder(order) {
-  const c = newCreature('Built');
+  const c = plainCreature('Built');
   order.forEach((stat, i) => { c.essence[FOOD_FOR[stat]] = (5 - i) * 100; });
   return c;
 }
@@ -60,7 +64,7 @@ test('limits come from rank, so every stat can be the one it is great at', () =>
 });
 
 test('limits never touch a creature that is under them', () => {
-  const c = newCreature('Ordinary');
+  const c = plainCreature('Ordinary');
   c.training.vigor = 6;
   c.essence.sap = 8;
   const raw = rawStats(c);
@@ -69,7 +73,7 @@ test('limits never touch a creature that is under them', () => {
 });
 
 test('passing another stat takes its place: the old best falls back to the next limit', () => {
-  const c = newCreature('Shifting');
+  const c = plainCreature('Shifting');
   c.essence.ember = 400; // Might, way past 60
   c.essence.spark = 240; // Speed, past 45
   assert.equal(computeStats(c).might, STAT_LIMITS[0]);
@@ -94,7 +98,7 @@ test('a hostile file gets the same limits', () => {
 
 test('a Stand and a speedster both take a place in its top three', () => {
   // Four stats pushed well past 20: only three of them can actually be 20 or more.
-  const c = newCreature('Spread');
+  const c = plainCreature('Spread');
   ['might', 'vigor', 'guard', 'wits'].forEach((stat, i) => { c.essence[FOOD_FOR[stat]] = 400 - i * 10; });
   const stats = computeStats(c);
   assert.ok(STAT_LIMITS[3] < 20, 'the fourth limit stops short of what the powers need');
@@ -105,7 +109,7 @@ test('a Stand and a speedster both take a place in its top three', () => {
 });
 
 test('Liamsaurus-style stats come through untouched', () => {
-  const c = newCreature('Today');
+  const c = plainCreature('Today');
   c.growth = STAGES[3].at;
   c.training.vigor = 31;
   const raw = rawStats(c);
@@ -115,7 +119,7 @@ test('Liamsaurus-style stats come through untouched', () => {
 // ---------- mutation limit ----------
 
 test('a creature stops mutating at the limit, however much it eats', () => {
-  const c = newCreature('Hungry');
+  const c = plainCreature('Hungry');
   let n = 0;
   let sawNoRoom = false;
   for (const fam of Object.keys(FOODS)) {
@@ -164,7 +168,7 @@ test('every food, color and monster the guide names really raises that stat', ()
     const guide = STAT_GUIDE[stat];
     assert.equal(FOODS[guide.food].stat, stat, `${stat} food`);
     assert.equal(TRAINING_MONSTERS[guide.monster].stat, stat, `${stat} monster`);
-    const c = newCreature('Sample');
+    const c = plainCreature('Sample');
     const before = rawStats(c);
     addColor(c, ...guide.sample, 900);
     const after = rawStats(c);
@@ -174,11 +178,11 @@ test('every food, color and monster the guide names really raises that stat', ()
 });
 
 test('what the guide says about puzzle duels matches the code', () => {
-  const beaten = newCreature('Beaten');
+  const beaten = plainCreature('Beaten');
   applyDuelResult(beaten, true, 'four'); // you won, so it lost
   assert.ok(beaten.training.wits > 0, 'beating it at puzzles trains its Wits');
   assert.equal(beaten.training.might, 0);
-  const winner = newCreature('Winner');
+  const winner = plainCreature('Winner');
   applyDuelResult(winner, false, 'four'); // it won
   assert.ok(winner.training.might > 0, 'it beating you trains its Might');
   assert.equal(winner.training.wits, 0);
@@ -187,7 +191,7 @@ test('what the guide says about puzzle duels matches the code', () => {
 });
 
 test('the plan for a stat reads properly, for creatures at every point', () => {
-  const creatures = [newCreature('New'), wildCreature(1, 1), wildCreature(2, 2), wildCreature(3, 3), everything()];
+  const creatures = [plainCreature('New'), wildCreature(1, 1), wildCreature(2, 2), wildCreature(3, 3), everything()];
   for (const c of creatures) {
     for (const stat of STAT_KEYS) {
       const plan = trainingPlan(c, stat);
@@ -204,7 +208,7 @@ test('the plan for a stat reads properly, for creatures at every point', () => {
 });
 
 test('the plan only offers jobs it can still reach', () => {
-  const c = newCreature('Rancher');
+  const c = plainCreature('Rancher');
   c.path.line = ['farmer', 'rancher'];
   assert.deepEqual(jobsAhead(c).sort(), ['beastmaster', 'swarm']);
   const planned = trainingPlan(c, 'speed').find((r) => r.title === 'Jobs ahead');
@@ -216,14 +220,14 @@ test('the plan only offers jobs it can still reach', () => {
 });
 
 test('the plan shows when a route has run out', () => {
-  const c = newCreature('Full');
+  const c = plainCreature('Full');
   c.training.guard = TRAINING_LIMIT;
   const monster = trainingPlan(c, 'guard').find((r) => r.title.startsWith('Beat the'));
   assert.ok(monster.done);
   for (let i = 0; i < MAX_MUTATIONS; i++) c.mutations.push({ id: MUTATION_IDS[i], from: '', at: 0 });
   assert.ok(trainingPlan(c, 'guard').find((r) => r.title.startsWith('Mutations')).done);
-  assert.ok(unlockNote(newCreature('X'), 'wits').includes('20'));
-  assert.equal(unlockNote(newCreature('X'), 'guard'), null);
+  assert.ok(unlockNote(plainCreature('X'), 'wits').includes('20'));
+  assert.equal(unlockNote(plainCreature('X'), 'guard'), null);
 });
 
 test('every build idea can really do what it claims', () => {
@@ -256,7 +260,7 @@ test('every monster is wired up, and every stat has trophies to win', () => {
 });
 
 test('a training monster can\'t kill it, and only sometimes teaches it anything', () => {
-  const c = newCreature('Student');
+  const c = plainCreature('Student');
   const lost = settleChallenge(c, 'crab', false, 0);
   assert.equal(lost.died, false);
   assert.equal(c.dead, null);
@@ -271,12 +275,12 @@ test('a training monster can\'t kill it, and only sometimes teaches it anything'
   const lucky = settleChallenge(c, 'crab', true, TRAINING_CHANCE - 0.001);
   assert.equal(lucky.trained, 'guard');
   assert.equal(c.training.guard, 1);
-  assert.equal(computeStats(c).guard, computeStats(newCreature('Base')).guard + 1);
+  assert.equal(computeStats(c).guard, computeStats(plainCreature('Base')).guard + 1);
   assert.equal(c.dead, null);
 });
 
 test('training stops at its limit', () => {
-  const c = newCreature('Full');
+  const c = plainCreature('Full');
   c.training.speed = TRAINING_LIMIT - 0.5;
   assert.equal(trainingFull(c, 'speed'), false);
   settleChallenge(c, 'hare', true, 0);
@@ -327,7 +331,7 @@ test('trophies in a file have to be real', () => {
 });
 
 test('fights need a full enough stomach and burn fullness either way', () => {
-  const c = newCreature('Empty');
+  const c = plainCreature('Empty');
   c.fullness = MIN_FULLNESS_TO_FIGHT - 1;
   assert.equal(fightProblem(c, 'crab'), 'too hungry to fight');
   c.fullness = 50;
@@ -394,7 +398,7 @@ test('training monsters size themselves to it, leading with their own stat', () 
   const crab = trainingMonsterStats(c, TRAINING_MONSTERS.crab);
   assert.ok(crab.guard >= s.guard, 'its specialty is at least as good as yours');
   assert.ok(crab.might < s.might, 'the rest are weaker');
-  const small = trainingMonsterStats(newCreature('New'), TRAINING_MONSTERS.crab);
+  const small = trainingMonsterStats(plainCreature('New'), TRAINING_MONSTERS.crab);
   Object.values(small).forEach((v) => assert.ok(v >= 3));
 });
 
@@ -432,7 +436,7 @@ test('the odds it is shown are about right, and the monsters get harder as they 
 });
 
 test('every mutation\'s stats are in the guide\'s plan where they apply', () => {
-  const c = newCreature('Open');
+  const c = plainCreature('Open');
   const plan = trainingPlan(c, 'wits').find((r) => r.title.startsWith('Mutations'));
   const best = MUTATION_IDS.filter((id) => MUTATIONS[id].stats.wits).sort((a, b) => MUTATIONS[b].stats.wits - MUTATIONS[a].stats.wits)[0];
   assert.ok(plan.detail.includes(MUTATIONS[best].name));

@@ -24,11 +24,18 @@ const DIRS = {
 const FOOD_EXTS = new Set(['bone', 'sap', 'spark', 'ink', 'ember', 'goo']);
 const MAX_FOOD_BYTES = 1024 * 1024;
 const MAX_CREATURE_BYTES = 4 * 1024 * 1024;
-const DATA_KEYS = new Set(['arena', 'society', 'household']);
+const DATA_KEYS = new Set(['arena', 'household']);
 const DWELL_MS = 220; // the cursor must rest on the creature this long, so quick clicks reach your apps
 const APP_ID = 'creature.overlay.game';
 const TEAM_MAX = 3;
-const OPENABLE = new Set(['menu', 'feed', 'breed', 'creatures', 'powers']);
+const OPENABLE = new Set(['menu', 'feed', 'nursery', 'creatures', 'village', 'adventure', 'powers']);
+// Creature.exe, when the game was started with it (tools/launcher/Creature.cs). A pinned taskbar
+// button and the jump list then start the game through it, with its icon, and in the same world.
+const LAUNCHER = (() => {
+  const exe = process.env.CREATURE_LAUNCHER;
+  return exe && /\.exe$/i.test(exe) && fs.existsSync(exe) ? exe : null;
+})();
+const WORLD = /^[a-z0-9_-]{1,40}$/.test(process.env.CREATURE_WORLD ?? '') ? process.env.CREATURE_WORLD : '';
 
 let win = null;
 let tray = null;
@@ -42,7 +49,7 @@ let hiddenByUser = false;
 let quitting = false;
 let wantsFocus = false;
 let lastCursor = 0;
-const settings = { quiet: false, bottomOnly: false, calm: false, scale: 1, opacity: 0.75, team: [] };
+const settings = { quiet: false, bottomOnly: false, calm: false, dark: false, scale: 1, opacity: 0.75, team: [] };
 
 // ---------- helpers ----------
 
@@ -200,9 +207,13 @@ function taskbarClick() {
   send('toggleMenu');
 }
 
+// What starts the game again: Creature.exe if that is how it was started, or Electron with this
+// folder. extra is more arguments, like --creature=feed.
 function relaunchArgs(extra = '') {
+  if (LAUNCHER) return `${WORLD} ${extra}`.trim();
   return `${app.isPackaged ? '' : `"${app.getAppPath()}" `}${extra}`.trim();
 }
+const relaunchProgram = () => LAUNCHER ?? process.execPath;
 
 function createLauncher() {
   const drawn = path.join(ART_DIR, 'icons', 'tray.png');
@@ -225,8 +236,15 @@ function createLauncher() {
     ...(icon ? { icon } : {}),
   });
   if (process.platform === 'win32') {
-    // So a pinned button starts the game, not a bare Electron.
-    launcher.setAppDetails({ appId: APP_ID, relaunchCommand: `"${process.execPath}" ${relaunchArgs()}`.trim(), relaunchDisplayName: 'Creature', appIconPath: process.execPath, appIconIndex: 0 });
+    // So a pinned button starts the game, not a bare Electron: right-click the button and pin it,
+    // and it starts Creature.exe from then on, with its icon.
+    launcher.setAppDetails({
+      appId: APP_ID,
+      relaunchCommand: `"${relaunchProgram()}" ${relaunchArgs()}`.trim(),
+      relaunchDisplayName: WORLD ? `Creature (${WORLD})` : 'Creature',
+      appIconPath: relaunchProgram(),
+      appIconIndex: 0,
+    });
     launcher.setThumbnailToolTip('Creature: click to open its menu');
   }
   launcher.on('restore', () => {
@@ -250,14 +268,15 @@ function createLauncher() {
 function setJumpList() {
   if (process.platform !== 'win32') return;
   const task = (title, what, description) => ({
-    program: process.execPath, arguments: relaunchArgs(`--creature=${what}`), iconPath: process.execPath, iconIndex: 0, title, description,
+    program: relaunchProgram(), arguments: relaunchArgs(`--creature=${what}`), iconPath: relaunchProgram(), iconIndex: 0, title, description,
   });
   try {
     app.setUserTasks([
       task('Open the menu', 'menu', 'Opens the creature menu'),
-      task('Feed', 'feed', 'Opens the Feed panel'),
-      task('Breed', 'breed', 'Opens the Breed panel'),
-      task('Your creatures', 'creatures', 'Opens the list of your creatures'),
+      task('Your creatures', 'creatures', 'Every creature you have, in one place'),
+      task('Nursery', 'nursery', 'Breed, hatch eggs and use items'),
+      task('Adventure', 'adventure', 'The 20-level campaign'),
+      task('Village', 'village', 'Work, the Legendary Mine and expeditions'),
       task('Hide or show', 'hide', 'Hides everything, or brings it back'),
     ]);
   } catch (err) {
@@ -435,6 +454,7 @@ function rebuildTray() {
     { type: 'separator' },
     { label: 'Quiet mode (no speech bubbles)', type: 'checkbox', checked: settings.quiet, click: (i) => updateSetting('quiet', i.checked) },
     { label: 'Stay near the bottom of the screen', type: 'checkbox', checked: settings.bottomOnly, click: (i) => updateSetting('bottomOnly', i.checked) },
+    { label: 'Dark mode', type: 'checkbox', checked: settings.dark, click: (i) => updateSetting('dark', i.checked) },
     ...(multi ? [{ label: 'Move to next monitor', click: nextMonitor }] : []),
     { type: 'separator' },
     { label: 'Open world folder', click: () => shell.openPath(HOME) },
@@ -463,6 +483,7 @@ function loadSettings() {
     settings.quiet = !!saved.quiet;
     settings.bottomOnly = !!saved.bottomOnly;
     settings.calm = !!saved.calm;
+    settings.dark = !!saved.dark;
     if (Number.isFinite(saved.scale)) settings.scale = Math.min(3, Math.max(0.5, saved.scale));
     if (Number.isFinite(saved.opacity)) settings.opacity = Math.min(1, Math.max(0.2, saved.opacity));
     if (Number.isFinite(saved.display)) {
@@ -564,6 +585,32 @@ function buryCreature(base, text) {
   saveSettings();
 }
 
+// A creature with a new name gets a file to match. The new file is written before the old one goes,
+// so a failure part way through can't lose it. Returns the new file name, without .creature.
+function renameCreature(base, name, text) {
+  const old = safeBase(base);
+  const from = path.join(DIRS.creatures, `${old}.creature`);
+  if (!fs.existsSync(from)) throw new Error('That creature has no file');
+  const body = String(text);
+  if (Buffer.byteLength(body) > MAX_CREATURE_BYTES || !JSON.parse(body)?.format) throw new Error('That is not a creature');
+  const wanted = safeBase(name);
+  // The same name, maybe in other capitals, keeps its file; anything else gets one of its own.
+  const same = wanted.toLowerCase() === old.toLowerCase();
+  const to = same ? path.join(DIRS.creatures, `${wanted}.creature`) : uniquePath(DIRS.creatures, wanted, 'creature');
+  if (same) {
+    atomicWrite(from, body);
+    if (wanted !== old) fs.renameSync(from, to);
+  } else {
+    atomicWrite(to, body);
+    fs.rmSync(from, { force: true });
+  }
+  const now = path.basename(to, '.creature');
+  if (settings.active === old) settings.active = now;
+  settings.team = settings.team.map((b) => (b === old ? now : b));
+  saveSettings();
+  return now;
+}
+
 function listGraves() {
   return fs.readdirSync(DIRS.graveyard)
     .filter((f) => extOf(f) === 'creature')
@@ -624,7 +671,11 @@ function wireIpc() {
     rects = list.filter((r) => r && [r.x, r.y, r.w, r.h].every(Number.isFinite)).slice(0, 40);
   });
   ipcMain.on('captureAll', (_e, on) => { captureAll = !!on; });
-  ipcMain.on('focus', (_e, on) => setFocus(!!on));
+  // Only a change does anything, so a note being redrawn never pulls the keyboard away from
+  // whatever app you are typing in.
+  ipcMain.on('focus', (_e, on) => {
+    if (!!on !== wantsFocus) setFocus(!!on);
+  });
   ipcMain.on('quitReady', () => { quitting = true; app.quit(); });
   ipcMain.on('closeGame', () => app.quit());
 
@@ -634,7 +685,7 @@ function wireIpc() {
     if (d) moveToDisplay(d);
   });
   ipcMain.handle('settings:set', (_e, key, value) => {
-    if (key === 'quiet' || key === 'bottomOnly' || key === 'calm') updateSetting(key, !!value);
+    if (key === 'quiet' || key === 'bottomOnly' || key === 'calm' || key === 'dark') updateSetting(key, !!value);
     else if (key === 'scale') updateSetting(key, Math.min(3, Math.max(0.5, Number(value) || 1)));
     else if (key === 'opacity') updateSetting(key, Math.min(1, Math.max(0.2, Number(value) || 1)));
   });
@@ -646,6 +697,7 @@ function wireIpc() {
     atomicWrite(path.join(DIRS.creatures, `${safeBase(base)}.creature`), String(text));
   });
   ipcMain.handle('creature:bury', (_e, base, text) => buryCreature(base, text));
+  ipcMain.handle('creature:rename', (_e, base, name, text) => renameCreature(base, name, text));
   ipcMain.handle('creature:graves', () => listGraves());
   ipcMain.handle('creature:newBase', (_e, name) => path.basename(uniquePath(DIRS.creatures, safeBase(name), 'creature'), '.creature'));
   ipcMain.handle('creature:readDropped', (_e, file) => readCreatureFile(file));

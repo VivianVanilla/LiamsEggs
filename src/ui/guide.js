@@ -57,9 +57,9 @@ function buildStart(body, c) {
     ['2. Give it a job', `Once it is a Sprout, pick ${jobs.slice(0, -1).join(', ')} or ${jobs[jobs.length - 1]}. Each job splits twice, into ${finals} final forms in all.`, []],
     ['3. Mine and farm', 'Mining digs real colors off your screen. Colors, gems and harvests go into one pool that all your creatures share, to spend in the workshop or eat.', [['Mine colors', 'mine'], ['Farm', 'farm'], ['Workshop', 'workshop']]],
     ['4. Powers', `At ${STAND_WITS} Wits a Stand, at ${SPEEDSTER_SPEED} Speed speedster powers, at ${TECHNIQUE_MIGHT} Might its family's cursed technique. It gets one, unless a Legendary mutation makes room for two. Or, at ${FRUIT_VIGOR} Vigor, it can eat a Devil Fruit instead of all of them. Quirks cost max HP, and go with anything.`, [['Powers', 'powers']]],
-    ['5. Fight', 'Training monsters can\'t kill it. Deadly ones can, forever. The battle plan decides how it fights.', [['Challenges', 'challenges'], ['Battle plan', 'plan'], ['Arena', 'arena']]],
-    ['6. Your village', `Up to ${TEAM_MAX} mains are out on your screen. Everyone else lives in the village and works for the pool you all share. Send them on expeditions, hold the line against waves of raiders, and turn on hostile mode if you want rival villages.`, [['Village', 'village'], ['Expeditions', 'expeditions'], ['Defend', 'village:defend']]],
-    ['7. More creatures', 'Breed two and choose what the egg gets, roll eggs until you like one, or get rid of one in the village. Expeditions bring home other races now and then.', [['Breed', 'breed'], ['Roll an egg', 'roll']]],
+    ['5. Fight', 'Training monsters can\'t kill it. Deadly ones can, forever. Adventure is a 20-level campaign for a party of three where nobody can die. The battle plan decides how it fights.', [['Adventure', 'adventure'], ['Challenges', 'challenges'], ['Battle plan', 'plan'], ['Arena', 'arena']]],
+    ['6. Your village', `Up to ${TEAM_MAX} mains are out on your screen. Everyone else lives in the village and works for the pool you all share. Legendary Miners dig ore in the Legendary Mine for the forge, and parties go on expeditions for gems and loot.`, [['Village', 'village'], ['Legendary Mine', 'mine'], ['Expeditions', 'expeditions']]],
+    ['7. More creatures', 'The Nursery is where they come from: breed two and choose what the egg gets, or hatch eggs until you like one. Its Items tab uses the loot Adventure and expeditions bring home. Your creatures shows everyone at once.', [['Nursery', 'nursery'], ['Eggs', 'nursery:eggs'], ['Your creatures', 'creatures']]],
   ];
   fill(body,
     h('div', { class: 'small', style: 'margin-top:5px' }, 'Click a creature on your screen, or its taskbar button, for its menu. The ? on any panel opens this guide on the page for it.'),
@@ -125,7 +125,7 @@ function buildChances(body, c) {
 function buildBreeding(body) {
   fill(body,
     h('div', { class: 'small', style: 'margin-top:5px' }, 'Two of your creatures make an egg, and you choose what it gets from each. Nothing in breeding is left to luck.'),
-    h('div', { class: 'row', style: 'margin-top:3px' }, go('Breed', 'breed'), go('Roll an egg', 'roll')),
+    h('div', { class: 'row', style: 'margin-top:3px' }, go('Breed', 'nursery'), go('Hatch an egg', 'nursery:eggs'), go('Items', 'items')),
     rowsOf(breedingGuide(), 440),
   );
 }

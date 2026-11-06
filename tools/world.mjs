@@ -8,7 +8,7 @@
 //   npm run world -- push <name>           send that world's branch to GitHub
 //   npm run world -- list                  show the worlds on this computer
 //
-// Then play one with:  Start Creature.cmd <name>
+// Then play one with:  Creature.exe <name>   (make Creature.exe first with: npm run exe)
 
 import { execFileSync } from 'child_process';
 import fs from 'fs';
@@ -86,9 +86,10 @@ function newWorld(name, copy) {
     }
   }
   // A launcher to double-click. Like the worlds themselves, it never goes on main.
-  fs.writeFileSync(path.join(ROOT, `Play ${name}.cmd`), `@echo off\r\nrem Plays ${name}'s world, from worlds\\${name}.\r\ncall "%~dp0Start Creature.cmd" ${name}\r\n`);
+  fs.writeFileSync(path.join(ROOT, `Play ${name}.cmd`), `@echo off\r\nrem Plays ${name}'s world, from worlds\\${name}.\r\nstart "" "%~dp0Creature.exe" ${name}\r\n`);
   console.log(`\nMade worlds/${name} on branch ${branch}.`);
-  console.log(`Play it:       double-click "Play ${name}.cmd", or Start Creature.cmd ${name}`);
+  console.log(`Play it:       double-click "Play ${name}.cmd", or run Creature.exe ${name}`);
+  if (!fs.existsSync(path.join(ROOT, 'Creature.exe'))) console.log('               (make Creature.exe first: npm run exe)');
   console.log(`Save it:       npm run world -- save ${name}`);
 }
 

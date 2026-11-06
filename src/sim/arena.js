@@ -5,7 +5,10 @@ import { clamp, makeRng } from '../lib/util.js';
 import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize } from '../core/creature.js';
 import { tuningOf } from '../core/sheet.js';
 import { ABILITIES } from '../data/paths.js';
-import { STANDS, SPEEDSTER, BLACK_FLASH, SHARINGAN_COPY, tuneMove } from '../data/powers.js';
+import {
+  STANDS, SPEEDSTER, BLACK_FLASH, SHARINGAN_COPY, tuneMove, TRAITS, TITAN, SAIYAN, HAKI, SUN_BREATHING, NINE_TAILS, ONE_PUNCH,
+} from '../data/powers.js';
+import { WEAPONS } from '../data/forge.js';
 import { prepEffects } from '../core/craft.js';
 import {
   WINDUP, WINDUP_SLACK, LOW_HEALTH, BERSERK_HIT, BERSERK_TAKEN, BACKING_SPEED, MID_GAP, OFF_BALANCE, BOUNCE_BACK, BOUNCE_WAIT_GAP, HOLD_GUARD, HOLD_HIT, HOLD_PATIENCE, THROW,
@@ -83,6 +86,7 @@ export class Bout {
     const fast = c.powers.speedster;
     const standDef = c.powers.stand ? STANDS[c.powers.stand] : null;
     const base = combatNumbers(s);
+    const weapon = c.weapon && Object.hasOwn(WEAPONS, c.weapon) ? WEAPONS[c.weapon] : null;
     return {
       id: this.nextId++,
       team,
@@ -94,10 +98,21 @@ export class Bout {
       dir,
       scale: stage.scale * this.sizeMul * raceSize(c),
       size,
+      // How much bigger than usual it is drawn: a Titan is twice the size.
+      grow: 1,
       hp: maxHp,
       maxHp,
       ...base,
-      atk: base.atk * (1 + prep.damage),
+      crit: base.crit + (weapon?.crit ?? 0),
+      weapon,
+      // Born-with gifts that change a fight. 'ready' turns to 'on' or 'used' once it happens.
+      titan: hasTrait(c, 'titanshifter') ? 'ready' : null,
+      saiyan: hasTrait(c, 'saiyan') ? 'ready' : null,
+      haki: hasTrait(c, 'haki'),
+      sun: hasTrait(c, 'sunbreathing'),
+      fox: hasTrait(c, 'ninetails') ? 'ready' : null,
+      punches: hasTrait(c, 'onepunch') ? 0 : null,
+      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)),
       moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move),
       attackEvery: (base.attackEvery * (fast ? SPEEDSTER.arenaAttack : 1)) / (1 + prep.attack),
       dodge: base.dodge + (fast ? SPEEDSTER.arenaDodge : 0) + prep.dodge,
@@ -268,8 +283,27 @@ export class Bout {
     return this.stopLeft > 0 && f.team !== this.stopTeam && !f.stand?.def.movesInStop;
   }
 
+  // The moment a fight starts, once everyone has lined up: Conqueror's Haki stuns anything weaker,
+  // and makes everything else flinch.
+  openFight() {
+    this.opened = true;
+    for (const f of this.fighters) {
+      if (!f.haki || !f.alive) continue;
+      const cowed = this.enemies(f).filter((o) => !o.minion);
+      if (!cowed.length) continue;
+      this.events.push({ type: 'ability', x: f.x, y: f.y - 60 * f.scale, name: 'CONQUEROR\'S HAKI', color: TRAITS.haki.color, loud: true });
+      this.events.push({ type: 'nova', x: f.x, y: f.y, range: 260, color: TRAITS.haki.color });
+      for (const o of cowed) {
+        const weaker = o.maxHp < f.maxHp;
+        o.stun = Math.max(o.stun, weaker ? HAKI.weaker : HAKI.stronger);
+        this.events.push({ type: 'status', x: o.x, y: o.y - 80 * o.scale, text: weaker ? 'overwhelmed' : 'flinched', color: TRAITS.haki.color });
+      }
+    }
+  }
+
   tick(dt) {
     if (this.done) return;
+    if (!this.opened) this.openFight();
     if (this.stopLeft > 0) {
       // The fight's clock is stopped too.
       this.stopLeft -= dt;
@@ -305,6 +339,8 @@ export class Bout {
       if (!f.alive) return;
       if (f.poison.left <= 0) f.poison = null;
     }
+    if (f.sun && f.hp < f.maxHp) f.hp = Math.min(f.maxHp, f.hp + f.maxHp * SUN_BREATHING * dt);
+    if (f.saiyan === 'ready' && this.t >= SAIYAN.after) this.superSaiyan(f);
     this.tickStand(f, dt);
     if (f.trail) this.tickTrail(f, dt);
 
@@ -393,12 +429,61 @@ export class Bout {
 
   swing(f, target, power = 1) {
     f.cdAttack = f.attackEvery;
-    if (f.blackFlash && this.rand() < BLACK_FLASH.chance) {
+    // One Punch: every 10th swing is a Serious Punch, and nothing gets out of the way of it.
+    let serious = false;
+    if (typeof f.punches === 'number' && ++f.punches >= ONE_PUNCH.every) {
+      f.punches = 0;
+      serious = true;
+      power *= ONE_PUNCH.power;
+      this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'SERIOUS PUNCH', color: TRAITS.onepunch.color, loud: true });
+    } else if (f.blackFlash && this.rand() < BLACK_FLASH.chance) {
+      power *= BLACK_FLASH.power;
       this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'BLACK FLASH', color: '#ff5a4a', loud: true });
-      this.strike(f, target, power * BLACK_FLASH.power);
-      return;
     }
-    this.strike(f, target, power);
+    const dealt = this.strike(f, target, power, { sure: serious });
+    if (dealt > 0 && f.weapon) this.weaponHit(f, target, dealt);
+  }
+
+  // What its weapon does on top of a swing that landed.
+  weaponHit(f, target, dealt) {
+    const w = f.weapon;
+    if (w.lifesteal) f.hp = Math.min(f.maxHp, f.hp + dealt * w.lifesteal);
+    if (!target.alive) return;
+    if (w.poison) target.poison = { left: w.poisonFor, dps: f.atk * w.poison, from: f };
+    if (w.stunChance && this.rand() < w.stunChance) {
+      target.stun = Math.max(target.stun, w.stun);
+      this.events.push({ type: 'status', x: target.x, y: target.y - 80 * target.scale, text: 'stunned!', color: w.color });
+    }
+  }
+
+  // Saiyan Blood, once the fight has gone on long enough.
+  superSaiyan(f) {
+    f.saiyan = 'on';
+    f.atk *= 1 + SAIYAN.damage;
+    f.moveSpeed *= 1 + SAIYAN.speed;
+    f.attackEvery /= 1 + SAIYAN.speed;
+    this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'SUPER SAIYAN', color: TRAITS.saiyan.color, loud: true });
+    this.events.push({ type: 'buff', x: f.x, y: f.y - 30 * f.scale, color: TRAITS.saiyan.color });
+  }
+
+  // Titan Shifter, below half its health: twice the size, twice the damage, for the rest of the fight.
+  titanShift(f) {
+    f.titan = 'on';
+    f.grow = TITAN.size;
+    f.size *= TITAN.size;
+    f.scale *= TITAN.size;
+    f.atk *= TITAN.damage;
+    this.events.push({ type: 'nova', x: f.x, y: f.y, range: 160, color: TRAITS.titanshifter.color });
+    this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'TITAN SHIFT', color: TRAITS.titanshifter.color, loud: true });
+  }
+
+  // Nine-Tails Chakra: the first knockout doesn't take.
+  foxWakes(f) {
+    f.fox = 'used';
+    f.hp = f.maxHp * NINE_TAILS.hp;
+    f.atk *= 1 + NINE_TAILS.damage;
+    this.events.push({ type: 'nova', x: f.x, y: f.y, range: 120, color: TRAITS.ninetails.color });
+    this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'NINE-TAILS', color: TRAITS.ninetails.color, loud: true });
   }
 
   // Ready to swing at something in reach, once it has wound up.
@@ -674,21 +759,24 @@ export class Bout {
     }
   }
 
+  // Returns the damage it dealt: none if it missed.
   strike(f, target, power, { sure = false } = {}) {
-    if (!target.alive) return;
+    if (!target.alive) return 0;
     // Nothing can dodge in stopped time.
     if (!sure && !this.frozen(target) && this.rand() < target.dodge + this.buffValue(target, 'dodge')) {
       this.events.push({ type: 'dodge', x: target.x, y: target.y - 60 * target.scale });
-      return;
+      return 0;
     }
     const crit = this.rand() < f.crit + this.buffValue(f, 'crit');
     let dmg = f.atk * power * (1 + this.buffValue(f, 'atk')) * (0.85 + this.rand() * 0.3);
     if (crit) dmg *= 2;
     if (f.plan?.hurt === 'berserk' && lowHealth(f)) dmg *= BERSERK_HIT;
-    this.hurt(target, dmg, f, { crit });
+    if (f.weapon?.monster && target.monster) dmg *= 1 + f.weapon.monster;
+    return this.hurt(target, dmg, f, { crit });
   }
 
-  // `still` is for damage over time, which shouldn't shove the target on every tick.
+  // `still` is for damage over time, which shouldn't shove the target on every tick. Returns the
+  // damage it took.
   hurt(target, raw, from, { crit = false, silent = false, still = false } = {}) {
     const shield = 1 - clamp(this.buffValue(target, 'guard') + (target.holding ? HOLD_GUARD : 0), 0, 0.8);
     const bare = target.plan?.hurt === 'berserk' && lowHealth(target) ? BERSERK_TAKEN : 1;
@@ -701,6 +789,8 @@ export class Bout {
       target.y += Math.sin(a) * 3;
     }
     if (!silent) this.events.push({ type: 'hit', x: target.x, y: target.y - 44 * target.scale, amt: dmg, crit, color: from?.c ? null : '#fff' });
+    if (target.hp <= 0 && target.fox === 'ready') this.foxWakes(target);
+    if (target.titan === 'ready' && target.hp > 0 && target.hp < target.maxHp * TITAN.below) this.titanShift(target);
     if (target.hp <= 0) {
       target.hp = 0;
       target.alive = false;
@@ -714,6 +804,7 @@ export class Bout {
         }
       }
     }
+    return dmg;
   }
 
   tickBolts(dt) {

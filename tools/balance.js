@@ -1,39 +1,42 @@
-// Prints how long society worlds last and how fair arena fights are. Run: node tools/balance.js
+// Prints how fair arena fights are, what each power, gift and weapon is worth, and how hard each
+// Adventure level is for a few kinds of party. Run: node tools/balance.js
 
 import { wildCreature, newCreature, computeStats, pathTitle, parseCreature, serializeCreature, powerOf, STAGES } from '../src/core/creature.js';
 import { startChallenge, wonChallenge } from '../src/sim/challenges.js';
 import { finishBout } from '../src/sim/arena.js';
 import { DEADLY_IDS, DEADLY_MONSTERS, TRAINING_IDS, TRAINING_MONSTERS } from '../src/data/monsters.js';
-import { newWorld, tickWorld, TICK_MS } from '../src/sim/society.js';
 import { runBout } from '../src/sim/arena.js';
 import { PATHS, TIER_XP } from '../src/data/paths.js';
-import { STANDS, STAND_IDS, QUIRKS, QUIRK_IDS, TECHNIQUES, TECHNIQUE_IDS , OFA_LEVEL_AT } from '../src/data/powers.js';
+import { STANDS, STAND_IDS, QUIRKS, QUIRK_IDS, TECHNIQUES, TECHNIQUE_IDS, OFA_LEVEL_AT, TRAITS } from '../src/data/powers.js';
+import { WEAPONS, WEAPON_IDS } from '../src/data/forge.js';
+import { LEVEL_COUNT, startLevel, levelWon } from '../src/core/adventure.js';
 
 const NO_POWERS = () => ({ stand: null, speedster: false, technique: null, technique2: null, quirks: [] });
 
-function worlds(tribeCount, runs = 12, limit = 30000) {
-  const lengths = [];
-  const firstWar = [];
-  let unfinished = 0;
-  for (let run = 0; run < runs; run++) {
-    const roster = Array.from({ length: tribeCount }, (_, i) => wildCreature(run * 100 + i, 3));
-    const world = newWorld(roster, { seed: run + 1 });
-    let warTick = null;
-    while (!world.ended && world.tick < limit) {
-      tickWorld(world, 1, () => { if (warTick === null) warTick = world.tick; });
-    }
-    if (!world.ended) unfinished++;
-    lengths.push(world.tick);
-    if (warTick !== null) firstWar.push(warTick);
+// Adventure: how often a party of three wins each level.
+function adventure(seeds = 12) {
+  const party = (level, base, extra) => [0, 1, 2].map((i) => {
+    const c = wildCreature(base + i * 7919, level);
+    extra?.(c);
+    return c;
+  });
+  const kinds = {
+    'wild level 1': (s) => party(1, s),
+    'wild level 2': (s) => party(2, s),
+    'final forms': (s) => party(3, s),
+    'elders, armed': (s) => party(3, s, (c) => { c.growth = 200; c.weapon = 'dragonslayer'; c.training = { might: 10, guard: 10, speed: 10, wits: 10, vigor: 10 }; }),
+  };
+  console.log('\nAdventure, share of levels won:');
+  console.log(`  ${'level'.padEnd(6)}${Object.keys(kinds).map((k) => k.padStart(15)).join('')}`);
+  for (let n = 1; n <= LEVEL_COUNT; n++) {
+    const cells = Object.values(kinds).map((make) => {
+      let won = 0;
+      for (let s = 0; s < seeds; s++) if (levelWon(finishBout(startLevel(n, make(1000 + s * 31), { seed: 500 + s * 13 + n })))) won++;
+      return `${Math.round((won / seeds) * 100)}%`.padStart(15);
+    });
+    console.log(`  ${String(n).padEnd(6)}${cells.join('')}`);
   }
-  lengths.sort((a, b) => a - b);
-  firstWar.sort((a, b) => a - b);
-  const hrs = (ticks) => ((ticks * TICK_MS) / 3600000).toFixed(1);
-  const median = lengths[Math.floor(lengths.length / 2)];
-  console.log(`${tribeCount} peoples: median ${median} ticks (${hrs(median)} h), range ${hrs(lengths[0])}-${hrs(lengths[lengths.length - 1])} h, first battle at ${hrs(firstWar[Math.floor(firstWar.length / 2)] ?? 0)} h, unfinished ${unfinished}/${runs}`);
 }
-
-[2, 4, 8].forEach((n) => worlds(n));
 
 // Final forms against each other. Build a creature on each final-form line.
 const finals = Object.entries(PATHS).filter(([, n]) => n.tier === 3).map(([id]) => id);
@@ -125,6 +128,10 @@ row('Limitless with Six Eyes', powerRate((c) => { c.powers.technique = 'limitles
 row('Shrine', powerRate((c) => { c.powers.technique = 'shrine'; }));
 row('Cursed Body: Shrine and Ten Shadows', powerRate((c) => { c.powers.technique = 'shrine'; c.powers.technique2 = 'tenshadows'; c.traits = ['cursedbody']; }));
 row('Cursed Body: Limitless and Shrine, Six Eyes', powerRate((c) => { c.powers.technique = 'limitless'; c.powers.technique2 = 'shrine'; c.traits = ['cursedbody', 'sixeyes']; }));
+['titanshifter', 'saiyan', 'haki', 'sunbreathing', 'ninetails', 'onepunch'].forEach((id) => row(TRAITS[id].name, powerRate((c) => { c.traits = [id]; })));
+console.log('Weapons:');
+WEAPON_IDS.forEach((id) => row(WEAPONS[id].name, powerRate((c) => { c.weapon = id; })));
+adventure();
 
 // Each stance for a few kinds of creature, against unrelated rivals with no powers who keep close.
 function stanceRate(make, stance, rounds = 200) {

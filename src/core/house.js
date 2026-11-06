@@ -1,6 +1,7 @@
 // What your creatures share: one bank of mined colors, dust and gems, one larder of harvested
 // plants, one food store, the Devil Fruits nobody has eaten yet, and the next egg on offer. The
-// village lives here too: its work, its expeditions, and with hostile mode on, its raids.
+// village lives here too (its work, its Legendary Mine and its expeditions), along with the forge's
+// ore and armory, the bag of loot, the Mega Breeder, and how far Adventure has got.
 // Pure logic with no DOM, so tests can run it.
 //
 // A creature in the household simply uses the shared objects as its own bank, larder, fruits and
@@ -10,7 +11,10 @@ import { clamp, num } from '../lib/util.js';
 import { BANK_KEYS, MAX_BANK, CROP_IDS } from '../data/crafting.js';
 import { FRUITS } from '../data/fruits.js';
 import { RACES } from '../data/races.js';
-import { EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE, HOSTILE_VILLAGES } from '../data/village.js';
+import { EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE, LEGENDARY_MINE } from '../data/village.js';
+import { WEAPON_IDS, MAX_ARMORY, MAX_ORE } from '../data/forge.js';
+import { ITEM_IDS, MAX_ITEMS } from '../data/items.js';
+import { ADVENTURE_LEVELS, ADVENTURE_PARTY } from '../data/adventure.js';
 import { emptyBank } from './craft.js';
 
 export const MAX_STORE = 9999;
@@ -18,9 +22,11 @@ export const MAX_STORE = 9999;
 const emptyLarder = () => Object.fromEntries(CROP_IDS.map((id) => [id, 0]));
 const safeStr = (v, max) => String(v ?? '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').slice(0, max);
 const safeId = (v) => String(v ?? '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
+const creatureIds = (list, max) => (Array.isArray(list) ? [...new Set(list.filter((id) => typeof id === 'string').map((id) => id.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64)))] : []).filter(Boolean).slice(0, max);
 const time = (v) => Math.max(0, num(v));
+const counts = (raw, ids, max) => Object.fromEntries(ids.map((id) => [id, Math.floor(clamp(num(raw?.[id]), 0, max))]).filter(([, n]) => n > 0));
 
-// egg is the egg on offer in the Roll note, kept here so closing the note can't roll a new one free.
+// egg is the egg on offer in the Nursery, kept here so closing the note can't roll a new one free.
 export const emptyHouse = () => ({
   bank: emptyBank(),
   larder: emptyLarder(),
@@ -30,20 +36,25 @@ export const emptyHouse = () => ({
   village: { lastTick: 0, carry: {} },
   expeditions: [],
   found: [],
-  hostile: { on: false, villages: [], nextRaid: 0, restUntil: 0, log: [] },
-  waves: { best: 0 },
+  // Legendary ore for the forge, the weapons nobody is carrying, and the bag of loot.
+  ore: 0,
+  armory: {},
+  items: {},
+  // The ids of the legendary Miners working the Legendary Mine.
+  mine: [],
+  megaBreeder: false,
+  // The best Adventure level beaten, and the ids of the party last sent.
+  adventure: { best: 0, party: [] },
 });
 
-// The household file can be edited by hand, so it gets cleaned like a .creature file.
+// The household file can be edited by hand, so it gets cleaned like a .creature file. Old saves
+// lose their hostile villages and waves, which no longer exist.
 export function sanitizeHouse(raw) {
   const house = emptyHouse();
   BANK_KEYS.forEach((k) => { house.bank[k] = clamp(num(raw?.bank?.[k]), 0, MAX_BANK); });
   CROP_IDS.forEach((id) => { house.larder[id] = Math.floor(clamp(num(raw?.larder?.[id]), 0, MAX_BANK)); });
   house.store = clamp(num(raw?.store), 0, MAX_STORE);
-  Object.keys(FRUITS).forEach((id) => {
-    const n = Math.floor(clamp(num(raw?.fruits?.[id]), 0, 99));
-    if (n) house.fruits[id] = n;
-  });
+  house.fruits = counts(raw?.fruits, Object.keys(FRUITS), 99);
   if (typeof raw?.egg?.id === 'string' && /^[a-f0-9]{16}$/.test(raw.egg.id)) house.egg = { id: raw.egg.id };
   house.village.lastTick = time(raw?.village?.lastTick);
   for (const [k, v] of Object.entries(raw?.village?.carry ?? {}).slice(0, 40)) {
@@ -63,17 +74,13 @@ export function sanitizeHouse(raw) {
     .filter((f) => f && Object.hasOwn(RACES, f.race))
     .slice(0, 12)
     .map((f) => ({ race: f.race, where: Object.hasOwn(EXPEDITIONS, f.where) ? f.where : null, at: time(f.at) }));
-  const hostile = raw?.hostile ?? {};
-  house.hostile.on = hostile.on === true;
-  house.hostile.villages = house.hostile.on && Array.isArray(hostile.villages)
-    ? hostile.villages.slice(0, HOSTILE_VILLAGES).filter((v) => v && typeof v.name === 'string').map((v) => ({
-      id: safeId(v.id) || 'v', name: safeStr(v.name, 40), power: clamp(num(v.power, 50), 1, 100000), raidedAt: time(v.raidedAt),
-    }))
-    : [];
-  house.hostile.nextRaid = time(hostile.nextRaid);
-  house.hostile.restUntil = time(hostile.restUntil);
-  house.hostile.log = (Array.isArray(hostile.log) ? hostile.log : []).slice(-20).filter((l) => l && typeof l.text === 'string').map((l) => ({ at: time(l.at), text: safeStr(l.text, 200) }));
-  house.waves.best = Math.floor(clamp(num(raw?.waves?.best), 0, 999));
+  house.ore = Math.floor(clamp(num(raw?.ore), 0, MAX_ORE));
+  house.armory = counts(raw?.armory, WEAPON_IDS, MAX_ARMORY);
+  house.items = counts(raw?.items, ITEM_IDS, MAX_ITEMS);
+  house.mine = creatureIds(raw?.mine, LEGENDARY_MINE.slots);
+  house.megaBreeder = raw?.megaBreeder === true;
+  house.adventure.best = Math.floor(clamp(num(raw?.adventure?.best), 0, ADVENTURE_LEVELS.length));
+  house.adventure.party = creatureIds(raw?.adventure?.party, ADVENTURE_PARTY);
   return house;
 }
 

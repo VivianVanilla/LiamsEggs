@@ -9,7 +9,8 @@ import {
   learnTechnique, canLearnSecondTechnique, learnSecondTechnique, perksOf, choosePath, STAGES, STAT_LIMITS,
 } from '../src/core/creature.js';
 import {
-  breed, breedProblem, giftsOf, giftLimit, choiceProblem, nurseHelp, isNurse, heirProblem, passOn, stockpileAfter, restLeft, ownPower,
+  breed, breedProblem, breedCost, giftsOf, giftLimit, choiceProblem, nurseHelp, isNurse, heirProblem, passOn, stockpileAfter, ownPower,
+  megaBreederProblem, buyMegaBreeder,
 } from '../src/core/family.js';
 import { describeMove, moveList, buildSheet, ofaText, tuningOf, perkText } from '../src/core/sheet.js';
 import {
@@ -18,9 +19,10 @@ import {
 } from '../src/data/powers.js';
 import { ABILITIES, PATHS, ROOT_PATHS, TIER_XP } from '../src/data/paths.js';
 import {
-  TEAM_MAX, BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_REST_HOURS, BREED_GIFTS, MAX_CARE_REST,
+  TEAM_MAX, BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER,
 } from '../src/data/family.js';
 import { Bout, runBout, finishBout } from '../src/sim/arena.js';
+import { emptyHouse } from '../src/core/house.js';
 
 const clean = (s) => !/undefined|NaN|null|\[object/.test(s);
 const HOUR = 3600 * 1000;
@@ -329,20 +331,19 @@ test('a higher One For All wins more often', () => {
 
 // ---------- breeding ----------
 
-test('parents have to be grown, fed and rested', () => {
+test('parents have to be grown and fed, and there is no waiting between eggs', () => {
   const kid = newCreature('Kid', NOW);
   kid.fullness = 90;
-  assert.match(breedProblem(kid, NOW), /has to be a Scrapper first/);
+  assert.match(breedProblem(kid), /has to be a Scrapper first/);
   const a = adult('A');
-  assert.equal(breedProblem(a, NOW), null);
+  assert.equal(breedProblem(a), null);
   a.fullness = BREED_FULLNESS - 1;
-  assert.match(breedProblem(a, NOW), /too hungry/);
+  assert.match(breedProblem(a), /too hungry/);
   a.fullness = 90;
-  a.bredAt = NOW - HOUR;
-  assert.match(breedProblem(a, NOW), /resting for \d+ more min/);
-  assert.equal(breedProblem(a, NOW + BREED_REST_HOURS * HOUR), null);
+  a.bredAt = NOW;
+  assert.equal(breedProblem(a), null, 'having just bred does not stop it');
   a.dead = { at: NOW, by: 'x' };
-  assert.match(breedProblem(a, NOW), /gone/);
+  assert.match(breedProblem(a), /gone/);
 });
 
 test('breeding passes on exactly what you choose, and costs both parents', () => {
@@ -383,8 +384,10 @@ test('breeding passes on exactly what you choose, and costs both parents', () =>
   // Saved and loaded, it is the same baby.
   const back = parseCreature(serializeCreature(baby));
   assert.deepEqual([back.lineage, back.otherLine, back.traits, back.powers.quirks, back.parents], [baby.lineage, baby.otherLine, baby.traits, baby.powers.quirks, baby.parents]);
-  // Straight away, neither can breed again.
-  assert.ok(breed(a, b, { family: 'a', look: 'a', style: 'a', gifts: [] }, 'Again', NOW).problem);
+  // No waiting: fed enough, they can go again straight away, until they are too hungry.
+  assert.ok(breed(a, b, { family: 'a', look: 'a', style: 'a', gifts: [] }, 'Again', NOW).baby);
+  assert.equal(a.fullness, 90 - 2 * BREED_COST);
+  assert.match(breed(a, b, { family: 'a', look: 'a', style: 'a', gifts: [] }, 'Third', NOW).problem, /too hungry/);
 });
 
 test('two parents from one family still give a different other side', () => {
@@ -429,10 +432,13 @@ test('a nurse out on the screen makes breeding go better', () => {
   assert.equal(help.nurse, nurse);
   assert.equal(help.picks, 1);
   assert.equal(giftLimit(help), BREED_GIFTS + 1);
-  // It rests the parents for less time.
+  // Its parents spend less fullness on an egg.
+  assert.ok(breedCost(help) < breedCost(null));
+  assert.equal(breedCost(null), BREED_COST);
   const a = adult('A');
-  a.bredAt = NOW;
-  assert.ok(restLeft(a, NOW, help) < restLeft(a, NOW, null));
+  const z = adult('Z');
+  breed(a, z, { family: 'a', look: 'a', style: 'a', gifts: [] }, 'Cheap', NOW, help);
+  assert.equal(a.fullness, 90 - breedCost(help));
   // The midwife line hatches bigger eggs.
   nurse.path.xp = TIER_XP[2];
   assert.ok(choosePath(nurse, 'midwife'));
@@ -442,7 +448,29 @@ test('a nurse out on the screen makes breeding go better', () => {
   const c = adult('C');
   const { baby } = breed(b, c, { family: 'a', look: 'a', style: 'a', gifts: [] }, 'Big', NOW, help);
   assert.equal(baby.growth, 12);
-  assert.ok(help.rest <= MAX_CARE_REST);
+  assert.ok(help.save <= MAX_CARE_SAVE);
+});
+
+test('the Mega Breeder is bought once, with gems, and lets every egg carry more', () => {
+  const house = emptyHouse();
+  assert.match(megaBreederProblem(house), new RegExp(`${MEGA_BREEDER.cost} gems`));
+  assert.equal(buyMegaBreeder(house), false);
+  house.bank.gems = MEGA_BREEDER.cost + 5;
+  assert.ok(buyMegaBreeder(house));
+  assert.equal(house.bank.gems, 5);
+  assert.ok(house.megaBreeder);
+  assert.match(megaBreederProblem(house), /already/);
+  const help = { ...nurseHelp([]), mega: house.megaBreeder };
+  assert.equal(giftLimit(help), BREED_GIFTS + MEGA_BREEDER.gifts);
+  // Six things pass on where three would have been the limit.
+  const a = adult('Mega A');
+  const b = adult('Mega B');
+  a.traits = ['sharingan', 'titanshifter', 'haki'];
+  b.traits = ['onepunch', 'saiyan', 'ninetails'];
+  const gifts = ['trait:sharingan', 'trait:titanshifter', 'trait:haki', 'trait:onepunch', 'trait:saiyan', 'trait:ninetails'];
+  assert.match(choiceProblem(a, b, { gifts }), /Only 3/);
+  const { baby } = breed(a, b, { family: 'a', look: 'a', style: 'a', gifts }, 'Loaded', NOW, help);
+  assert.deepEqual(baby.traits.slice().sort(), gifts.map((g) => g.slice(6)).sort());
 });
 
 test('the sheet shows what it was born with, and the gifts read properly', () => {
