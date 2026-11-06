@@ -33,7 +33,7 @@
   },
   "pureBlood": false,
   "born": 1793983117943,
-  "lastSeen": 1793984380814,
+  "lastSeen": 1793986481266,
   "summary": {
     "stage": "Elder",
     "race": "Human",
@@ -73,8 +73,8 @@
     "wits": 27,
     "vigor": 23
   },
-  "growth": 276.84,
-  "fullness": 70.29,
+  "growth": 278.5,
+  "fullness": 69.91,
   "essence": {
     "bone": 5,
     "sap": 5,
@@ -225,7 +225,7 @@
     "line": [
       "nurse"
     ],
-    "xp": 16
+    "xp": 17
   },
   "powers": {
     "stand": "starplatinum",
@@ -305,7 +305,7 @@
     "fields": [],
     "animals": [],
     "store": 0,
-    "lastTick": 1793984380359,
+    "lastTick": 1793986480817,
     "wateredAt": 0,
     "nextId": 1
   },

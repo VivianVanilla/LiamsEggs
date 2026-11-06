@@ -23,7 +23,7 @@
     }
   ],
   "bredAt": 1793983117943,
-  "household": false,
+  "household": true,
   "race": "human",
   "heritage": {
     "human": 1
