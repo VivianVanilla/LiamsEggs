@@ -8,7 +8,7 @@ import { emptyHouse, sanitizeHouse, joinHouse, withoutHouse, MAX_STORE } from '.
 import { pay } from '../src/core/craft.js';
 import { addField, doJob, eatFromStore, eatPlant } from '../src/sim/farm.js';
 import { chanceSections } from '../src/core/odds.js';
-import { TRAIT_ODDS, LEGENDARY_ONE_IN, BLACK_FLASH, TECHNIQUE_IDS } from '../src/data/powers.js';
+import { TRAIT_ODDS, BLACK_FLASH, TECHNIQUE_IDS } from '../src/data/powers.js';
 import { TRAINING_CHANCE } from '../src/data/monsters.js';
 import { GEM_CHANCE, VEIN_CHANCE, MAX_BANK } from '../src/data/crafting.js';
 
@@ -88,7 +88,9 @@ test('the chances list shows the real numbers, and reads properly', () => {
   assert.ok(find('Six Eyes').detail.includes(`1 in ${TRAIT_ODDS.sixeyes * TECHNIQUE_IDS.length} of all eggs`));
   assert.equal(find('Sharingan').odds, `1 in ${TRAIT_ODDS.sharingan}`);
   assert.ok(!find('Sharingan').has);
-  assert.equal(find('Twin Soul').odds, `1 in ${LEGENDARY_ONE_IN}`);
+  assert.equal(find('Twin Soul').odds, 'every win', 'no luck in a Legendary mutation');
+  assert.ok(find('Twin Soul').detail.includes('The Last Dragon'));
+  assert.ok(find('Iron Soul').detail.includes('Legendary road'));
   assert.equal(find('Black Flash').odds, `${Math.round(BLACK_FLASH.chance * 100)}%`);
   assert.equal(find('Training monster').odds, `${Math.round(TRAINING_CHANCE * 100)}%`);
   assert.equal(find('Gem').odds, `${Math.round(GEM_CHANCE * 100)}%`);

@@ -1,6 +1,6 @@
 // Powers a creature can earn on top of its job.
 //   It can be one of these three, for good, unless a Legendary mutation lets it have two
-//   (Twin Soul: any two. Malevolent Soul: a Stand, plus a speedster or a cursed technique):
+//   (see LEGENDARY below for which two each one allows):
 //     a Stand (JoJo's Bizarre Adventure), from Wits. Its soul decides which one it gets.
 //     a speedster, from Speed.
 //     a cursed technique (Jujutsu Kaisen), from Might. Its family name decides which one.
@@ -152,7 +152,11 @@ export const TECHNIQUES = {
 
 export const TECHNIQUE_IDS = Object.keys(TECHNIQUES);
 
-// Rare. It doesn't take up one of its mutation places.
+// A creature holds one at a time, and it doesn't take up one of its mutation places. The only way to
+// get one is to beat the monster that gives it, in the Challenges note (`soul` in data/monsters.js).
+// How many powers a soul holds is `slots` (POWER_SLOTS_LEGENDARY if it doesn't say). `noStand`: no
+// Stand comes out of it. `besideFruit`: its second place is only for a pair with a Devil Fruit in it.
+// `passive` works in every fight, the same way a race's does (data/races.js).
 export const LEGENDARY = {
   twinsoul: {
     name: 'Twin Soul', color: '#ffe14a', stats: { might: 1, guard: 1, speed: 1, wits: 1, vigor: 1 },
@@ -162,6 +166,26 @@ export const LEGENDARY = {
     name: 'Malevolent Soul', color: '#c9302c', stats: { might: 3, vigor: 2 }, apart: true, fruit: true,
     blurb: 'Something cruel has moved in. It can hold a Stand, plus one more: speedster powers, a cursed technique or a Devil Fruit.',
   },
+  ironsoul: {
+    name: 'Iron Soul', color: '#9aa7b8', stats: { guard: 3, vigor: 2 }, slots: 1,
+    passive: { taken: 0.2, hp: 0.15, text: 'Takes 20% less damage, and has 15% more max HP.' },
+    blurb: 'A soul like a wall. It still holds only one power, but very little gets through to it.',
+  },
+  ghostsoul: {
+    name: 'Ghost Soul', color: '#b9c6ec', stats: { speed: 2, wits: 3 }, slots: 1,
+    passive: { dodge: 0.1, crit: 0.12, speed: 0.1, text: '10% more likely to dodge, 12% more critical hits, and moves 10% faster.' },
+    blurb: 'Half of it is always somewhere else. It still holds only one power, but it is hard to hit and hits where it hurts.',
+  },
+  tidesoul: {
+    name: 'Tide Soul', color: '#2f8fd8', stats: { vigor: 3, might: 2 }, fruit: true, besideFruit: true,
+    passive: { poisonproof: true, text: 'Poison can\'t touch it.' },
+    blurb: 'The sea gives back what a Devil Fruit takes. It can hold a Devil Fruit beside any one power: a Stand, speedster powers or a cursed technique. Without a fruit, it holds one.',
+  },
+  warsoul: {
+    name: 'War Soul', color: '#d4542a', stats: { might: 2, speed: 1 }, noStand: true,
+    passive: { crit: 0.08, reach: 20, text: '8% more critical hits, and swings from a little further away.' },
+    blurb: 'Nothing in it waits behind it. It can hold speedster powers and a cursed technique together, but a Stand will never come out of it.',
+  },
 };
 export const LEGENDARY_ID = 'twinsoul';
 export const MALEVOLENT_ID = 'malevolentsoul';
@@ -169,11 +193,6 @@ export const MALEVOLENT_ID = 'malevolentsoul';
 // What a soul with `apart` keeps separate: it can't hold two powers from one category. A soul with
 // `fruit` can hold a Devil Fruit beside its other power; without it, a fruit goes with nothing.
 export const POWER_CATEGORIES = { stand: 'stand', speedster: 'other', technique: 'other', fruit: 'other' };
-
-// One new mutation in this many comes with a Twin Soul, and The Last Dragon always gives one.
-// Any other win to the death has this chance of a Malevolent Soul. A creature only ever has one.
-export const LEGENDARY_ONE_IN = 25;
-export const LEGENDARY_FROM_TROPHY = 0.15;
 
 // `cost` is the percent of max HP given up for good. `behind` puts its picture behind the body.
 export const QUIRKS = {

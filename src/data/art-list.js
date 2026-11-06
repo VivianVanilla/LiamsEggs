@@ -8,7 +8,7 @@ import { FOODS, FOOD_ORDER } from './foods.js';
 import { STANDS, STAND_IDS, QUIRKS, QUIRK_IDS, TECHNIQUES, TECHNIQUE_IDS, LEGENDARY } from './powers.js';
 import { CHARMS, CHARM_IDS, CROPS, CROP_IDS } from './crafting.js';
 import { RACES, RACE_PICTURES, RACE_IDEAS, RACE_BACKS, RACE_BACK_IDEAS } from './races.js';
-import { TRAINING_MONSTERS, TRAINING_IDS, DEADLY_MONSTERS, DEADLY_IDS, ULTIMATE_IDS } from './monsters.js';
+import { TRAINING_MONSTERS, TRAINING_IDS, DEADLY_MONSTERS, DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS } from './monsters.js';
 
 // These mutation layers sit behind the body. All the others sit in front of it.
 export const BEHIND_BODY = new Set(['spikes', 'clubtail', 'zaptail', 'jets', 'tentacle', 'firetail', 'extralegs', 'extraarms', 'smoke']);
@@ -148,5 +148,5 @@ export const ART_FILES = [
   { file: 'fx/bolt.png', group: 'Effects', what: 'A thrown shot or ranged move flying through the air.' },
 
   ...TRAINING_IDS.map((id) => ({ file: `monsters/${id}.png`, group: 'Monsters', what: `${TRAINING_MONSTERS[id].name}, a training monster.` })),
-  ...[...DEADLY_IDS, ...ULTIMATE_IDS].map((id) => ({ file: `monsters/${id}.png`, group: 'Monsters', what: `${DEADLY_MONSTERS[id].name}${DEADLY_MONSTERS[id].ultimate ? ', an ultimate monster' : ''}. ${DEADLY_MONSTERS[id].blurb}` })),
+  ...[...DEADLY_IDS, ...LEGEND_IDS, ...ULTIMATE_IDS].map((id) => ({ file: `monsters/${id}.png`, group: 'Monsters', what: `${DEADLY_MONSTERS[id].name}${DEADLY_MONSTERS[id].ultimate ? ', an ultimate monster' : DEADLY_MONSTERS[id].road === 'legend' ? ', on the Legendary road' : ''}. ${DEADLY_MONSTERS[id].blurb}` })),
 ];

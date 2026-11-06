@@ -223,7 +223,7 @@ export function buildSheet(c) {
   }
   if (c.legendary) {
     const l = LEGENDARY[c.legendary];
-    sections.unshift({ title: 'Legendary mutation', rows: [row(c, l.name, l.stats, l.blurb)] });
+    sections.unshift({ title: 'Legendary mutation', rows: [row(c, l.name, l.stats, `${l.blurb}${l.passive ? ` In a fight: ${l.passive.text}` : ''}`)] });
   }
   if (powerRows.length) {
     const given = hpGivenUp(c);

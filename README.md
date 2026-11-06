@@ -65,7 +65,15 @@ Open Powers, Powers. Each needs its stat in its top three, and all of them are f
 - **A cursed technique** (*Jujutsu Kaisen*) at 20 Might. Its last name decides which one runs in its family.
 - **A Devil Fruit** (*One Piece*) at 20 Vigor, from the fruits your farms and expeditions find.
 
-It can hold one of those. **A Legendary mutation** lets it hold two: **Twin Soul** holds any two of a Stand, speedster powers and a technique; **Malevolent Soul** holds a Stand plus one more, and that one can be a **Devil Fruit**. A fruit goes with nothing else.
+It can hold one of those. **A Legendary mutation** changes that, and it holds one at a time. The only way to get one is to beat the monster that gives it in Challenges; if it wins another, you choose which to keep.
+- **Twin Soul** (The Last Dragon): any two of a Stand, speedster powers and a technique.
+- **Malevolent Soul** (Old Rex): a Stand plus one more, and that one can be a **Devil Fruit**.
+- **Iron Soul** (The Iron Rhino): still one power, but takes 20% less damage and has 15% more max HP.
+- **Ghost Soul** (The Ghost Leopard): still one power, but dodges, crits and moves more.
+- **Tide Soul** (The Sea King): a Devil Fruit beside any one power, and poison can't touch it.
+- **War Soul** (The Silverback): speedster powers and a technique together, more crits and reach, but never a Stand.
+
+Without one, a fruit goes with nothing else.
 
 **Quirks** (*My Hero Academia*) are paid for with max HP instead, up to 60%. **One For All** grows as it is passed on.
 
@@ -133,8 +141,9 @@ Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blad
 ## Fighting
 
 - **Battle plan:** every move it knows, which to use, and how it fights, when it is hurt, and who it goes for.
-- **Challenges:** training monsters can't kill it; deadly ones can, forever, and each win is a trophy. A dead creature's file moves to `world/graveyard`. Beating The Last Dragon always gives a Twin Soul, even in place of a Malevolent Soul (unless it holds a Devil Fruit beside a Stand, which only a Malevolent Soul allows).
-- **Ultimate monsters:** five more, just as deadly, once every deadly monster is beaten. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time.
+- **Challenges:** training monsters can't kill it; deadly ones can, forever, and each win is a trophy. A dead creature's file moves to `world/graveyard`. Old Rex also gives a Malevolent Soul, and The Last Dragon a Twin Soul.
+- **Legendary road:** four more monsters to the death. No trophies: each gives one Legendary mutation and nothing else.
+- **Ultimate monsters:** five more, just as deadly, once it has won any 2 on the Legendary road. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time.
 - **Arena:** a free-for-all with any `.creature` files.
 
 ## The art

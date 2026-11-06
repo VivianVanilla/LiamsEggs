@@ -1,19 +1,23 @@
-// The Challenges note: training monsters that can't kill it, and deadly ones that can.
+// The Challenges note: training monsters that can't kill it, deadly ones that can, the Legendary
+// road, and the ultimate monsters. Beating a monster is the only way to get a Legendary mutation.
 
 import { toast } from './flair.js';
 import { clamp } from '../lib/util.js';
 import { G, api, saveCreature, memberOf, creatureText } from '../state.js';
 import { h, fill, button, openNote, closeNote, getNote } from './notes.js';
-import { parseCreature, serializeCreature, computeStats, STAT_LABELS, TRAINING_LIMIT, pathTitle, stageOf } from '../core/creature.js';
+import { parseCreature, serializeCreature, computeStats, fitsSoul, STAT_LABELS, TRAINING_LIMIT, pathTitle, stageOf } from '../core/creature.js';
 import {
-  startChallenge, payForFight, settleChallenge, wonChallenge, fightProblem, trainingFull, oddsOfWinning, monsterDef, isDeadly,
+  startChallenge, payForFight, settleChallenge, wonChallenge, fightProblem, trainingFull, oddsOfWinning, monsterDef, isDeadly, beatenAlready,
+  takeSoulOffer, keepSoul,
 } from '../sim/challenges.js';
-import { TRAINING_MONSTERS, TRAINING_IDS, DEADLY_MONSTERS, DEADLY_IDS, ULTIMATE_IDS, TRAINING_CHANCE, TROPHY_POINTS, REBORN } from '../data/monsters.js';
+import {
+  TRAINING_MONSTERS, TRAINING_IDS, DEADLY_MONSTERS, DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS, LEGEND_WINS_FOR_ULTIMATE, TRAINING_CHANCE, TROPHY_POINTS, REBORN,
+} from '../data/monsters.js';
 import { dropRig, hasArt, artUrl } from '../draw/art.js';
 import { forgetFighter } from './boards.js';
 import { coachRow } from './plan.js';
 import { useUpPrep } from '../core/craft.js';
-import { ultimatesLeft, rebornLeft, canBeReborn, timesReborn } from '../core/reborn.js';
+import { ultimateWinsLeft, rebornLeft, canBeReborn, timesReborn } from '../core/reborn.js';
 import { LEGENDARY } from '../data/powers.js';
 import { openReborn } from './reborn.js';
 
@@ -89,11 +93,12 @@ export function onChallengeEnded(bout) {
     die(c, result.def, bout);
     return;
   }
-  if (result.legendary) {
-    const { name, color } = LEGENDARY[result.legendary];
-    G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, `LEGENDARY MUTATION: ${name}`, color, 24, 4);
-    toast(`LEGENDARY MUTATION: ${name}!!!`, 'rare');
+  if (result.legendary || result.offer) {
+    const { name, color } = LEGENDARY[result.legendary || result.offer];
+    G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, `LEGENDARY MUTATION: ${name}${result.offer ? '?' : ''}`, color, 24, 4);
+    toast(result.offer ? `${c.name.toUpperCase()} WON A ${name.toUpperCase()}! KEEP ITS OLD ONE OR TAKE THIS?` : `LEGENDARY MUTATION: ${name}!!!`, 'rare');
   }
+  if (result.opened) toast('THE ULTIMATE MONSTERS HAVE COME OUT!', 'rare');
   if (result.won && result.def.ultimate && canBeReborn(c)) toast(`${c.name.toUpperCase()} BEAT EVERY ULTIMATE MONSTER! IT CAN BE REBORN!!!`, 'rare');
   dropRig(c);
   saveCreature();
@@ -192,12 +197,28 @@ function trainingRow(id, note) {
     button('Spawn', () => begin(id, note), '', full));
 }
 
+// The Legendary mutation a monster gives, and what winning it would mean for this creature.
+function soulPrize(c, id) {
+  const soul = LEGENDARY[id];
+  const name = h('b', { style: `color:${soul.color}`, title: soul.blurb }, soul.name);
+  if (c.legendary === id) return ['Legendary mutation: ', name, ', which it already has.'];
+  if (!fitsSoul(c, id)) return ['Legendary mutation: ', name, ', but what it holds now doesn\'t fit one, so it would win nothing.'];
+  if (c.legendary) return ['Legendary mutation: ', name, `. It has a ${LEGENDARY[c.legendary].name}: win, and you choose which to keep.`];
+  return ['Legendary mutation: ', name, '.'];
+}
+
+function prizeLine(c, m) {
+  return [
+    m.trophy && `Trophy: +${TROPHY_POINTS} ${STAT_LABELS[m.trophy]}, and +${TROPHY_POINTS} to its limit.${m.soul ? ' ' : ''}`,
+    m.soul && soulPrize(c, m.soul),
+  ];
+}
+
 function deadlyRow(id, note) {
   const c = G.creature;
   const m = DEADLY_MONSTERS[id];
-  const beaten = c.trophies.includes(id);
+  const beaten = beatenAlready(c, id);
   const line = h('div', { class: 'small' }, m.blurb);
-  const prize = `Trophy: +${TROPHY_POINTS} ${STAT_LABELS[m.trophy]}, and +${TROPHY_POINTS} to its limit.`;
   // Forever is a long time: the first press plays it out on copies and tells you the odds, the
   // second press means it, and moving away calls it off.
   let armed = false;
@@ -225,13 +246,14 @@ function deadlyRow(id, note) {
     h('div', { class: 'grow' },
       h('div', { class: 'name' }, m.name),
       line,
-      h('div', { class: 'small' }, beaten ? 'Beaten. It has this trophy.' : prize)),
+      h('div', { class: 'small' }, beaten ? (m.trophy ? 'Beaten. It has this trophy.' : 'Beaten.') : prizeLine(c, m))),
     beaten ? h('span', { class: 'small' }, 'Beaten') : go);
 }
 
 function buildList(body, note) {
   fill(body,
     note.spec.message && h('div', { class: 'warning' }, note.spec.message),
+    offerBox(note),
     h('div', { class: 'sect', style: 'margin-top:0' }, 'Training'),
     h('div', { class: 'small' }, `These can't kill it. Each win has a ${Math.round(TRAINING_CHANCE * 100)}% chance of +1 to their stat. They match its strength, and every fight burns a little fullness.`),
     h('div', { class: 'monsters' }, TRAINING_IDS.map((id) => trainingRow(id, note))),
@@ -239,6 +261,10 @@ function buildList(body, note) {
     h('div', { class: 'warning' }, 'If it loses, it dies forever.'),
     h('div', { class: 'small' }, 'A trophy is the only way past a stat limit. Each monster only gives one.'),
     h('div', { class: 'monsters tall' }, DEADLY_IDS.map((id) => deadlyRow(id, note))),
+    h('div', { class: 'sect' }, 'Legendary road'),
+    h('div', { class: 'warning' }, 'Also to the death.'),
+    h('div', { class: 'small' }, `No trophies here: each gives a Legendary mutation and nothing else. Win any ${LEGEND_WINS_FOR_ULTIMATE} and the ultimate monsters come out.`),
+    h('div', { class: 'monsters tall' }, LEGEND_IDS.map((id) => deadlyRow(id, note))),
     ultimateSection(note),
   );
 }
@@ -246,10 +272,10 @@ function buildList(body, note) {
 // The ultimate monsters, once every deadly one is beaten, and being reborn once they are too.
 function ultimateSection(note) {
   const c = G.creature;
-  const locked = ultimatesLeft(c).length;
+  const locked = ultimateWinsLeft(c);
   const head = h('div', { class: 'sect' }, timesReborn(c) ? `Ultimate (reborn ${timesReborn(c)} time${timesReborn(c) === 1 ? '' : 's'})` : 'Ultimate');
   if (locked) {
-    return [head, h('div', { class: 'small' }, `${ULTIMATE_IDS.length} ultimate monsters come out once it has beaten every monster above, ${locked} to go. Beat them all and it can be reborn.`)];
+    return [head, h('div', { class: 'small' }, `${ULTIMATE_IDS.length} ultimate monsters come out once it has won ${LEGEND_WINS_FOR_ULTIMATE} fights on the Legendary road, ${locked} to go. Beat them all and it can be reborn.`)];
   }
   const left = rebornLeft(c).length;
   return [
@@ -286,11 +312,41 @@ function buildFight(body, note) {
   );
 }
 
-function soulLine({ legendary, replaced, keptSoul }) {
-  if (legendary && replaced) return ` And its ${LEGENDARY[replaced].name} became a ${LEGENDARY[legendary].name}: it can hold any two powers now.`;
-  if (legendary) return ` And it grew a Legendary mutation, ${LEGENDARY[legendary].name}: it can now hold two powers.`;
-  if (keptSoul) return ` It keeps its ${LEGENDARY[keptSoul].name}: a Twin Soul has no room for the Devil Fruit it holds beside its Stand.`;
+function soulLine({ legendary, offer, noFit }) {
+  if (legendary) return ` It grew a Legendary mutation, ${LEGENDARY[legendary].name}. ${LEGENDARY[legendary].blurb}`;
+  if (offer) return ` It won a ${LEGENDARY[offer].name}, but it can only hold one Legendary mutation.`;
+  if (noFit) return ` No ${LEGENDARY[noFit].name} for it, though: what it holds now doesn't fit one, and a new soul can't cost it a power.`;
   return '';
+}
+
+// A Legendary mutation it won while it already had one: take it, or keep the old one.
+function offerBox(note) {
+  const c = G.creature;
+  if (!c?.soulOffer) return null;
+  const won = LEGENDARY[c.soulOffer];
+  const has = c.legendary ? LEGENDARY[c.legendary] : null;
+  const fits = fitsSoul(c, c.soulOffer);
+  const done = () => {
+    dropRig(c);
+    saveCreature();
+    G.onCreatureChanged?.();
+    note.rebuild();
+  };
+  return h('div', { class: 'callout' },
+    h('div', null, h('b', null, `It won a ${won.name}. `), has ? `It can only hold one: take it in place of its ${has.name}, or keep the ${has.name}?` : 'Take it?'),
+    h('div', { class: 'small', style: 'margin-top:3px' }, h('b', { style: `color:${won.color}` }, `${won.name}: `), won.blurb),
+    has && h('div', { class: 'small' }, h('b', { style: `color:${has.color}` }, `${has.name}: `), has.blurb),
+    !fits && h('div', { class: 'warning' }, `What it holds now doesn't fit a ${won.name}.`),
+    h('div', { class: 'row gap' },
+      button(`Take the ${won.name}`, () => {
+        if (takeSoulOffer(c) === false) return;
+        toast(`LEGENDARY MUTATION: ${won.name}!!!`, 'rare');
+        done();
+      }, 'big hot', !fits),
+      has && button(`Keep the ${has.name}`, () => {
+        keepSoul(c);
+        done();
+      }, 'big')));
 }
 
 function resultLine(result, c) {
@@ -298,8 +354,9 @@ function resultLine(result, c) {
   if (!won) return `${def.name} won. It limps home with nothing but a sore everything.`;
   if (deadly) {
     const next = def.ultimate && canBeReborn(c) ? ' It has beaten every ultimate monster: it can be reborn now.'
-      : !def.ultimate && ultimatesLeft(c).length === 0 && !c.trophies.some((id) => DEADLY_MONSTERS[id].ultimate) ? ' Every deadly monster is beaten, so the ultimate ones have come out.' : '';
-    return `It beat ${def.name}! Trophy: ${STAT_LABELS[trophy]} is now ${computeStats(c)[trophy]}, and its limit went up by ${TROPHY_POINTS}.${soulLine(result)}${next}`;
+      : result.opened ? ` That makes ${LEGEND_WINS_FOR_ULTIMATE} on the Legendary road, so the ultimate monsters have come out.` : '';
+    const won = trophy ? `It beat ${def.name}! Trophy: ${STAT_LABELS[trophy]} is now ${computeStats(c)[trophy]}, and its limit went up by ${TROPHY_POINTS}.` : `It beat ${def.name}!`;
+    return `${won}${soulLine(result)}${next}`;
   }
   if (trained) return `It won, and learned something: +1 ${STAT_LABELS[trained]}.`;
   return `It won, but learned nothing this time.`;
@@ -313,6 +370,7 @@ function buildResult(body, note) {
       picture(result.def.id),
       h('div', { class: 'grow hand' }, result.won ? 'Won!' : 'Lost.')),
     h('p', { style: 'margin:5px 0 0' }, resultLine(result, c)),
+    offerBox(note),
     h('div', { class: 'row gap' },
       !result.deadly && button('Again', () => {
         if (G.bout?.done) endFight();

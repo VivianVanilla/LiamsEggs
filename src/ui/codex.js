@@ -17,7 +17,7 @@ import { FOODS, FOOD_ORDER } from '../data/foods.js';
 import { CROPS, CROP_IDS, CHARMS, CHARM_IDS, PAINTS, PAINT_IDS } from '../data/crafting.js';
 import { WEAPONS, WEAPON_IDS } from '../data/forge.js';
 import { ITEMS, ITEM_IDS, EXPANDER_SLOTS } from '../data/items.js';
-import { DEADLY_MONSTERS, DEADLY_IDS, ULTIMATE_IDS, TRAINING_MONSTERS, TRAINING_IDS, TROPHY_POINTS, REBORN } from '../data/monsters.js';
+import { DEADLY_MONSTERS, DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS, TRAINING_MONSTERS, TRAINING_IDS, TROPHY_POINTS, REBORN, LEGEND_WINS_FOR_ULTIMATE } from '../data/monsters.js';
 import { bredRuleText } from '../core/family.js';
 import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED } from '../data/adventure.js';
 import { EXPEDITIONS, EXPEDITION_IDS, LEGENDARY_MINE } from '../data/village.js';
@@ -42,6 +42,9 @@ function card(name, color, tag, ...lines) {
 
 // A few words in bold, then the rest of the line.
 const said = (label, text) => text && h('div', { class: 'cx-line' }, h('b', null, `${label}: `), text);
+// Which monster gives each Legendary mutation: the only way to get one.
+const SOUL_FROM = Object.fromEntries(Object.values(DEADLY_MONSTERS).filter((m) => m.soul)
+  .map((m) => [m.soul, `beating ${m.name}${m.road === 'legend' ? ' on the Legendary road' : ''}`]));
 const intro = (text) => h('div', { class: 'small cx-intro' }, text);
 const head = (text) => h('div', { class: 'cx-head' }, text);
 
@@ -132,7 +135,9 @@ function mutations(page) {
         h('div', { class: 'cx-grid' }, list.map((id) => h('div', { class: 'cx-mini' }, h('b', null, MUTATIONS[id].name), h('span', null, statText(MUTATIONS[id].stats))))));
     }),
     head('Legendary mutations'),
-    Object.values(LEGENDARY).map((l) => card(l.name, l.color, 'legendary', h('div', { class: 'cx-blurb' }, l.blurb), said('Stats', statText(l.stats)))),
+    intro('A creature holds one at a time, and the only way to get one is to beat the monster that gives it, in the Challenges note. If it wins another, you choose which to keep.'),
+    Object.entries(LEGENDARY).map(([id, l]) => card(l.name, l.color, 'legendary', h('div', { class: 'cx-blurb' }, l.blurb),
+      said('Stats', statText(l.stats)), l.passive && said('In a fight', l.passive.text), said('From', SOUL_FROM[id] ?? 'nothing yet'))),
   );
 }
 
@@ -186,17 +191,21 @@ function monsters(page) {
     intro('They match its strength and can\'t kill it. A win has a chance of +1 to the stat each one trains.'),
     h('div', { class: 'cx-grid' }, TRAINING_IDS.map((id) => h('div', { class: 'cx-mini' }, h('b', null, TRAINING_MONSTERS[id].name), h('span', null, `trains ${STAT_LABELS[TRAINING_MONSTERS[id].stat]}`)))),
     head('Deadly monsters'),
-    intro(`A fight to the death: lose and it is gone forever. Each one beaten is a trophy: +${TROPHY_POINTS} to a stat, and to that stat's limit.`),
+    intro(`A fight to the death: lose and it is gone forever. Each one beaten is a trophy: +${TROPHY_POINTS} to a stat, and to that stat's limit. Two of them also give a Legendary mutation.`),
     DEADLY_IDS.map((id) => monsterCard(id, stats)),
+    head('Legendary road'),
+    intro(`Also to the death, but no trophies: each one gives a Legendary mutation and nothing else. Win any ${LEGEND_WINS_FOR_ULTIMATE} and the ultimate monsters come out.`),
+    LEGEND_IDS.map((id) => monsterCard(id, stats)),
     head('Ultimate monsters'),
-    intro(`They come out once a creature has beaten every deadly monster, and they kill just the same. Beat all ${ULTIMATE_IDS.length} and it can be reborn: it absorbs one of your creatures, takes up to ${REBORN.takes} of its gifts, and starts over as a Hatchling with nothing but its gifts.`),
+    intro(`They come out once a creature has won ${LEGEND_WINS_FOR_ULTIMATE} fights on the Legendary road, and they kill just the same. Beat all ${ULTIMATE_IDS.length} and it can be reborn: it absorbs one of your creatures, takes up to ${REBORN.takes} of its gifts, and starts over as a Hatchling with nothing but its gifts.`),
     ULTIMATE_IDS.map((id) => monsterCard(id, stats)),
   );
 }
 
 function monsterCard(id, stats) {
   const m = DEADLY_MONSTERS[id];
-  return card(m.name, m.legendary ? '#ffd24a' : m.ultimate ? '#8a3bd6' : '#c2412b', `trophy: ${STAT_LABELS[m.trophy]}`,
+  const prize = [m.trophy && `trophy: ${STAT_LABELS[m.trophy]}`, m.soul && LEGENDARY[m.soul].name].filter(Boolean).join(', ');
+  return card(m.name, m.soul ? LEGENDARY[m.soul].color : m.ultimate ? '#8a3bd6' : '#c2412b', prize,
     said('Stats', stats(m.stats)), m.moves.length > 0 && said('Moves', m.moves.map(moveName).join(', ')));
 }
 

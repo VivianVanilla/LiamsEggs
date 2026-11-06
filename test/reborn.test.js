@@ -18,7 +18,7 @@ import { Bout, finishBout } from '../src/sim/arena.js';
 import {
   TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, ACKERMAN, SLAYER_MARK, SCARLET_EYES, LEGENDARY_ID,
 } from '../src/data/powers.js';
-import { DEADLY_IDS, ULTIMATE_IDS, DEADLY_MONSTERS, REBORN, TROPHY_POINTS } from '../src/data/monsters.js';
+import { DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS, DEADLY_MONSTERS, REBORN, TROPHY_POINTS, LEGEND_WINS_FOR_ULTIMATE } from '../src/data/monsters.js';
 import { ALTAR } from '../src/data/family.js';
 import { RACES, SKIN_MIX } from '../src/data/races.js';
 import { ABILITIES } from '../src/data/paths.js';
@@ -32,7 +32,7 @@ const grown = (name, seed = 1) => {
   c.traits = [];
   return c;
 };
-const everyTrophy = (c) => { c.trophies = [...DEADLY_IDS, ...ULTIMATE_IDS]; return c; };
+const everyTrophy = (c) => { c.trophies = [...DEADLY_IDS, ...ULTIMATE_IDS]; c.legendWins = LEGEND_IDS.slice(0, LEGEND_WINS_FOR_ULTIMATE); return c; };
 
 // ---------- Lunarians ----------
 
@@ -182,7 +182,7 @@ test('what the bred gifts do in a fight', () => {
 
 // ---------- the ultimate monsters ----------
 
-test('the ultimate monsters are wired up, and only come out after every deadly one', () => {
+test('the ultimate monsters are wired up, and only come out after 2 wins on the Legendary road', () => {
   const files = ART_FILES.map((a) => a.file);
   assert.ok(ULTIMATE_IDS.length >= 5);
   ULTIMATE_IDS.forEach((id) => {
@@ -194,20 +194,24 @@ test('the ultimate monsters are wired up, and only come out after every deadly o
     assert.ok(fs.existsSync(`art/monsters/${id}.png`), `${id} picture exists`);
     m.moves.forEach((move) => assert.ok(ABILITIES[move], `${id} move ${move}`));
   });
+  assert.equal(LEGEND_WINS_FOR_ULTIMATE, 2);
   const c = grown('Climber', 11);
   assert.ok(!ultimatesOpen(c));
-  assert.match(fightProblem(c, ULTIMATE_IDS[0]), /every deadly monster/);
-  c.trophies = DEADLY_IDS.slice(0, -1);
-  assert.ok(!ultimatesOpen(c));
+  assert.match(fightProblem(c, ULTIMATE_IDS[0]), /2 on the Legendary road/);
   c.trophies = [...DEADLY_IDS];
-  assert.ok(ultimatesOpen(c));
+  assert.ok(!ultimatesOpen(c), 'the trophy monsters alone are not enough');
+  c.trophies = [];
+  c.legendWins = LEGEND_IDS.slice(0, 1);
+  assert.ok(!ultimatesOpen(c));
+  c.legendWins = LEGEND_IDS.slice(-2);
+  assert.ok(ultimatesOpen(c), 'any 2 will do');
   assert.equal(fightProblem(c, ULTIMATE_IDS[0]), null);
   // They kill like any deadly monster, and pay a trophy like one.
   const won = settleChallenge(c, ULTIMATE_IDS[0], true, 0.99);
   assert.equal(won.trophy, DEADLY_MONSTERS[ULTIMATE_IDS[0]].trophy);
   assert.ok(c.trophies.includes(ULTIMATE_IDS[0]));
   const doomed = grown('Doomed', 12);
-  doomed.trophies = [...DEADLY_IDS];
+  doomed.legendWins = LEGEND_IDS.slice(0, 2);
   assert.ok(settleChallenge(doomed, ULTIMATE_IDS[1], false, 0, 99).died);
   // Their trophies survive a save, like any other.
   assert.deepEqual(parseCreature(serializeCreature(c)).trophies, c.trophies);
@@ -268,6 +272,7 @@ test('being reborn: it absorbs another, takes up to two of its gifts, and starts
   assert.equal(c.growth, 0);
   assert.deepEqual(c.mutations, []);
   assert.deepEqual(c.trophies, []);
+  assert.deepEqual(c.legendWins, [], 'and the Legendary road starts over too');
   assert.deepEqual(c.path, { line: [], xp: 0 });
   assert.equal(c.legendary, null);
   assert.equal(c.powers.stand, null);

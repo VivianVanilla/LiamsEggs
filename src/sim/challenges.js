@@ -2,16 +2,17 @@
 // The fight itself uses a copy, so nothing here changes the creature until settleChallenge().
 
 import { clamp, makeRng } from '../lib/util.js';
-import { computeStats, parseCreature, serializeCreature, addActivityXp, STAT_KEYS, TRAINING_LIMIT } from '../core/creature.js';
+import { computeStats, parseCreature, serializeCreature, addActivityXp, fitsSoul, STAT_KEYS, TRAINING_LIMIT } from '../core/creature.js';
 import { Bout, finishBout } from './arena.js';
 import {
-  TRAINING_MONSTERS, DEADLY_MONSTERS, TRAINING_CHANCE, TRAINING_SCALE, DEADLY_ROLL, FIGHT_HUNGER, MIN_FULLNESS_TO_FIGHT,
+  TRAINING_MONSTERS, DEADLY_MONSTERS, LEGEND_WINS_FOR_ULTIMATE, TRAINING_CHANCE, TRAINING_SCALE, DEADLY_ROLL, FIGHT_HUNGER, MIN_FULLNESS_TO_FIGHT,
 } from '../data/monsters.js';
-import { LEGENDARY_ID, MALEVOLENT_ID, LEGENDARY_FROM_TROPHY } from '../data/powers.js';
 import { ultimatesOpen } from '../core/reborn.js';
 
 export const isDeadly = (id) => Object.hasOwn(DEADLY_MONSTERS, id);
 export const monsterDef = (id) => (isDeadly(id) ? DEADLY_MONSTERS[id] : TRAINING_MONSTERS[id]);
+export const isLegendRoad = (id) => DEADLY_MONSTERS[id]?.road === 'legend';
+export const beatenAlready = (c, id) => (isLegendRoad(id) ? (c.legendWins ?? []).includes(id) : c.trophies.includes(id));
 
 // Training monsters are sized to the creature, so they stay useful however strong it gets.
 export function trainingMonsterStats(c, def) {
@@ -31,8 +32,8 @@ export const trainingFull = (c, stat) => (c.training[stat] ?? 0) >= TRAINING_LIM
 export function fightProblem(c, id) {
   if (c.dead) return 'it is dead';
   if (c.fullness < MIN_FULLNESS_TO_FIGHT) return 'too hungry to fight';
-  if (isDeadly(id) && c.trophies.includes(id)) return 'it already beat this one';
-  if (DEADLY_MONSTERS[id]?.ultimate && !ultimatesOpen(c)) return 'it has to beat every deadly monster first';
+  if (isDeadly(id) && beatenAlready(c, id)) return 'it already beat this one';
+  if (DEADLY_MONSTERS[id]?.ultimate && !ultimatesOpen(c)) return `it has to win ${LEGEND_WINS_FOR_ULTIMATE} on the Legendary road first`;
   return null;
 }
 
@@ -52,12 +53,34 @@ export function payForFight(c, id) {
 
 export const wonChallenge = (bout) => bout.winner?.team === 0;
 
-// Whether a Twin Soul can hold everything it has now. Only a Malevolent Soul lets a Devil Fruit sit
-// beside another power, so trading that for a Twin Soul would cost it the fruit.
-export function twinSoulFits(c) {
-  const held = ['stand', 'speedster', 'technique', 'fruit'].filter((k) => c.powers[k]);
-  return !(c.powers.fruit && held.length > 1);
+// A Legendary mutation it won. With none yet it just grows it. With one already, the new one waits
+// in c.soulOffer for you to take it or keep the old one. Either way, only if its powers all fit:
+// trading souls can't cost it a power.
+function winSoul(c, soul, result) {
+  if (c.legendary === soul) return;
+  if (!fitsSoul(c, soul)) {
+    result.noFit = soul;
+  } else if (!c.legendary) {
+    c.legendary = soul;
+    result.legendary = soul;
+  } else {
+    c.soulOffer = soul;
+    result.offer = soul;
+  }
 }
+
+// Takes the Legendary mutation waiting in its offer, in place of the one it has. Returns the one it
+// gave up (or null if it had none), or false if there is nothing to take or its powers don't fit.
+export function takeSoulOffer(c) {
+  const soul = c.soulOffer;
+  if (!soul || !fitsSoul(c, soul)) return false;
+  const old = c.legendary;
+  c.legendary = soul;
+  c.soulOffer = null;
+  return old;
+}
+
+export const keepSoul = (c) => { c.soulOffer = null; };
 
 // What the fight does to the real creature. `roll` is the training chance, 0 to 1.
 export function settleChallenge(c, id, won, roll = Math.random(), now = Date.now()) {
@@ -74,23 +97,18 @@ export function settleChallenge(c, id, won, roll = Math.random(), now = Date.now
   }
   c.record.monstersBeaten += 1;
   if (deadly) {
-    if (!c.trophies.includes(id)) c.trophies.push(id);
-    result.trophy = def.trophy;
     addActivityXp(c, 'battle', 40);
-    // The Last Dragon always leaves a Twin Soul, even in place of a Malevolent Soul. Any other kill
-    // sometimes leaves something darker, if it has no Legendary mutation yet.
-    if (def.legendary && c.legendary !== LEGENDARY_ID) {
-      if (twinSoulFits(c)) {
-        result.replaced = c.legendary;
-        c.legendary = LEGENDARY_ID;
-        result.legendary = LEGENDARY_ID;
-      } else {
-        result.keptSoul = c.legendary;
-      }
-    } else if (!def.legendary && !c.legendary && roll < LEGENDARY_FROM_TROPHY) {
-      c.legendary = MALEVOLENT_ID;
-      result.legendary = c.legendary;
+    if (isLegendRoad(id)) {
+      // The Legendary road gives no trophy, only its Legendary mutation and a step toward the ultimates.
+      c.legendWins = c.legendWins ?? [];
+      if (!c.legendWins.includes(id)) c.legendWins.push(id);
+      result.opened = c.legendWins.length === LEGEND_WINS_FOR_ULTIMATE;
+    } else {
+      if (!c.trophies.includes(id)) c.trophies.push(id);
+      result.trophy = def.trophy;
     }
+    // The only way to get a Legendary mutation: beat the monster that gives it.
+    if (def.soul) winSoul(c, def.soul, result);
   } else {
     addActivityXp(c, 'battle', 4);
     if (roll < TRAINING_CHANCE && !trainingFull(c, def.stat)) {

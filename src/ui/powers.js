@@ -18,9 +18,15 @@ import { openGuide } from './guide.js';
 import { ABILITIES } from '../data/paths.js';
 import {
   STANDS, STAND_WITS, QUIRKS, QUIRK_IDS, SPEEDSTER, SPEEDSTER_SPEED, MAX_HP_GIVEN, TECHNIQUES, TECHNIQUE_MIGHT,
-  LEGENDARY, LEGENDARY_ONE_IN, LEGENDARY_FROM_TROPHY, BLACK_FLASH, TRAITS, OFA_ID, OFA_MAX_LEVEL, ofaStats,
+  LEGENDARY, BLACK_FLASH, TRAITS, OFA_ID, OFA_MAX_LEVEL, ofaStats,
 } from '../data/powers.js';
 import { dropRig, hasArt, artUrl, heightOf } from '../draw/art.js';
+import { DEADLY_MONSTERS } from '../data/monsters.js';
+
+// How many monsters give a Legendary mutation, each its own.
+const SOUL_MONSTERS = Object.values(DEADLY_MONSTERS).filter((m) => m.soul).length;
+// The souls that let a Devil Fruit sit beside another power.
+const FRUIT_SOULS = Object.values(LEGENDARY).filter((l) => l.fruit).map((l) => l.name).join(' or ');
 
 const moveNames = (ids) => ids.map((id) => ABILITIES[id].name).join(', ');
 
@@ -53,9 +59,9 @@ function pathIntro(body, note) {
   const slots = powerSlots(c);
   fill(body,
     c.legendary
-      ? h('div', { class: 'callout' }, h('b', null, `Legendary mutation: ${LEGENDARY[c.legendary].name}. `), `${LEGENDARY[c.legendary].blurb} It has ${held}. ${statText(LEGENDARY[c.legendary].stats)}.`)
+      ? h('div', { class: 'callout' }, h('b', null, `Legendary mutation: ${LEGENDARY[c.legendary].name}. `), `${LEGENDARY[c.legendary].blurb}${LEGENDARY[c.legendary].passive ? ` In a fight: ${LEGENDARY[c.legendary].passive.text}` : ''} It has ${held} of ${slots}. ${statText(LEGENDARY[c.legendary].stats)}.`)
       : h('div', { class: 'small', style: 'font-weight:600' }, `It can be one of these three, for good: a Stand, a speedster, or a cursed technique. Or it can eat a Devil Fruit instead of all of them. It has ${held} of ${slots}.`),
-    !c.legendary && h('div', { class: 'small' }, `A Legendary mutation makes room for a second. One new mutation in ${LEGENDARY_ONE_IN} comes with a Twin Soul, which holds any two, and The Last Dragon always gives one. A win to the death has a ${Math.round(LEGENDARY_FROM_TROPHY * 100)}% chance of a Malevolent Soul, which holds a Stand plus one of the others.`),
+    !c.legendary && h('div', { class: 'small' }, `A Legendary mutation can make room for a second. The only way to get one is to beat the monster that gives it in Challenges: ${SOUL_MONSTERS} monsters each give their own, and it holds one at a time.`),
     h('div', { class: 'small', style: 'margin-top:3px' },
       h('b', { style: `color:${RACES[c.race]?.color ?? '#888'}` }, `${raceName(c)}: `),
       raceParts(c).length > 1 ? `${c.pureBlood ? 'Pure-blooded, so every race in it is at full power.' : 'A mix: each race gives its share of its bonuses.'}` : RACES[raceParts(c)[0][0]].blurb,
@@ -73,8 +79,9 @@ function noRoomLine(c, kind) {
   if (hasRoomFor(c, kind)) return false;
   const soul = c.legendary ? LEGENDARY[c.legendary] : null;
   let text = 'It already has its one.';
-  if (c.powers.fruit && !soul?.fruit) text = `It ate the ${FRUITS[c.powers.fruit].name}, and nothing else goes with a Devil Fruit${soul ? '' : ', unless a Malevolent Soul makes room for a Stand'}.`;
-  else if (soul) text = powersHeld(c) >= powerSlots(c) ? 'It already holds two.' : `A ${soul.name} can't hold this alongside what it already has.`;
+  if (c.powers.fruit && !soul?.fruit) text = `It ate the ${FRUITS[c.powers.fruit].name}, and nothing else goes with a Devil Fruit${soul ? '' : `, unless a ${FRUIT_SOULS} makes room`}.`;
+  else if (kind === 'stand' && soul?.noStand) text = `A Stand never comes out of a ${soul.name}.`;
+  else if (soul) text = powersHeld(c) >= powerSlots(c) ? (powerSlots(c) > 1 ? 'It already holds two.' : 'It already has its one.') : `A ${soul.name} can't hold this alongside what it already has.`;
   return h('div', { class: 'small', style: 'font-weight:600' }, text);
 }
 

@@ -178,6 +178,10 @@ const LOOKS = {
   // The Legendary mutations.
   'legendary/twinsoul.png': [['1f31f', 256, 32, 62], ['2728', 150, 90, 54], ['2728', 362, 90, 54], ['2728', 118, 300, 40], ['2728', 394, 300, 40]],
   'legendary/malevolentsoul.png': [['1f5a4', 256, 215, 62], ['26d3', 124, 270, 84], ['26d3', 388, 270, 84, 0, true], ['1fa78', 134, 130, 46], ['1fa78', 378, 130, 46]],
+  'legendary/ironsoul.png': [['2699', 256, 32, 62], ['1f529', 138, 112, 46, 30], ['1f529', 374, 112, 46, -30, true]],
+  'legendary/ghostsoul.png': [['1f319', 256, 32, 60], ['1f4a8', 118, 250, 70, 0, true], ['1f4a8', 394, 250, 70]],
+  'legendary/tidesoul.png': [['1f30a', 256, 34, 64], ['1fae7', 134, 116, 50], ['1fae7', 378, 116, 50], ['1f4a7', 118, 300, 40], ['1f4a7', 394, 300, 40]],
+  'legendary/warsoul.png': [['2694', 256, 32, 62], ['1f525', 134, 118, 48], ['1f525', 378, 118, 48]],
 
   // Charms.
   'crafts/ruby.png': [['1f534', 256, 256, 480]],
@@ -214,6 +218,11 @@ const LOOKS = {
   'monsters/mammoth.png': [['1f9a3', 256, 256, 500, 0, true]],
   'monsters/rex.png': [['1f996', 256, 256, 500, 0, true]],
   'monsters/dragon.png': [['1f409', 256, 256, 500, 0, true]],
+  // The Legendary road.
+  'monsters/rhino.png': [['1f98f', 256, 256, 500, 0, true]],
+  'monsters/leopard.png': [['1f406', 256, 256, 500, 0, true]],
+  'monsters/shark.png': [['1f988', 256, 256, 500, 0, true]],
+  'monsters/gorilla.png': [['1f98d', 256, 256, 500, 0, true]],
   // The ultimate monsters.
   'monsters/lobster.png': [['1f99e', 256, 256, 500]],
   'monsters/tiger.png': [['1f405', 256, 256, 500, 0, true]],

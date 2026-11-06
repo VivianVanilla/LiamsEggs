@@ -6,18 +6,17 @@
 
 import { STAT_KEYS } from './creature.js';
 import { emptyBank } from './craft.js';
-import { DEADLY_IDS, ULTIMATE_IDS, REBORN } from '../data/monsters.js';
+import { ULTIMATE_IDS, REBORN, LEGEND_WINS_FOR_ULTIMATE } from '../data/monsters.js';
 import { TRAITS, OFA_ID } from '../data/powers.js';
 import { MAX_ARMORY } from '../data/forge.js';
 import { FOOD_ORDER } from '../data/foods.js';
 
-const left = (c, ids) => ids.filter((id) => !c.trophies.includes(id));
-
-// The ultimate monsters come out once every deadly monster is beaten.
-export const ultimatesLeft = (c) => left(c, DEADLY_IDS);
-export const ultimatesOpen = (c) => ultimatesLeft(c).length === 0;
+// The ultimate monsters come out once it has won LEGEND_WINS_FOR_ULTIMATE fights on the Legendary
+// road, any of them. This is how many more it needs.
+export const ultimateWinsLeft = (c) => Math.max(0, LEGEND_WINS_FOR_ULTIMATE - (c.legendWins?.length ?? 0));
+export const ultimatesOpen = (c) => ultimateWinsLeft(c) === 0;
 // And it can be reborn once every ultimate monster is beaten too.
-export const rebornLeft = (c) => left(c, ULTIMATE_IDS);
+export const rebornLeft = (c) => ULTIMATE_IDS.filter((id) => !c.trophies.includes(id));
 export const canBeReborn = (c) => ultimatesOpen(c) && rebornLeft(c).length === 0;
 export const timesReborn = (c) => c.rebirths?.length ?? 0;
 
@@ -54,7 +53,9 @@ export function startOver(c, house, now = Date.now()) {
   c.powers = { stand: null, speedster: false, technique: null, technique2: null, fruit: null, quirks: [] };
   c.ofa = null;
   c.legendary = null;
+  c.soulOffer = null;
   c.trophies = [];
+  c.legendWins = [];
   c.gear = { owned: [], worn: [] };
   c.prep = { paint: null };
   c.record = Object.fromEntries(Object.keys(c.record).map((k) => [k, 0]));

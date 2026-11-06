@@ -2,7 +2,7 @@
 // (hits, KOs, fx) for the renderer. Also runs headless so balance can be tested.
 
 import { clamp, makeRng } from '../lib/util.js';
-import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, racePassive } from '../core/creature.js';
+import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, fightPassive } from '../core/creature.js';
 import { tuningOf } from '../core/sheet.js';
 import { ABILITIES } from '../data/paths.js';
 import {
@@ -81,10 +81,10 @@ export class Bout {
       .map((id) => (Object.hasOwn(ABILITIES, id) ? { id, def: tuneMove(id, ABILITIES[id], tuning), cd: 1.5 + this.rand() * 3 } : null))
       .filter(Boolean);
     const prep = prepEffects(c);
-    // What its races do in a fight, and its earned gifts that just change its numbers.
-    const race = racePassive(c);
+    // What its races and its Legendary mutation do in a fight, and its earned gifts that just change its numbers.
+    const passive = fightPassive(c);
     const sees = hasTrait(c, 'observation');
-    const maxHp = maxHpOf(c, s) * (1 + prep.hp) * (1 + race.hp);
+    const maxHp = maxHpOf(c, s) * (1 + prep.hp) * (1 + passive.hp);
     const dir = x < this.cx ? 1 : -1;
     const size = 26 * stage.scale * this.sizeMul * raceSize(c);
     const fast = c.powers.speedster;
@@ -111,7 +111,7 @@ export class Bout {
       hp: maxHp,
       maxHp,
       ...base,
-      crit: base.crit + (weapon?.crit ?? 0) + race.crit + (sees ? OBSERVATION.crit : 0),
+      crit: base.crit + (weapon?.crit ?? 0) + passive.crit + (sees ? OBSERVATION.crit : 0),
       weapon,
       // Born-with gifts that change a fight. 'ready' turns to 'on' or 'used' once it happens.
       titan: hasTrait(c, 'titanshifter') ? 'ready' : null,
@@ -126,16 +126,16 @@ export class Bout {
       gourmet: hasTrait(c, 'gourmet'),
       will: hasTrait(c, 'willofd') ? 'ready' : null,
       ackerman: hasTrait(c, 'ackerman'),
-      reach: race.reach * this.sizeMul,
-      poisonproof: race.poisonproof,
-      feast: race.feast,
+      reach: passive.reach * this.sizeMul,
+      poisonproof: passive.poisonproof,
+      feast: passive.feast,
       atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit,
-      moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move) * (1 + race.speed) * markSpeed,
+      moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move) * (1 + passive.speed) * markSpeed,
       attackEvery: (base.attackEvery * (fast ? SPEEDSTER.arenaAttack : 1)) / (1 + prep.attack) / markSpeed,
       // Nothing dodges everything.
-      dodge: Math.min(0.75, base.dodge + (fast ? SPEEDSTER.arenaDodge : 0) + prep.dodge + race.dodge + (hasTrait(c, 'ultrainstinct') ? ULTRA_DODGE : 0) + (sees ? OBSERVATION.dodge : 0)),
+      dodge: Math.min(0.75, base.dodge + (fast ? SPEEDSTER.arenaDodge : 0) + prep.dodge + passive.dodge + (hasTrait(c, 'ultrainstinct') ? ULTRA_DODGE : 0) + (sees ? OBSERVATION.dodge : 0)),
       cdMul: base.cdMul * (1 - prep.moves) * (hasTrait(c, 'scarleteyes') ? 1 - SCARLET_EYES.moves : 1),
-      takenMul: (1 - prep.taken) * (1 - race.taken),
+      takenMul: (1 - prep.taken) * (1 - passive.taken),
       blackFlash: !!c.powers.technique,
       tuning,
       sharingan: hasTrait(c, 'sharingan'),

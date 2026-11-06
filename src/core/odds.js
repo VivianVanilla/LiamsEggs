@@ -4,10 +4,10 @@
 import { perksOf, hasTrait } from './creature.js';
 import { bredRuleText } from './family.js';
 import {
-  TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, EARNED_TRAIT_IDS, EARN_RULES, TRAIT_ODDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, SHARINGAN_COPY, TECHNIQUES, TECHNIQUE_IDS, LEGENDARY, LEGENDARY_ID, MALEVOLENT_ID,
-  LEGENDARY_ONE_IN, LEGENDARY_FROM_TROPHY, BLACK_FLASH, OFA_LEVEL_AT,
+  TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, EARNED_TRAIT_IDS, EARN_RULES, TRAIT_ODDS, SIX_EYES_FAMILY, SIX_EYES_EVERY, SHARINGAN_COPY, TECHNIQUES, TECHNIQUE_IDS, LEGENDARY,
+  BLACK_FLASH, OFA_LEVEL_AT,
 } from '../data/powers.js';
-import { TRAINING_CHANCE, DEADLY_ROLL, DEADLY_MONSTERS, ULTIMATE_IDS, REBORN } from '../data/monsters.js';
+import { TRAINING_CHANCE, DEADLY_ROLL, DEADLY_MONSTERS, ULTIMATE_IDS, REBORN, LEGEND_WINS_FOR_ULTIMATE } from '../data/monsters.js';
 import { GEM_CHANCE, VEIN_CHANCE, VEIN_GEM_CHANCE } from '../data/crafting.js';
 import { MUTATION_THRESHOLDS, MAX_MUTATIONS } from '../data/mutations.js';
 import { BREED_GIFTS, ROLL_COST, MEGA_BREEDER } from '../data/family.js';
@@ -31,7 +31,7 @@ export function chanceSections(c = null) {
   const gojo = TECHNIQUES[SIX_EYES_FAMILY].family;
   const families = TECHNIQUE_IDS.length;
   const jobGems = c ? perksOf(c).gemChance : 0;
-  const dragon = Object.values(DEADLY_MONSTERS).find((m) => m.legendary);
+  const dragon = DEADLY_MONSTERS.dragon;
   const born = (id) => !!c && hasTrait(c, id);
   return [
     {
@@ -125,9 +125,13 @@ export function chanceSections(c = null) {
     {
       title: 'Legendary mutations',
       rows: [
-        { name: LEGENDARY[LEGENDARY_ID].name, odds: oneIn(LEGENDARY_ONE_IN), detail: `Of new mutations. Beating ${dragon.name} in the Challenges note always gives it, even in place of a ${LEGENDARY[MALEVOLENT_ID].name}, unless it holds a Devil Fruit beside a Stand, which only a ${LEGENDARY[MALEVOLENT_ID].name} allows.` },
-        { name: LEGENDARY[MALEVOLENT_ID].name, odds: pct(LEGENDARY_FROM_TROPHY), detail: 'Of any other win to the death, for a creature with no Legendary mutation yet.' },
-        { name: 'Only one', odds: 'at a time', detail: 'A creature holds one Legendary mutation at a time. Being reborn takes it away, so it can win one again.' },
+        // No luck in these: each comes from beating one monster, and from nothing else.
+        ...Object.values(DEADLY_MONSTERS).filter((m) => m.soul).map((m) => ({
+          name: LEGENDARY[m.soul].name,
+          odds: 'every win',
+          detail: `Only from beating ${m.name}${m.road === 'legend' ? ' on the Legendary road' : ''} in the Challenges note. ${LEGENDARY[m.soul].blurb}`,
+        })),
+        { name: 'Only one', odds: 'at a time', detail: 'A creature holds one Legendary mutation at a time. If it wins another, you choose which to keep. Being reborn takes it away, so it can win them again.' },
       ],
     },
     {
@@ -136,7 +140,7 @@ export function chanceSections(c = null) {
         { name: 'Black Flash', odds: pct(BLACK_FLASH.chance), detail: `Of melee swings, for anything with a cursed technique. It hits ${BLACK_FLASH.power} times as hard.` },
         { name: 'Training monster', odds: pct(TRAINING_CHANCE), detail: 'Each win has this chance of +1 to that monster\'s stat.' },
         { name: 'Deadly monster', odds: `${pct(DEADLY_ROLL.low)}-${pct(DEADLY_ROLL.high)}`, detail: 'Each one shows up somewhere in this range of its usual strength, the ultimate ones too. The first press on Spawn tells you its odds.' },
-        { name: 'Ultimate monsters', odds: `${ULTIMATE_IDS.length} more`, detail: `They come out once it has beaten every deadly monster, and they kill just the same. Beat all ${ULTIMATE_IDS.length} and it can be reborn: absorb one of your creatures, take up to ${REBORN.takes} of its gifts, and start over as a Hatchling with nothing else.` },
+        { name: 'Ultimate monsters', odds: `${ULTIMATE_IDS.length} more`, detail: `They come out once it has won ${LEGEND_WINS_FOR_ULTIMATE} fights on the Legendary road, and they kill just the same. Beat all ${ULTIMATE_IDS.length} and it can be reborn: absorb one of your creatures, take up to ${REBORN.takes} of its gifts, and start over as a Hatchling with nothing else.` },
       ],
     },
     {

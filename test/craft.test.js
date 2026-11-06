@@ -17,7 +17,7 @@ import { trainingPlan } from '../src/core/training.js';
 import { ABILITIES, PATHS } from '../src/data/paths.js';
 import { MUTATION_IDS, MUTATIONS, MAX_MUTATIONS } from '../src/data/mutations.js';
 import {
-  STANDS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, LEGENDARY, LEGENDARY_ID, MALEVOLENT_ID, LEGENDARY_ONE_IN, BLACK_FLASH,
+  STANDS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, LEGENDARY, LEGENDARY_ID, MALEVOLENT_ID, BLACK_FLASH,
 } from '../src/data/powers.js';
 import { BANK_KEYS, PIGMENTS, PIGMENT_IDS, familyOfBin, CHARMS, CHARM_IDS, CHARM_SLOTS, PAINTS, PAINT_IDS, DYE_COST, CROPS, CROP_IDS, WATER_PUSH_MS, WATER_EVERY_MS } from '../src/data/crafting.js';
 import { FOODS, FOOD_ORDER, SNACK } from '../src/data/foods.js';
@@ -26,7 +26,8 @@ import { STANCES, STANCE_IDS, HURT_PLANS, TARGET_PLANS, HOLD_GUARD, HOLD_PATIENC
 import { ART_FILES } from '../src/data/art-list.js';
 import { Bout, finishBout } from '../src/sim/arena.js';
 import { practiceStances } from '../src/sim/practice.js';
-import { settleChallenge } from '../src/sim/challenges.js';
+import { settleChallenge, takeSoulOffer, keepSoul } from '../src/sim/challenges.js';
+import { DEADLY_MONSTERS, TRAINING_IDS } from '../src/data/monsters.js';
 import { addField, doJob, nextJob, tickFarm, growMs, setFieldCrop, waterFields, waterReadyIn, eatPlant, TILE } from '../src/sim/farm.js';
 
 // An egg's born-with gifts are random, and some change how a fight goes, so the creatures made
@@ -423,21 +424,14 @@ test('every technique is wired up, and Black Flash really happens', () => {
   assert.ok(!plain.events.some((e) => e.name === 'BLACK FLASH'), 'only technique holders');
 });
 
-test('the Legendary mutation is rare, comes from the file, and doesn\'t take a mutation place', () => {
-  // Over many creatures that each grow one mutation, about 1 in 25 gets it.
-  let found = 0;
-  const N = 3000;
-  for (let i = 0; i < N; i++) {
-    const c = plainCreature('Lucky');
+test('food never grows a Legendary mutation, and one doesn\'t take a mutation place', () => {
+  for (let i = 0; i < 400; i++) {
+    const c = plainCreature('Hungry');
     const hex = (n) => n.toString(16).padStart(8, '0');
     absorbFile(c, { ext: 'ink', name: 'a', sha: `${hex(i * 2654435761 >>> 0)}${hex((i * 40503 + 7) >>> 0)}aa`, size: 32 * 1024, snippet: '' });
-    if (c.legendary) {
-      found++;
-      assert.equal(c.mutations.length, 1, 'it comes on top of the mutation itself');
-    }
+    assert.equal(c.mutations.length, 1);
+    assert.equal(c.legendary, null);
   }
-  const share = found / N;
-  assert.ok(share > (1 / LEGENDARY_ONE_IN) * 0.5 && share < (1 / LEGENDARY_ONE_IN) * 1.8, `share ${share}`);
 
   const c = plainCreature('Twice');
   c.legendary = LEGENDARY_ID;
@@ -450,36 +444,52 @@ test('the Legendary mutation is rare, comes from the file, and doesn\'t take a m
   assert.equal(c.mutations.length, MAX_MUTATIONS);
 });
 
-test('winning to the death can grow it, and The Last Dragon always does', () => {
-  const dragon = plainCreature('Slayer');
-  const res = settleChallenge(dragon, 'dragon', true, 0.99);
-  assert.equal(res.legendary, LEGENDARY_ID);
-  assert.equal(dragon.legendary, LEGENDARY_ID);
-  assert.equal(settleChallenge(dragon, 'rex', true, 0).legendary, null, 'only once');
+test('only beating the monster that gives it grows a Legendary mutation, and a second one is your choice', () => {
+  // Each Legendary mutation comes from exactly one monster.
+  const givers = Object.keys(DEADLY_MONSTERS).filter((id) => DEADLY_MONSTERS[id].soul);
+  assert.deepEqual(givers.map((id) => DEADLY_MONSTERS[id].soul).sort(), Object.keys(LEGENDARY).sort());
+  // No other win gives one, however lucky.
+  for (const id of [...TRAINING_IDS, ...Object.keys(DEADLY_MONSTERS)].filter((m) => !DEADLY_MONSTERS[m]?.soul)) {
+    const c = plainCreature('Plain');
+    [0, 0.001, 0.01, 0.5, 0.99].forEach((roll) => settleChallenge(c, id, true, roll));
+    assert.equal(c.legendary, null, `${id} gives none`);
+    assert.equal(c.soulOffer, null);
+  }
 
-  const lucky = plainCreature('Lucky');
-  assert.equal(settleChallenge(lucky, 'rat', true, 0.01).legendary, MALEVOLENT_ID, 'an ordinary kill can only leave a Malevolent Soul');
-  assert.equal(settleChallenge(lucky, 'scorpion', true, 0.01).legendary, null, 'and a creature only holds one soul');
-  assert.equal(lucky.legendary, MALEVOLENT_ID);
-  // The Last Dragon still rewards it: its Twin Soul takes the Malevolent Soul's place.
-  const swapped = settleChallenge(lucky, 'dragon', true, 0.01);
-  assert.equal(swapped.legendary, LEGENDARY_ID);
-  assert.equal(swapped.replaced, MALEVOLENT_ID);
-  assert.equal(lucky.legendary, LEGENDARY_ID);
-  // Unless its powers only fit a Malevolent Soul: a Stand with a Devil Fruit beside it.
+  const slayer = plainCreature('Slayer');
+  const res = settleChallenge(slayer, 'dragon', true, 0.99);
+  assert.equal(res.legendary, LEGENDARY_ID);
+  assert.equal(res.trophy, 'might', 'and its trophy as well');
+  assert.equal(slayer.legendary, LEGENDARY_ID);
+  // A second one waits for you: nothing changes until you choose, even through a save.
+  const second = settleChallenge(slayer, 'rex', true, 0);
+  assert.equal(second.legendary, null);
+  assert.equal(second.offer, MALEVOLENT_ID);
+  assert.equal(slayer.legendary, LEGENDARY_ID);
+  assert.equal(parseCreature(serializeCreature(slayer)).soulOffer, MALEVOLENT_ID);
+  keepSoul(slayer);
+  assert.equal(slayer.soulOffer, null);
+  assert.equal(slayer.legendary, LEGENDARY_ID);
+  slayer.soulOffer = MALEVOLENT_ID;
+  assert.equal(takeSoulOffer(slayer), LEGENDARY_ID, 'it says what it gave up');
+  assert.equal(slayer.legendary, MALEVOLENT_ID);
+  assert.equal(slayer.soulOffer, null);
+  assert.equal(takeSoulOffer(slayer), false, 'nothing left to take');
+  // A file can't offer it the soul it already has.
+  slayer.soulOffer = MALEVOLENT_ID;
+  assert.equal(parseCreature(serializeCreature(slayer)).soulOffer, null);
+
+  // A new soul can't cost it a power: a Stand with a Devil Fruit beside it doesn't fit a Twin Soul.
   const fruity = plainCreature('Fruity');
   fruity.legendary = MALEVOLENT_ID;
   fruity.powers.stand = 'theworld';
   fruity.powers.fruit = Object.keys(FRUITS)[0];
   const kept = settleChallenge(fruity, 'dragon', true, 0.99);
-  assert.equal(kept.legendary, null);
-  assert.equal(kept.keptSoul, MALEVOLENT_ID);
+  assert.equal(kept.noFit, LEGENDARY_ID);
+  assert.equal(kept.offer, undefined);
+  assert.equal(fruity.soulOffer, null);
   assert.equal(fruity.legendary, MALEVOLENT_ID);
   assert.equal(parseCreature(serializeCreature(fruity)).powers.fruit, fruity.powers.fruit, 'and it keeps its fruit');
-  const unlucky = plainCreature('Unlucky');
-  assert.equal(settleChallenge(unlucky, 'rat', true, 0.99).legendary, null);
-  const training = plainCreature('Student');
-  assert.equal(settleChallenge(training, 'crab', true, 0).legendary, null, 'training monsters never give it');
 });
 
 test('wild rivals follow the same rule', () => {
@@ -800,19 +810,18 @@ test('eating plants raises the stat its family raises, and it needs room to eat'
   assert.equal(eatPlant(c, 'constructor', 99), null);
 });
 
-test('plants respect the mutation limit, and can bring a Legendary mutation', () => {
+test('plants respect the mutation limit, and never bring a Legendary mutation', () => {
   const c = plainCreature('Full');
-  let legendary = 0;
   for (const id of CROP_IDS) {
     c.larder[id] = 60;
     for (let i = 0; i < 60; i++) {
       c.fullness = 0;
-      if (eatPlant(c, id, i * 1000 + id.length)?.legendary) legendary++;
+      eatPlant(c, id, i * 1000 + id.length);
     }
   }
   assert.ok(c.mutations.length <= MAX_MUTATIONS);
   assert.equal(c.mutations.length, MAX_MUTATIONS);
-  assert.ok(legendary <= 1, 'only ever one');
+  assert.equal(c.legendary, null);
 });
 
 // ---------- the sheet says what everything does ----------
