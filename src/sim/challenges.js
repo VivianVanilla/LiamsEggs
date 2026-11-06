@@ -8,6 +8,7 @@ import {
   TRAINING_MONSTERS, DEADLY_MONSTERS, TRAINING_CHANCE, TRAINING_SCALE, DEADLY_ROLL, FIGHT_HUNGER, MIN_FULLNESS_TO_FIGHT,
 } from '../data/monsters.js';
 import { LEGENDARY_ID, MALEVOLENT_ID, LEGENDARY_FROM_TROPHY } from '../data/powers.js';
+import { ultimatesOpen } from '../core/reborn.js';
 
 export const isDeadly = (id) => Object.hasOwn(DEADLY_MONSTERS, id);
 export const monsterDef = (id) => (isDeadly(id) ? DEADLY_MONSTERS[id] : TRAINING_MONSTERS[id]);
@@ -31,6 +32,7 @@ export function fightProblem(c, id) {
   if (c.dead) return 'it is dead';
   if (c.fullness < MIN_FULLNESS_TO_FIGHT) return 'too hungry to fight';
   if (isDeadly(id) && c.trophies.includes(id)) return 'it already beat this one';
+  if (DEADLY_MONSTERS[id]?.ultimate && !ultimatesOpen(c)) return 'it has to beat every deadly monster first';
   return null;
 }
 
@@ -50,6 +52,13 @@ export function payForFight(c, id) {
 
 export const wonChallenge = (bout) => bout.winner?.team === 0;
 
+// Whether a Twin Soul can hold everything it has now. Only a Malevolent Soul lets a Devil Fruit sit
+// beside another power, so trading that for a Twin Soul would cost it the fruit.
+export function twinSoulFits(c) {
+  const held = ['stand', 'speedster', 'technique', 'fruit'].filter((k) => c.powers[k]);
+  return !(c.powers.fruit && held.length > 1);
+}
+
 // What the fight does to the real creature. `roll` is the training chance, 0 to 1.
 export function settleChallenge(c, id, won, roll = Math.random(), now = Date.now()) {
   const def = monsterDef(id);
@@ -68,9 +77,18 @@ export function settleChallenge(c, id, won, roll = Math.random(), now = Date.now
     if (!c.trophies.includes(id)) c.trophies.push(id);
     result.trophy = def.trophy;
     addActivityXp(c, 'battle', 40);
-    // The Last Dragon always leaves a Twin Soul. Any other kill sometimes leaves something darker.
-    if (!c.legendary && (def.legendary || roll < LEGENDARY_FROM_TROPHY)) {
-      c.legendary = def.legendary ? LEGENDARY_ID : MALEVOLENT_ID;
+    // The Last Dragon always leaves a Twin Soul, even in place of a Malevolent Soul. Any other kill
+    // sometimes leaves something darker, if it has no Legendary mutation yet.
+    if (def.legendary && c.legendary !== LEGENDARY_ID) {
+      if (twinSoulFits(c)) {
+        result.replaced = c.legendary;
+        c.legendary = LEGENDARY_ID;
+        result.legendary = LEGENDARY_ID;
+      } else {
+        result.keptSoul = c.legendary;
+      }
+    } else if (!def.legendary && !c.legendary && roll < LEGENDARY_FROM_TROPHY) {
+      c.legendary = MALEVOLENT_ID;
       result.legendary = c.legendary;
     }
   } else {

@@ -14,7 +14,7 @@ import {
   TRAITS, BORN_TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, OFA_ID, ofaLevelFor, ofaStats, ofaLimitBonus, OFA_MOVES,
 } from '../data/powers.js';
 import { DEADLY_MONSTERS, TROPHY_POINTS } from '../data/monsters.js';
-import { RACES, DEFAULT_RACE, RACE_PICTURES, WILD_RACES, RACE_FULL_SHARE } from '../data/races.js';
+import { RACES, DEFAULT_RACE, RACE_PICTURES, RACE_BACKS, SKIN_MIX, WILD_RACES, RACE_FULL_SHARE } from '../data/races.js';
 import { FRUITS, FRUIT_VIGOR } from '../data/fruits.js';
 import { STANCES, HURT_PLANS, TARGET_PLANS, defaultBattlePlan } from '../data/battle.js';
 import { CHARMS, CHARM_SLOTS, PAINTS, CROP_IDS, BANK_KEYS, MAX_BANK, familyOfBin } from '../data/crafting.js';
@@ -45,6 +45,7 @@ export const STAT_LIMITS = [60, 45, 30, 18, 12];
 export const TRAINING_LIMIT = 10;
 
 const MAX_ABSORBED = 200;
+const MAX_REBIRTHS = 50;
 const FULL_AT = 92;
 
 export function newCreature(name, now = Date.now()) {
@@ -81,6 +82,8 @@ export function newCreature(name, now = Date.now()) {
     heritage: null,
     pureBlood: false,
     trophies: [],
+    // Each time it was reborn: when, who it absorbed, and which of that one's gifts it took.
+    rebirths: [],
     dead: null,
     battle: defaultBattlePlan(),
     bank: emptyBank(),
@@ -238,8 +241,11 @@ export function creatureColors(c) {
   if (foodTint) body = mixHex(body, foodTint, clamp(c.essence[topFood] / 24, 0.08, 0.32));
   if (swatches.length) body = mixHex(body, swatches[0].hex, clamp(coloured / 300, 0.15, 0.92));
   const accent = swatches[1]?.hex ?? swatches[0]?.hex ?? foodTint ?? '#ff6b5e';
+  // Some races have a skin of their own, which shades whatever colors it wears.
+  const skins = fullRaces(c).filter((race) => race.skin);
+  skins.forEach((race) => { body = mixHex(body, race.skin, SKIN_MIX / skins.length); });
   // A dye from the workshop covers all of that, until it is washed off.
-  return { body: c.look.dye ?? body, accent, tinted: !!c.look.dye || !!foodTint || swatches.length > 0 };
+  return { body: c.look.dye ?? body, accent, tinted: !!c.look.dye || !!foodTint || swatches.length > 0 || skins.length > 0 };
 }
 
 // ---------- stats ----------
@@ -379,6 +385,9 @@ export function racePictures(c) {
     .map(([id, share]) => (id === 'devil' && share < 1 && !c.pureBlood ? 'halfdevil' : id))
     .filter((id) => RACE_PICTURES.includes(id));
 }
+
+// The ones of those with a picture behind the body too, like a Lunarian's wings.
+export const raceBackPictures = (c) => racePictures(c).filter((id) => RACE_BACKS.includes(id));
 
 // One For All's level, from its stockpile. 0 if it doesn't hold it.
 export const ofaLevel = (c) => (c.powers.quirks.includes(OFA_ID) ? ofaLevelFor(c.ofa?.stockpile ?? 0) : 0);
@@ -562,6 +571,7 @@ export function movesOf(c) {
   if (c.powers.technique) TECHNIQUES[c.powers.technique].moves.forEach((id) => list.push({ id, from: TECHNIQUES[c.powers.technique].name }));
   if (c.powers.technique2) TECHNIQUES[c.powers.technique2].moves.forEach((id) => list.push({ id, from: `${TECHNIQUES[c.powers.technique2].name} (Cursed Body)` }));
   if (c.powers.fruit) FRUITS[c.powers.fruit].moves.forEach((id) => list.push({ id, from: FRUITS[c.powers.fruit].name }));
+  (c.traits ?? []).filter((id) => TRAITS[id]?.move).forEach((id) => list.push({ id: TRAITS[id].move, from: TRAITS[id].name }));
   const level = ofaLevel(c);
   c.powers.quirks.forEach((id) => {
     if (id !== OFA_ID) {
@@ -703,6 +713,13 @@ export function sanitizeCreature(raw, now = Date.now()) {
     : null;
   c.trophies = Array.isArray(raw.trophies)
     ? [...new Set(raw.trophies)].filter((id) => typeof id === 'string' && Object.hasOwn(DEADLY_MONSTERS, id))
+    : [];
+  c.rebirths = Array.isArray(raw.rebirths)
+    ? raw.rebirths.slice(-MAX_REBIRTHS).filter((r) => r && typeof r === 'object').map((r) => ({
+      at: safeNum(r.at, 0, now),
+      absorbed: safeStr(r.absorbed, 60),
+      took: Array.isArray(r.took) ? [...new Set(r.took)].filter((id) => typeof id === 'string' && Object.hasOwn(TRAITS, id)).slice(0, 8) : [],
+    }))
     : [];
   // Once dead, always dead. A file can't come back by leaving out a date or a killer.
   c.dead = raw.dead ? { at: safeNum(raw.dead.at, 0, now), by: safeStr(raw.dead.by, 40), ...(raw.dead.to ? { to: safeStr(raw.dead.to, 40) } : {}) } : null;
@@ -855,6 +872,7 @@ export function serializeCreature(c) {
       devilFruit: c.powers.fruit ? FRUITS[c.powers.fruit].name : null,
       oneForAllLevel: ofaLevel(c) || null,
       bornWith: c.traits.map((id) => TRAITS[id].name),
+      timesReborn: c.rebirths?.length || null,
       weapon: c.weapon ? WEAPONS[c.weapon].name : null,
     },
     stats: computeStats(c),
@@ -874,6 +892,7 @@ export function serializeCreature(c) {
     ofa: c.ofa,
     legendary: c.legendary,
     trophies: c.trophies,
+    rebirths: c.rebirths ?? [],
     dead: c.dead,
     battle: c.battle,
     bank: c.bank,

@@ -4,11 +4,12 @@
   "calm": false,
   "dark": true,
   "scale": 0.5,
-  "opacity": 0.9,
+  "opacity": 0.5,
   "team": [
-    "Test egg",
-    "setst"
+    "LiamBody",
+    "GOAT",
+    "Logo"
   ],
-  "display": 1083108159,
-  "active": "setst"
+  "display": 3440412562,
+  "active": "Logo"
 }

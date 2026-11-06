@@ -1,6 +1,6 @@
 # Files to draw
 
-**1 to draw**, 150 from a free library, 0 drawn by you, out of 151. Run `npm run art` to refresh this list. To see new files in the game, use **Reload art** in the tray menu.
+**1 to draw**, 153 from a free library, 0 drawn by you, out of 154. Run `npm run art` to refresh this list. To see new files in the game, use **Reload art** in the tray menu.
 
 Every file is a **PNG with a transparent background**, saved in this folder under exactly the name below. The sizes are suggestions; only the creature layers must all share one canvas size.
 
@@ -58,16 +58,6 @@ One tile of a field, and the crop that sits on it. Suggested size: 64 x 64.
 | library | `farm/bean.png` | A ripe Stone Bean |
 | library | `farm/melon.png` | A ripe Mind Melon |
 | library | `farm/cap.png` | A ripe Mutagen Cap |
-
-## Society (3)
-
-Standing at the bottom of the canvas. Use pale colors: each people's color is tinted over these. Suggested size: 128 x 128.
-
-| Status | File | What |
-| --- | --- | --- |
-| library | `society/hut.png` | A hut on land a people owns |
-| library | `society/keep.png` | A people's capital |
-| library | `society/citizen.png` | One tiny citizen |
 
 ## Tray icon (1)
 
@@ -190,7 +180,7 @@ Same trick as mutations: only the new part, lined up with the body. Nothing show
 | library | `quirks/hardening.png` | Hardening. Goes hard as rock and shrugs most of it off. Sits in front of the body. |
 | library | `quirks/electrification.png` | Electrification. Zaps everything nearby, then short-circuits its own brain for a moment. Sits in front of the body. |
 
-## Races (5)
+## Races (6)
 
 Same trick as mutations: only the new part, lined up with the body. Giants and Tontattas only change size, so they have none. Nothing shows until a file exists. Suggested size: same canvas as creature/body.png.
 
@@ -198,9 +188,10 @@ Same trick as mutations: only the new part, lined up with the body. Giants and T
 | --- | --- | --- |
 | library | `races/fishman.png` | Fish-man. Idea: a wave around its feet. |
 | library | `races/mink.png` | Mink. Idea: paw prints and a spark of lightning. |
-| library | `races/lunarian.png` | Lunarian. Idea: flames on its shoulders. |
+| library | `races/lunarian.png` | Lunarian. Idea: small flames on its shoulders. |
 | library | `races/devil.png` | Devil. Idea: a trident. |
 | library | `races/halfdevil.png` | Half-devil. Idea: a saw. |
+| library | `races/lunarian-back.png` | Lunarian, the part behind the body. Idea: two big black wings, and a fire burning between them. |
 
 ## Cursed techniques (10)
 
@@ -242,7 +233,7 @@ Thrown shots in a fight. Use a pale color: each move tints it. Suggested size: 6
 | --- | --- | --- |
 | library | `fx/bolt.png` | A thrown shot or ranged move flying through the air. |
 
-## Monsters (15)
+## Monsters (20)
 
 Facing right, standing at the bottom middle of the canvas. They spawn from the Challenges note. Suggested size: 512 x 512.
 
@@ -263,3 +254,8 @@ Facing right, standing at the bottom middle of the canvas. They spawn from the C
 | library | `monsters/mammoth.png` | Hill Mammoth. You will get tired long before it does. |
 | library | `monsters/rex.png` | Old Rex. One bite is most of a fight. |
 | library | `monsters/dragon.png` | The Last Dragon. There is a reason it is the last one. |
+| library | `monsters/lobster.png` | Abyss Crawler, an ultimate monster. It came up from the bottom of the sea, and nothing down there could crack it. |
+| library | `monsters/tiger.png` | Thunder Tiger, an ultimate monster. You see the lightning. The tiger was already there. |
+| library | `monsters/kraken.png` | The Kraken, an ultimate monster. Eight arms, and it always knows which one you are watching. |
+| library | `monsters/leviathan.png` | The Leviathan, an ultimate monster. The sea itself, angry. Every wound closes before the next one lands. |
+| library | `monsters/behemoth.png` | The Behemoth, an ultimate monster. The first and the last of the great beasts. The ground gives up before it does. |

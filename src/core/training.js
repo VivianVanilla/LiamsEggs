@@ -6,7 +6,8 @@ import { STAT_GUIDE } from '../data/guide.js';
 import { FOODS } from '../data/foods.js';
 import { MUTATIONS, MUTATION_IDS } from '../data/mutations.js';
 import { PATHS } from '../data/paths.js';
-import { TRAINING_MONSTERS, DEADLY_IDS, DEADLY_MONSTERS, TRAINING_CHANCE, TROPHY_POINTS } from '../data/monsters.js';
+import { TRAINING_MONSTERS, DEADLY_IDS, ULTIMATE_IDS, DEADLY_MONSTERS, TRAINING_CHANCE, TROPHY_POINTS } from '../data/monsters.js';
+import { ultimatesOpen } from './reborn.js';
 import { STAND_WITS, SPEEDSTER_SPEED, TECHNIQUE_MIGHT, TECHNIQUES } from '../data/powers.js';
 import { CHARMS, CHARM_IDS, CROPS, CROP_IDS } from '../data/crafting.js';
 
@@ -116,11 +117,13 @@ export function trainingPlan(c, stat) {
     done: stage === STAGES.length - 1,
   });
 
-  const trophies = DEADLY_IDS.filter((id) => DEADLY_MONSTERS[id].trophy === stat);
+  // The ultimate monsters give trophies too, once every deadly one is beaten.
+  const trophies = [...DEADLY_IDS, ...ULTIMATE_IDS].filter((id) => DEADLY_MONSTERS[id].trophy === stat);
   const left = trophies.filter((id) => !c.trophies.includes(id));
+  const nowLeft = left.filter((id) => !DEADLY_MONSTERS[id].ultimate || ultimatesOpen(c));
   rows.push({
     title: 'Trophies',
-    detail: `The only way past a limit: +${TROPHY_POINTS} ${label} and +${TROPHY_POINTS} to its limit. ${left.length ? `Beat ${left.map((id) => DEADLY_MONSTERS[id].name).join(' or ')}, and it dies forever if it loses.` : 'It has beaten every monster that gives one.'}`,
+    detail: `The only way past a limit: +${TROPHY_POINTS} ${label} and +${TROPHY_POINTS} to its limit. ${nowLeft.length ? `Beat ${nowLeft.map((id) => DEADLY_MONSTERS[id].name).join(' or ')}, and it dies forever if it loses.${nowLeft.length < left.length ? ' More come out once every deadly monster is beaten.' : ''}` : 'It has beaten every monster that gives one.'}`,
     have: sources.trophies[stat],
     done: !left.length,
   });

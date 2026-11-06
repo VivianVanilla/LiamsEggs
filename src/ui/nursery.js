@@ -1,6 +1,6 @@
 // The Nursery: where new creatures come from. Breed two of yours, hatch an egg, or use what is in
 // the bag: Time Chamber Keys grow a creature up on the spot, and Limit Expanders make room for more
-// mutations. The Mega Breeder is bought here too.
+// mutations. The Mega Breeder is bought here too, and the Bloodline Altar has a tab of its own.
 
 import { toast } from './flair.js';
 import { G, saveHouse } from '../state.js';
@@ -14,8 +14,9 @@ import { ADVENTURE_PRIZES } from '../data/adventure.js';
 import { drawPortrait, dropRig } from '../draw/art.js';
 import { buildBreed, freshBreed, loadRows, saveAnywhere } from './breed.js';
 import { buildEggs, freshEggs } from './roll.js';
+import { buildAltar } from './altar.js';
 
-const TABS = [['breed', 'Breed'], ['eggs', 'Eggs'], ['bag', 'Items']];
+const TABS = [['breed', 'Breed'], ['eggs', 'Eggs'], ['bag', 'Items'], ['altar', 'Altar']];
 const bagCount = () => ITEM_IDS.reduce((n, id) => n + itemCount(G.house, id), 0);
 
 export async function openNursery(tab = 'breed') {
@@ -47,6 +48,7 @@ export async function openNursery(tab = 'breed') {
       fill(body, page);
       if (spec.tab === 'eggs') buildEggs(page, note);
       else if (spec.tab === 'bag') buildBag(page, note);
+      else if (spec.tab === 'altar') buildAltar(page, note);
       else buildBreed(page, note);
     },
     tick(note) {

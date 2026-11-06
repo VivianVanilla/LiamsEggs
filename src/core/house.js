@@ -10,7 +10,7 @@
 import { clamp, num } from '../lib/util.js';
 import { BANK_KEYS, MAX_BANK, CROP_IDS } from '../data/crafting.js';
 import { FRUITS } from '../data/fruits.js';
-import { RACES } from '../data/races.js';
+import { RACES, DEFAULT_RACE } from '../data/races.js';
 import { EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE, LEGENDARY_MINE } from '../data/village.js';
 import { WEAPON_IDS, MAX_ARMORY, MAX_ORE } from '../data/forge.js';
 import { ITEM_IDS, MAX_ITEMS } from '../data/items.js';
@@ -43,6 +43,10 @@ export const emptyHouse = () => ({
   // The ids of the legendary Miners working the Legendary Mine.
   mine: [],
   megaBreeder: false,
+  // The Bloodline Altar, the races sacrificed on it, and the race the Nursery's next egg hatches as.
+  altar: false,
+  altarRaces: [],
+  eggRace: null,
   // The best Adventure level beaten, and the ids of the party last sent.
   adventure: { best: 0, party: [] },
 });
@@ -80,6 +84,11 @@ export function sanitizeHouse(raw) {
   house.items = counts(raw?.items, ITEM_IDS, MAX_ITEMS);
   house.mine = creatureIds(raw?.mine, LEGENDARY_MINE.slots);
   house.megaBreeder = raw?.megaBreeder === true;
+  house.altar = raw?.altar === true;
+  house.altarRaces = house.altar && Array.isArray(raw?.altarRaces)
+    ? [...new Set(raw.altarRaces)].filter((id) => typeof id === 'string' && Object.hasOwn(RACES, id) && id !== DEFAULT_RACE && id !== 'halfdevil')
+    : [];
+  house.eggRace = house.altarRaces.includes(raw?.eggRace) ? raw.eggRace : null;
   house.adventure.best = Math.floor(clamp(num(raw?.adventure?.best), 0, ADVENTURE_LEVELS.length));
   house.adventure.party = creatureIds(raw?.adventure?.party, ADVENTURE_PARTY);
   return house;

@@ -73,6 +73,8 @@ It can hold one of those. **A Legendary mutation** lets it hold two: **Twin Soul
 
 **Born with**, from the egg, and passed on by breeding: Six Eyes, Sharingan, Cursed Body, **Titan Shifter** (below half its health it doubles in size and damage), **Saiyan Blood**, **Conqueror's Haki**, **Sun Breathing**, **Nine-Tails Chakra** and **One Punch**.
 
+**Awakened by breeding**: never from an egg. A bred baby can wake up with one when its parents qualify, and from then on it passes on like a born-with gift. **Rinnegan** (both parents have Sharingan; brings the Almighty Push move), **Demon Slayer Mark** (a parent has Sun Breathing; more damage and speed all fight), **Ackerman Blood** (both parents have won a fight to the death; some swings land twice) and **Scarlet Eyes** (both parents share a last name; moves come back sooner). The Nursery shows the chance before you hatch, and Guide, Chances lists them all.
+
 **Earned**, by what it does, and kept for good, but never passed on:
 
 | Gift | How | What it does |
@@ -96,7 +98,7 @@ Every race has stats, a fight move, a passive in every fight, and a specialty at
 | Giant | Takes 15% less damage, and is drawn bigger | Digs 50% more colors | forest and sea expeditions |
 | Fish-man | 12% more max HP | Catches food, whatever its job | coast and sea |
 | Mink | 8% more dodging | Expeditions back 20% sooner | forest and sea |
-| Lunarian | Poison can't touch it | 50% more gems | sea and sky, Adventure level 23 |
+| Lunarian | Poison can't touch it. Drawn with dark skin, black wings and fire on its back | 50% more gems | sea and sky, Adventure level 23 |
 | Tontatta | 15% faster, 5% more dodging, drawn smaller | Farms 50% more | forest |
 | Long-arm | Swings from further away | Expeditions bring 25% more gems | forest |
 | Skypiean | 10% more critical hits | Expeditions twice as likely to find someone | sky island |
@@ -108,6 +110,7 @@ Home, Nursery is where new creatures come from.
 
 - **Breed:** two parents, Scrappers or older and at least 40 full. Choose its last name, who it looks and fights like, and up to 3 things to pass on: born-with gifts, mutations and one Quirk. There is no waiting between eggs: each parent just spends 30 fullness. A Nurse out on the screen lets one more pass on and saves the parents fullness.
 - **The Mega Breeder** costs 150 gems, once, and lets every egg after it carry 3 more things.
+- **The Bloodline Altar**, in the Altar tab, is bought once with gems. Sacrifice a creature on it (gone forever) and every race it is at least half of becomes a race the Eggs tab can hatch.
 - **Eggs:** the egg on offer is free; rolling another costs a gem, and Hyper roll keeps rolling until it gets the gifts or family you pick.
 - **Items:** a **Time Chamber Key** grows a creature straight to Grown and fed, ready to breed. A **Limit Expander** makes room for 2 more mutations. Both come from Adventure and expeditions.
 
@@ -130,7 +133,8 @@ Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blad
 ## Fighting
 
 - **Battle plan:** every move it knows, which to use, and how it fights, when it is hurt, and who it goes for.
-- **Challenges:** training monsters can't kill it; deadly ones can, forever, and each win is a trophy. A dead creature's file moves to `world/graveyard`.
+- **Challenges:** training monsters can't kill it; deadly ones can, forever, and each win is a trophy. A dead creature's file moves to `world/graveyard`. Beating The Last Dragon always gives a Twin Soul, even in place of a Malevolent Soul (unless it holds a Devil Fruit beside a Stand, which only a Malevolent Soul allows).
+- **Ultimate monsters:** five more, just as deadly, once every deadly monster is beaten. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time.
 - **Arena:** a free-for-all with any `.creature` files.
 
 ## The art

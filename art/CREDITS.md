@@ -37,6 +37,8 @@ To swap one for your own drawing, save over the file and remove its row here.
 
 The mutation, job, Stand, Quirk, technique, crafting and monster pictures below are Twemoji pictures (same credit and license as above), turned, mirrored, cropped (the helmets lose their chin straps) and placed on a transparent canvas by `tools/build-looks.cjs`. The Stands and the Dark Shadow also use the AIGA figure above, recolored. To swap one for your own drawing, save over the file and remove it from `LOOKS` in that tool and from this list.
 
+The Lunarian's wings are the wing picture from Twemoji 15.1.0, the version of Twemoji its community keeps going at [jdecked/twemoji](https://github.com/jdecked/twemoji), under the same CC-BY 4.0 license. Recolored from grey to black.
+
 Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's Bizarre Adventure*, *My Hero Academia* and *Jujutsu Kaisen*. None of the pictures come from those shows.
 
 | File in this folder | Pictures used |
@@ -94,6 +96,7 @@ Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's 
 | `races/fishman.png` | `1f30a.svg` |
 | `races/mink.png` | `1f43e.svg`, `26a1.svg` |
 | `races/lunarian.png` | `1f525.svg` |
+| `races/lunarian-back.png` | `1fabd.svg` from Twemoji 15.1.0, recolored black, `1f525.svg` |
 | `races/devil.png` | `1f531.svg` |
 | `races/halfdevil.png` | `1fa9a.svg` |
 | `jobs/nurse.png` | `1fa7a.svg` |
@@ -170,5 +173,10 @@ Stands, Quirks and cursed techniques borrow their names and powers from *JoJo's 
 | `monsters/mammoth.png` | `1f9a3.svg` |
 | `monsters/rex.png` | `1f996.svg` |
 | `monsters/dragon.png` | `1f409.svg` |
+| `monsters/lobster.png` | `1f99e.svg` |
+| `monsters/tiger.png` | `1f405.svg` |
+| `monsters/leviathan.png` | `1f40b.svg` |
+| `monsters/kraken.png` | `1f419.svg` |
+| `monsters/behemoth.png` | `1f99b.svg` |
 | `animals/shadow.png` | the AIGA figure |
 <!-- looks end -->

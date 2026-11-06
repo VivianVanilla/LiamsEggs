@@ -5,11 +5,11 @@ import {
 } from './creature.js';
 import { statText } from './sheet.js';
 import { MUTATIONS, MAX_MUTATIONS } from '../data/mutations.js';
-import { QUIRKS, TRAITS, MAX_HP_GIVEN, OFA_ID, ofaLevelFor, TECHNIQUES } from '../data/powers.js';
+import { QUIRKS, TRAITS, MAX_HP_GIVEN, OFA_ID, ofaLevelFor, TECHNIQUES, BRED_TRAIT_IDS, BRED_RULES } from '../data/powers.js';
 import { PATHS } from '../data/paths.js';
-import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER } from '../data/family.js';
-import { PURE_BLOOD_CHANCE, MIN_SHARE, DEFAULT_RACE } from '../data/races.js';
-import { heritageOf } from './creature.js';
+import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER, ALTAR } from '../data/family.js';
+import { RACES, PURE_BLOOD_CHANCE, MIN_SHARE, DEFAULT_RACE } from '../data/races.js';
+import { heritageOf, raceParts, hasTrait } from './creature.js';
 
 // ---------- the nurse ----------
 
@@ -37,6 +37,83 @@ export function buyMegaBreeder(house) {
   house.bank.gems -= MEGA_BREEDER.cost;
   house.megaBreeder = true;
   return true;
+}
+
+// ---------- the Bloodline Altar ----------
+
+export function altarProblem(house) {
+  if (house.altar) return 'You already have the Bloodline Altar';
+  if (house.bank.gems < ALTAR.cost) return `It costs ${ALTAR.cost} gems`;
+  return null;
+}
+
+export function buyAltar(house) {
+  if (altarProblem(house)) return false;
+  house.bank.gems -= ALTAR.cost;
+  house.altar = true;
+  return true;
+}
+
+// The races a sacrifice would give the altar: every race it is at least half of, other than Human,
+// which every egg can already be. A Half-devil gives Devil.
+export const altarRacesOf = (c) => raceParts(c)
+  .filter(([id, share]) => id !== DEFAULT_RACE && id !== 'halfdevil' && (c.pureBlood || share >= ALTAR.share))
+  .map(([id]) => id);
+
+// Why this one can't go on the altar, or null if it can. What it would add has to be new.
+export function sacrificeProblem(house, c) {
+  if (!house.altar) return 'Buy the Bloodline Altar first';
+  if (c.dead) return `${c.name} is gone`;
+  const races = altarRacesOf(c);
+  if (!races.length) return `${c.name} isn't at least half of any race but Human`;
+  if (races.every((id) => house.altarRaces.includes(id))) return `Eggs can already be ${races.map((id) => RACES[id].name).join(' and ')}`;
+  return null;
+}
+
+// It is gone for good, and its races join the altar. Returns the races it added, or null.
+export function sacrifice(house, c, now = Date.now()) {
+  if (sacrificeProblem(house, c)) return null;
+  const added = altarRacesOf(c).filter((id) => !house.altarRaces.includes(id));
+  house.altarRaces.push(...added);
+  c.dead = { at: now, by: 'the Bloodline Altar' };
+  return added;
+}
+
+// The races an egg from the Nursery can hatch as: Human, and whatever the altar has.
+export const eggRaces = (house) => [DEFAULT_RACE, ...(house.altar ? house.altarRaces : [])];
+
+// ---------- gifts awakened by breeding ----------
+
+// Does this pair have what it takes for a baby to awaken this gift?
+export function bredRuleMet(id, a, b) {
+  const rule = BRED_RULES[id];
+  if (!rule) return false;
+  if (rule.both && !(hasTrait(a, rule.both) && hasTrait(b, rule.both))) return false;
+  if (rule.either && !(hasTrait(a, rule.either) || hasTrait(b, rule.either))) return false;
+  if (rule.trophies && !(a.trophies.length >= rule.trophies && b.trophies.length >= rule.trophies)) return false;
+  if (rule.sameFamily && lineageOf(a) !== lineageOf(b)) return false;
+  return true;
+}
+
+// What a pair needs for each bred gift, in words, read from the rule itself. A whole sentence, or
+// with sentence false just the words, to go in the middle of one.
+export function bredRuleText(id, sentence = true) {
+  const rule = BRED_RULES[id];
+  const bits = [];
+  if (rule.both) bits.push(`both parents have ${TRAITS[rule.both].name}`);
+  if (rule.either) bits.push(`a parent has ${TRAITS[rule.either].name}`);
+  if (rule.trophies) bits.push(rule.trophies === 1 ? 'both parents have won a fight to the death' : `both parents have won ${rule.trophies} fights to the death`);
+  if (rule.sameFamily) bits.push('both parents have the same last name');
+  const text = bits.join(', and ');
+  return sentence ? `${text.charAt(0).toUpperCase()}${text.slice(1)}.` : text;
+}
+
+// The bred gifts this pair's baby could awaken, with the chance of each: { id, oneIn }. A gift the
+// baby is already getting from a parent isn't on the list.
+export function awakenChances(a, b, passing = []) {
+  return BRED_TRAIT_IDS
+    .filter((id) => !passing.includes(id) && bredRuleMet(id, a, b))
+    .map((id) => ({ id, oneIn: BRED_RULES[id].oneIn }));
 }
 
 // ---------- breeding ----------
@@ -131,13 +208,16 @@ export function breed(a, b, choice, name, now = Date.now(), help = null, rng = M
   baby.heritage = mixHeritage(a, b);
   baby.race = mainRace(baby.heritage);
   baby.pureBlood = Object.keys(baby.heritage).length > 1 && rng() < PURE_BLOOD_CHANCE;
+  // Something new can wake up in it, if its parents have what that takes.
+  const awakened = awakenChances(a, b, baby.traits).filter(({ oneIn }) => rng() < 1 / oneIn).map(({ id }) => id);
+  baby.traits.push(...awakened);
   baby.parents = [{ id: a.id, name: fullName(a) }, { id: b.id, name: fullName(b) }];
   baby.growth = help?.growth ?? 0;
   for (const p of [a, b]) {
     p.fullness = Math.max(0, p.fullness - breedCost(help));
     p.bredAt = now;
   }
-  return { baby };
+  return { baby, awakened };
 }
 
 // ---------- One For All ----------

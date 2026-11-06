@@ -10,6 +10,8 @@ import { fullName } from '../core/creature.js';
 import { eggFromId, rollEgg, matchChance, hyperRoll, hatchEgg } from '../core/roll.js';
 import { TECHNIQUES, TECHNIQUE_IDS, TRAITS, BORN_TRAIT_IDS } from '../data/powers.js';
 import { ROLL_COST, HYPER_BUDGETS } from '../data/family.js';
+import { RACES, DEFAULT_RACE } from '../data/races.js';
+import { eggRaces } from '../core/family.js';
 import { createCreature } from './panels.js';
 import { openNursery } from './nursery.js';
 import { loadRows } from './breed.js';
@@ -26,9 +28,12 @@ export function eggOnOffer() {
   return eggFromId(G.house.egg.id);
 }
 
+// The race the egg on offer hatches as: Human, unless the Bloodline Altar has another and it was picked.
+const eggRace = () => (eggRaces(G.house).includes(G.house.eggRace) ? G.house.eggRace : DEFAULT_RACE);
+
 // The egg on offer hatches as this creature, and the next one waits in its place.
 export function takeEgg(name) {
-  const c = hatchEgg(eggOnOffer(), name);
+  const c = hatchEgg(eggOnOffer(), name, Date.now(), eggRace());
   G.house.egg = null;
   saveHouse();
   return c;
@@ -71,6 +76,14 @@ export function buildEggs(page, note) {
         h('div', { class: 'nameline', style: 'font-size:16px' }, familyText(egg.lineage)),
         h('div', { class: 'small' }, `The other side of its family: ${TECHNIQUES[egg.otherLine].family}.`),
         h('div', { class: 'small', style: 'font-weight:600' }, rich(`Born with: ${giftsText(egg)}.`)))),
+    // With the Bloodline Altar, the egg can hatch as any race sacrificed on it.
+    eggRaces(G.house).length > 1 && h('div', { class: 'row', style: 'margin-top:4px' },
+      h('span', { class: 'small' }, 'Hatches as'),
+      h('div', { class: 'chips' }, eggRaces(G.house).map((id) => chip(RACES[id].name, eggRace() === id, () => {
+        G.house.eggRace = id === DEFAULT_RACE ? null : id;
+        saveHouse();
+        note.rebuild();
+      }, RACES[id].color)))),
     h('div', { class: 'row gap' }, input, button('Keep it', () => keep(note, input), 'hot')),
     h('div', { class: 'row gap' }, button(`Roll again: ${ROLL_COST} gem`, () => rollOnce(note), 'big', have < ROLL_COST)),
     have < ROLL_COST && h('div', { class: 'small' }, 'No gems left. Mining, the village, expeditions and Adventure all bring them in.'),
@@ -131,7 +144,8 @@ async function keep(note, input) {
   const egg = eggOnOffer();
   const made = await createCreature(name, takeEgg(name));
   note.spec.eggs.name = '';
-  note.spec.eggs.result = `${made.c.name} hatched: ${familyText(egg.lineage)}, born with ${giftsText(egg)}. A new egg is on offer.`;
+  const race = made.c.race !== DEFAULT_RACE ? `a ${RACES[made.c.race].name}, ` : '';
+  note.spec.eggs.result = `${made.c.name} hatched: ${race}${familyText(egg.lineage)}, born with ${giftsText(egg)}. A new egg is on offer.`;
   const m = await G.bringOut(made.base, made.c);
   if (m) m.pet.say(`i am ${fullName(made.c)}`, 4, true);
   toast(`${made.c.name.toUpperCase()} HATCHED!${egg.traits.length ? ` BORN WITH ${giftsText(egg).toUpperCase()}!!!` : ''}`, egg.traits.length ? 'rare' : 'good');

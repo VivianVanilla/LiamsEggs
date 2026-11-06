@@ -2,7 +2,7 @@
 // if a file does not exist yet, a plain dashed box with its file name stands in for it.
 // The creature is one still image, stacked from layers and rebuilt only when it changes.
 
-import { STAGES, stageIndex, creatureColors, raceSize, racePictures } from '../core/creature.js';
+import { STAGES, stageIndex, creatureColors, raceSize, racePictures, raceBackPictures } from '../core/creature.js';
 import { ART_FILES, BEHIND_BODY } from '../data/art-list.js';
 import { QUIRKS } from '../data/powers.js';
 
@@ -116,6 +116,7 @@ function paintCreature(ctx, c, x, feetY, size) {
   };
   const ids = c.mutations.map((m) => m.id);
   const { speedster, quirks } = c.powers;
+  raceBackPictures(c).forEach((id) => layer(`races/${id}-back.png`));
   ids.filter((id) => BEHIND_BODY.has(id)).forEach((id) => layer(`mutations/${id}.png`));
   quirks.filter((id) => QUIRKS[id].behind).forEach((id) => layer(`quirks/${id}.png`));
   const body = images.get('creature/body.png');

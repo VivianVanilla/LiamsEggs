@@ -8,7 +8,7 @@ import { STAT_LABELS, STAT_LIMITS, TRAINING_LIMIT } from '../core/creature.js';
 import { RACES, RACE_IDS, PURE_BLOOD_CHANCE } from '../data/races.js';
 import { PATHS, ROOT_PATHS, ABILITIES, TIER_XP } from '../data/paths.js';
 import {
-  TRAITS, BORN_TRAIT_IDS, EARNED_TRAIT_IDS, TRAIT_ODDS, EARN_RULES, STANDS, STAND_IDS, STAND_WITS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT,
+  TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, EARNED_TRAIT_IDS, TRAIT_ODDS, EARN_RULES, STANDS, STAND_IDS, STAND_WITS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT,
   QUIRKS, QUIRK_IDS, MAX_HP_GIVEN, SPEEDSTER, SPEEDSTER_SPEED, LEGENDARY, SIX_EYES_FAMILY,
 } from '../data/powers.js';
 import { FRUITS, FRUIT_IDS, FRUIT_VIGOR } from '../data/fruits.js';
@@ -17,7 +17,8 @@ import { FOODS, FOOD_ORDER } from '../data/foods.js';
 import { CROPS, CROP_IDS, CHARMS, CHARM_IDS, PAINTS, PAINT_IDS } from '../data/crafting.js';
 import { WEAPONS, WEAPON_IDS } from '../data/forge.js';
 import { ITEMS, ITEM_IDS, EXPANDER_SLOTS } from '../data/items.js';
-import { DEADLY_MONSTERS, DEADLY_IDS, TRAINING_MONSTERS, TRAINING_IDS, TROPHY_POINTS } from '../data/monsters.js';
+import { DEADLY_MONSTERS, DEADLY_IDS, ULTIMATE_IDS, TRAINING_MONSTERS, TRAINING_IDS, TROPHY_POINTS, REBORN } from '../data/monsters.js';
+import { bredRuleText } from '../core/family.js';
 import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED } from '../data/adventure.js';
 import { EXPEDITIONS, EXPEDITION_IDS, LEGENDARY_MINE } from '../data/village.js';
 
@@ -101,11 +102,15 @@ function jobs(page) {
 
 function gifts(page) {
   fill(page,
-    intro('Born-with gifts come from the egg, and a parent can pass them on. Earned gifts come from what a creature does, and stay with it.'),
+    intro('Born-with gifts come from the egg, and a parent can pass them on. A few only ever wake up in a bred baby. Earned gifts come from what a creature does, and stay with it. Being reborn can take any of them from another creature.'),
     head('Born with'),
     BORN_TRAIT_IDS.map((id) => card(TRAITS[id].name, TRAITS[id].color,
       id === 'sixeyes' ? `1 in ${TRAIT_ODDS[id]} ${TECHNIQUES[SIX_EYES_FAMILY].family}` : `1 in ${TRAIT_ODDS[id]}`,
       h('div', { class: 'cx-blurb' }, TRAITS[id].blurb))),
+    head('Awakened by breeding'),
+    BRED_TRAIT_IDS.map((id) => card(TRAITS[id].name, TRAITS[id].color, `1 in ${BRED_RULES[id].oneIn} bred`,
+      h('div', { class: 'cx-blurb' }, TRAITS[id].blurb),
+      said('How', `${bredRuleText(id)} Then 1 baby in ${BRED_RULES[id].oneIn} awakens it, and it passes on from there.`))),
     head('Earned'),
     EARNED_TRAIT_IDS.map((id) => card(TRAITS[id].name, TRAITS[id].color, 'earned',
       h('div', { class: 'cx-blurb' }, TRAITS[id].blurb),
@@ -182,12 +187,17 @@ function monsters(page) {
     h('div', { class: 'cx-grid' }, TRAINING_IDS.map((id) => h('div', { class: 'cx-mini' }, h('b', null, TRAINING_MONSTERS[id].name), h('span', null, `trains ${STAT_LABELS[TRAINING_MONSTERS[id].stat]}`)))),
     head('Deadly monsters'),
     intro(`A fight to the death: lose and it is gone forever. Each one beaten is a trophy: +${TROPHY_POINTS} to a stat, and to that stat's limit.`),
-    DEADLY_IDS.map((id) => {
-      const m = DEADLY_MONSTERS[id];
-      return card(m.name, m.legendary ? '#ffd24a' : '#c2412b', `trophy: ${STAT_LABELS[m.trophy]}`,
-        said('Stats', stats(m.stats)), m.moves.length > 0 && said('Moves', m.moves.map(moveName).join(', ')));
-    }),
+    DEADLY_IDS.map((id) => monsterCard(id, stats)),
+    head('Ultimate monsters'),
+    intro(`They come out once a creature has beaten every deadly monster, and they kill just the same. Beat all ${ULTIMATE_IDS.length} and it can be reborn: it absorbs one of your creatures, takes up to ${REBORN.takes} of its gifts, and starts over as a Hatchling with nothing but its gifts.`),
+    ULTIMATE_IDS.map((id) => monsterCard(id, stats)),
   );
+}
+
+function monsterCard(id, stats) {
+  const m = DEADLY_MONSTERS[id];
+  return card(m.name, m.legendary ? '#ffd24a' : m.ultimate ? '#8a3bd6' : '#c2412b', `trophy: ${STAT_LABELS[m.trophy]}`,
+    said('Stats', stats(m.stats)), m.moves.length > 0 && said('Moves', m.moves.map(moveName).join(', ')));
 }
 
 // ---------- adventure ----------

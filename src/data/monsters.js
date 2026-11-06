@@ -85,8 +85,47 @@ export const DEADLY_MONSTERS = {
   },
 };
 
-export const DEADLY_IDS = Object.keys(DEADLY_MONSTERS);
-DEADLY_IDS.forEach((id) => { DEADLY_MONSTERS[id].id = id; });
+// The ultimate monsters. Fights to the death like the ones above, and each gives a trophy the same
+// way, but they only come out for a creature that has beaten every deadly monster above. Beating all
+// of them lets it be reborn (core/reborn.js). Weakest first.
+const ULTIMATES = {
+  lobster: {
+    name: 'Abyss Crawler', trophy: 'guard', size: 160, moves: ['bonewall', 'quake', 'snare'], stance: 'hold',
+    stats: { might: 60, guard: 80, speed: 24, wits: 32, vigor: 66 },
+    blurb: 'It came up from the bottom of the sea, and nothing down there could crack it.',
+  },
+  tiger: {
+    name: 'Thunder Tiger', trophy: 'speed', size: 150, moves: ['stoop', 'zap', 'warcry'], stance: 'bounce',
+    stats: { might: 64, guard: 40, speed: 66, wits: 38, vigor: 54 },
+    blurb: 'You see the lightning. The tiger was already there.',
+  },
+  kraken: {
+    name: 'The Kraken', trophy: 'wits', size: 190, moves: ['inkcloud', 'mindswap', 'webshot', 'hex'], stance: 'mid',
+    stats: { might: 62, guard: 48, speed: 38, wits: 54, vigor: 74 },
+    blurb: 'Eight arms, and it always knows which one you are watching.',
+  },
+  leviathan: {
+    name: 'The Leviathan', trophy: 'vigor', size: 210, moves: ['regrow', 'quake', 'inkcloud', 'warcry'],
+    stats: { might: 68, guard: 52, speed: 30, wits: 36, vigor: 105 },
+    blurb: 'The sea itself, angry. Every wound closes before the next one lands.',
+  },
+  behemoth: {
+    name: 'The Behemoth', trophy: 'might', size: 220, moves: ['reckoning', 'quake', 'stoop', 'warcry'],
+    stats: { might: 104, guard: 58, speed: 36, wits: 32, vigor: 86 },
+    blurb: 'The first and the last of the great beasts. The ground gives up before it does.',
+  },
+};
+Object.values(ULTIMATES).forEach((m) => { m.ultimate = true; });
+Object.assign(DEADLY_MONSTERS, ULTIMATES);
+Object.keys(DEADLY_MONSTERS).forEach((id) => { DEADLY_MONSTERS[id].id = id; });
+
+// The deadly monsters, and the ultimate ones, each weakest first.
+export const DEADLY_IDS = Object.keys(DEADLY_MONSTERS).filter((id) => !DEADLY_MONSTERS[id].ultimate);
+export const ULTIMATE_IDS = Object.keys(DEADLY_MONSTERS).filter((id) => DEADLY_MONSTERS[id].ultimate);
+
+// Being reborn: it absorbs another creature, takes this many of its gifts, and goes back to being a
+// Hatchling with nothing else but its name, family, race, look and gifts.
+export const REBORN = { takes: 2 };
 
 // Moves only monsters use, added to ABILITIES in data/paths.js.
 export const MONSTER_MOVES = {

@@ -62,6 +62,8 @@ function pathIntro(body, note) {
       Object.keys(raceStats(c)).length ? ` ${statText(raceStats(c))}.` : ''),
     c.traits.length > 0 && sect(note, 'born', 'Born with'),
     c.traits.map((id) => h('div', { class: 'small', style: 'margin-top:2px' }, h('b', { style: `color:${TRAITS[id].color}` }, `${TRAITS[id].name}: `), TRAITS[id].blurb)),
+    c.rebirths?.length > 0 && h('div', { class: 'small', style: 'margin-top:3px;font-weight:600' },
+      `Reborn ${c.rebirths.length} time${c.rebirths.length === 1 ? '' : 's'}: ${c.rebirths.map((r) => `absorbed ${r.absorbed}${r.took.length ? ` for ${r.took.map((id) => TRAITS[id].name).join(' and ')}` : ''}`).join('; ')}.`),
     h('div', { class: 'row', style: 'margin-top:4px' }, button('Every chance in the game', () => openGuide('chances'), 'mini')),
   );
 }

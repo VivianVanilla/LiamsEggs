@@ -21,6 +21,7 @@ import {
 } from '../src/data/powers.js';
 import { BANK_KEYS, PIGMENTS, PIGMENT_IDS, familyOfBin, CHARMS, CHARM_IDS, CHARM_SLOTS, PAINTS, PAINT_IDS, DYE_COST, CROPS, CROP_IDS, WATER_PUSH_MS, WATER_EVERY_MS } from '../src/data/crafting.js';
 import { FOODS, FOOD_ORDER, SNACK } from '../src/data/foods.js';
+import { FRUITS } from '../src/data/fruits.js';
 import { STANCES, STANCE_IDS, HURT_PLANS, TARGET_PLANS, HOLD_GUARD, HOLD_PATIENCE, BERSERK_HIT, BERSERK_TAKEN, MID_GAP, THROW } from '../src/data/battle.js';
 import { ART_FILES } from '../src/data/art-list.js';
 import { Bout, finishBout } from '../src/sim/arena.js';
@@ -458,9 +459,23 @@ test('winning to the death can grow it, and The Last Dragon always does', () => 
 
   const lucky = plainCreature('Lucky');
   assert.equal(settleChallenge(lucky, 'rat', true, 0.01).legendary, MALEVOLENT_ID, 'an ordinary kill can only leave a Malevolent Soul');
-  assert.equal(settleChallenge(lucky, 'scorpion', true, 0.01).legendary, null, 'and a creature only ever has one soul');
-  assert.equal(settleChallenge(lucky, 'dragon', true, 0.01).legendary, null);
+  assert.equal(settleChallenge(lucky, 'scorpion', true, 0.01).legendary, null, 'and a creature only holds one soul');
   assert.equal(lucky.legendary, MALEVOLENT_ID);
+  // The Last Dragon still rewards it: its Twin Soul takes the Malevolent Soul's place.
+  const swapped = settleChallenge(lucky, 'dragon', true, 0.01);
+  assert.equal(swapped.legendary, LEGENDARY_ID);
+  assert.equal(swapped.replaced, MALEVOLENT_ID);
+  assert.equal(lucky.legendary, LEGENDARY_ID);
+  // Unless its powers only fit a Malevolent Soul: a Stand with a Devil Fruit beside it.
+  const fruity = plainCreature('Fruity');
+  fruity.legendary = MALEVOLENT_ID;
+  fruity.powers.stand = 'theworld';
+  fruity.powers.fruit = Object.keys(FRUITS)[0];
+  const kept = settleChallenge(fruity, 'dragon', true, 0.99);
+  assert.equal(kept.legendary, null);
+  assert.equal(kept.keptSoul, MALEVOLENT_ID);
+  assert.equal(fruity.legendary, MALEVOLENT_ID);
+  assert.equal(parseCreature(serializeCreature(fruity)).powers.fruit, fruity.powers.fruit, 'and it keeps its fruit');
   const unlucky = plainCreature('Unlucky');
   assert.equal(settleChallenge(unlucky, 'rat', true, 0.99).legendary, null);
   const training = plainCreature('Student');

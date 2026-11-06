@@ -8,12 +8,14 @@ import { parseCreature, serializeCreature, computeStats, STAT_LABELS, TRAINING_L
 import {
   startChallenge, payForFight, settleChallenge, wonChallenge, fightProblem, trainingFull, oddsOfWinning, monsterDef, isDeadly,
 } from '../sim/challenges.js';
-import { TRAINING_MONSTERS, TRAINING_IDS, DEADLY_MONSTERS, DEADLY_IDS, TRAINING_CHANCE, TROPHY_POINTS } from '../data/monsters.js';
+import { TRAINING_MONSTERS, TRAINING_IDS, DEADLY_MONSTERS, DEADLY_IDS, ULTIMATE_IDS, TRAINING_CHANCE, TROPHY_POINTS, REBORN } from '../data/monsters.js';
 import { dropRig, hasArt, artUrl } from '../draw/art.js';
 import { forgetFighter } from './boards.js';
 import { coachRow } from './plan.js';
 import { useUpPrep } from '../core/craft.js';
+import { ultimatesLeft, rebornLeft, canBeReborn, timesReborn } from '../core/reborn.js';
 import { LEGENDARY } from '../data/powers.js';
+import { openReborn } from './reborn.js';
 
 const CLEAR_RING_AFTER = 2600;
 
@@ -92,6 +94,7 @@ export function onChallengeEnded(bout) {
     G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, `LEGENDARY MUTATION: ${name}`, color, 24, 4);
     toast(`LEGENDARY MUTATION: ${name}!!!`, 'rare');
   }
+  if (result.won && result.def.ultimate && canBeReborn(c)) toast(`${c.name.toUpperCase()} BEAT EVERY ULTIMATE MONSTER! IT CAN BE REBORN!!!`, 'rare');
   dropRig(c);
   saveCreature();
   G.onCreatureChanged?.();
@@ -236,7 +239,31 @@ function buildList(body, note) {
     h('div', { class: 'warning' }, 'If it loses, it dies forever.'),
     h('div', { class: 'small' }, 'A trophy is the only way past a stat limit. Each monster only gives one.'),
     h('div', { class: 'monsters tall' }, DEADLY_IDS.map((id) => deadlyRow(id, note))),
+    ultimateSection(note),
   );
+}
+
+// The ultimate monsters, once every deadly one is beaten, and being reborn once they are too.
+function ultimateSection(note) {
+  const c = G.creature;
+  const locked = ultimatesLeft(c).length;
+  const head = h('div', { class: 'sect' }, timesReborn(c) ? `Ultimate (reborn ${timesReborn(c)} time${timesReborn(c) === 1 ? '' : 's'})` : 'Ultimate');
+  if (locked) {
+    return [head, h('div', { class: 'small' }, `${ULTIMATE_IDS.length} ultimate monsters come out once it has beaten every monster above, ${locked} to go. Beat them all and it can be reborn.`)];
+  }
+  const left = rebornLeft(c).length;
+  return [
+    head,
+    h('div', { class: 'warning' }, 'Still to the death.'),
+    h('div', { class: 'monsters tall' }, ULTIMATE_IDS.map((id) => deadlyRow(id, note))),
+    h('div', { class: 'mega' },
+      h('div', { class: 'row nowrap' },
+        h('div', { class: 'grow' },
+          h('div', { class: 'hand', style: 'font-weight:700' }, 'Be reborn'),
+          h('div', { class: 'small' }, `It absorbs one of your creatures and takes up to ${REBORN.takes} of its gifts, then starts over as a Hatchling with nothing but its gifts.`)),
+        button('Be reborn', () => openReborn(), 'hot', !canBeReborn(c) || !!G.bout)),
+      left > 0 && h('div', { class: 'small' }, `Beat every ultimate monster first, ${left} to go.`)),
+  ];
 }
 
 function buildFight(body, note) {
@@ -259,9 +286,21 @@ function buildFight(body, note) {
   );
 }
 
-function resultLine({ def, won, deadly, trained, trophy, legendary }, c) {
+function soulLine({ legendary, replaced, keptSoul }) {
+  if (legendary && replaced) return ` And its ${LEGENDARY[replaced].name} became a ${LEGENDARY[legendary].name}: it can hold any two powers now.`;
+  if (legendary) return ` And it grew a Legendary mutation, ${LEGENDARY[legendary].name}: it can now hold two powers.`;
+  if (keptSoul) return ` It keeps its ${LEGENDARY[keptSoul].name}: a Twin Soul has no room for the Devil Fruit it holds beside its Stand.`;
+  return '';
+}
+
+function resultLine(result, c) {
+  const { def, won, deadly, trained, trophy } = result;
   if (!won) return `${def.name} won. It limps home with nothing but a sore everything.`;
-  if (deadly) return `It beat ${def.name}! Trophy: ${STAT_LABELS[trophy]} is now ${computeStats(c)[trophy]}, and its limit went up by ${TROPHY_POINTS}.${legendary ? ` And it grew a Legendary mutation, ${LEGENDARY[legendary].name}: it can now hold two powers.` : ''}`;
+  if (deadly) {
+    const next = def.ultimate && canBeReborn(c) ? ' It has beaten every ultimate monster: it can be reborn now.'
+      : !def.ultimate && ultimatesLeft(c).length === 0 && !c.trophies.some((id) => DEADLY_MONSTERS[id].ultimate) ? ' Every deadly monster is beaten, so the ultimate ones have come out.' : '';
+    return `It beat ${def.name}! Trophy: ${STAT_LABELS[trophy]} is now ${computeStats(c)[trophy]}, and its limit went up by ${TROPHY_POINTS}.${soulLine(result)}${next}`;
+  }
   if (trained) return `It won, and learned something: +1 ${STAT_LABELS[trained]}.`;
   return `It won, but learned nothing this time.`;
 }

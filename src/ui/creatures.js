@@ -152,8 +152,17 @@ function buildRoster(body, note) {
       h('div', { class: 'sect grow', style: 'margin-top:0' }, `Graveyard (${spec.graves.length})`),
       button(spec.showGraves ? 'Hide' : 'Show', () => { spec.showGraves = !spec.showGraves; note.rebuild(); }, 'mini')),
     spec.showGraves && h('div', { class: 'graves' }, spec.graves.map((g) => h('div', { class: 'small' },
-      `${fullName(g)}, ${pathTitle(g)}. ${g.dead.to ? `Gave its One For All to ${g.dead.to}.` : g.dead.by === 'you' ? 'You let it go.' : `Killed by ${g.dead.by}.`}`))),
+      `${fullName(g)}, ${pathTitle(g)}. ${graveLine(g.dead)}`))),
   );
+}
+
+// How it went, for its gravestone.
+function graveLine(dead) {
+  if (dead.by === 'absorbed') return `Absorbed by ${dead.to}, who was reborn.`;
+  if (dead.by === 'the Bloodline Altar') return 'Sacrificed on the Bloodline Altar.';
+  if (dead.to) return `Gave its One For All to ${dead.to}.`;
+  if (dead.by === 'you') return 'You let it go.';
+  return `Killed by ${dead.by}.`;
 }
 
 function card(note, row) {
