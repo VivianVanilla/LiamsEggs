@@ -1,0 +1,228 @@
+{
+  "format": "creature/1",
+  "id": "b4e9e7958dc6c812",
+  "name": "Rinngean farm 2",
+  "lastName": "Ryomen",
+  "lineage": "shrine",
+  "otherLine": "speech",
+  "traits": [
+    "sharingan",
+    "titanshifter"
+  ],
+  "parents": [],
+  "bredAt": 1793990365914,
+  "household": true,
+  "race": "devil",
+  "heritage": null,
+  "pureBlood": false,
+  "born": 1793990322160,
+  "lastSeen": 1793990376554,
+  "summary": {
+    "stage": "Grown",
+    "race": "Devil",
+    "job": "No job yet",
+    "finalForm": false,
+    "power": 59,
+    "maxHp": 426,
+    "colors": {
+      "body": "#fbfaf6",
+      "accent": "#ff6b5e",
+      "tinted": false
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [
+      "Sharingan",
+      "Titan Shifter"
+    ],
+    "timesReborn": null,
+    "weapon": null
+  },
+  "stats": {
+    "might": 19,
+    "guard": 9,
+    "speed": 9,
+    "wits": 12,
+    "vigor": 10
+  },
+  "growth": 90.8,
+  "fullness": 71.25,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 0,
+    "ink": 0,
+    "ember": 0,
+    "goo": 0
+  },
+  "mutations": [],
+  "expanders": 0,
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 0,
+    "total": 0
+  },
+  "training": {
+    "might": 0,
+    "guard": 0,
+    "speed": 0,
+    "wits": 0,
+    "vigor": 0
+  },
+  "path": {
+    "line": [],
+    "xp": 0
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "legendWins": [],
+  "soulOffer": null,
+  "rebirths": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": null
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "weapon": null,
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 0,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 0,
+    "duelsLost": 0,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 0,
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793990376374,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": []
+}

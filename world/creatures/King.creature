@@ -1,0 +1,222 @@
+{
+  "format": "creature/1",
+  "id": "1290dcc4d333c980",
+  "name": "King",
+  "lastName": "Inumaki",
+  "lineage": "speech",
+  "otherLine": "limitless",
+  "traits": [],
+  "parents": [],
+  "bredAt": 1793989883954,
+  "household": false,
+  "race": "lunarian",
+  "heritage": null,
+  "pureBlood": false,
+  "born": 1793989011341,
+  "lastSeen": 1793989011341,
+  "summary": {
+    "stage": "Grown",
+    "race": "Lunarian",
+    "job": "No job yet",
+    "finalForm": false,
+    "power": 50,
+    "maxHp": 464,
+    "colors": {
+      "body": "#947f74",
+      "accent": "#ff6b5e",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [],
+    "timesReborn": null,
+    "weapon": null
+  },
+  "stats": {
+    "might": 9,
+    "guard": 12,
+    "speed": 9,
+    "wits": 9,
+    "vigor": 11
+  },
+  "growth": 90,
+  "fullness": 75,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 0,
+    "ink": 0,
+    "ember": 0,
+    "goo": 0
+  },
+  "mutations": [],
+  "expanders": 0,
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 0,
+    "total": 0
+  },
+  "training": {
+    "might": 0,
+    "guard": 0,
+    "speed": 0,
+    "wits": 0,
+    "vigor": 0
+  },
+  "path": {
+    "line": [],
+    "xp": 0
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "legendWins": [],
+  "soulOffer": null,
+  "rebirths": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": null
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "weapon": null,
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 0,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 0,
+    "duelsLost": 0,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 0,
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793989011341,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": []
+}

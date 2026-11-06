@@ -1,0 +1,226 @@
+{
+  "format": "creature/1",
+  "id": "205a205243b39b1e",
+  "name": "Perfect",
+  "lastName": "Gojo",
+  "lineage": "limitless",
+  "otherLine": "tenshadows",
+  "traits": [
+    "sunbreathing"
+  ],
+  "parents": [],
+  "bredAt": 1793935251563,
+  "household": true,
+  "race": "human",
+  "heritage": null,
+  "pureBlood": false,
+  "born": 1793933845024,
+  "lastSeen": 1793978982751,
+  "summary": {
+    "stage": "Grown",
+    "race": "Human",
+    "job": "Titan Driller",
+    "finalForm": true,
+    "power": 91,
+    "maxHp": 541,
+    "colors": {
+      "body": "#f7a48a",
+      "accent": "#f6d928",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [
+      "Sun Breathing"
+    ],
+    "weapon": null
+  },
+  "stats": {
+    "might": 36,
+    "guard": 12,
+    "speed": 15,
+    "wits": 13,
+    "vigor": 15
+  },
+  "growth": 94.45,
+  "fullness": 49.47,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 0,
+    "ink": 0,
+    "ember": 0,
+    "goo": 0
+  },
+  "mutations": [],
+  "expanders": 0,
+  "palette": {
+    "hues": [
+      {
+        "r": 237,
+        "g": 162,
+        "b": 139,
+        "n": 340.29
+      },
+      {
+        "r": 238,
+        "g": 207,
+        "b": 15,
+        "n": 295.47
+      },
+      {
+        "r": 112,
+        "g": 118,
+        "b": 60,
+        "n": 14.83
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 36,
+        "g": 176,
+        "b": 77,
+        "n": 179.29
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 64,
+        "g": 76,
+        "b": 194,
+        "n": 79.73
+      },
+      {
+        "r": 120,
+        "g": 70,
+        "b": 175,
+        "n": 11.22
+      },
+      {
+        "r": 137,
+        "g": 76,
+        "b": 156,
+        "n": 19.38
+      },
+      {
+        "r": 163,
+        "g": 74,
+        "b": 158,
+        "n": 92.74
+      },
+      {
+        "r": 236,
+        "g": 29,
+        "b": 36,
+        "n": 188.16
+      }
+    ],
+    "grey": 165.64,
+    "total": 1386.76
+  },
+  "training": {
+    "might": 7.608089480351947,
+    "guard": 0,
+    "speed": 5.600458983224226,
+    "wits": 1.5839999999999996,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "miner",
+      "excavator",
+      "driller"
+    ],
+    "xp": 654.4274231788095
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": null
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "weapon": null,
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 484,
+    "gems": 26,
+    "harvested": 0,
+    "duelsWon": 1,
+    "duelsLost": 9,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 0,
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793978982510,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": []
+}

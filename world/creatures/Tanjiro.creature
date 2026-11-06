@@ -1,0 +1,285 @@
+{
+  "format": "creature/1",
+  "id": "577b7f8d84df81b8",
+  "name": "Tanjiro",
+  "lastName": "Gojo",
+  "lineage": "limitless",
+  "otherLine": "flames",
+  "traits": [
+    "cursedbody",
+    "sunbreathing"
+  ],
+  "parents": [
+    {
+      "id": "a6065422871da7e3",
+      "name": "Flygon Jogo"
+    },
+    {
+      "id": "205a205243b39b1e",
+      "name": "Perfect Gojo"
+    }
+  ],
+  "bredAt": 1793936535900,
+  "household": true,
+  "race": "human",
+  "heritage": {
+    "human": 1
+  },
+  "pureBlood": false,
+  "born": 1793935251563,
+  "lastSeen": 1793947993319,
+  "summary": {
+    "stage": "Scrapper",
+    "race": "Human",
+    "job": "Berserker",
+    "finalForm": false,
+    "power": 54,
+    "maxHp": 374,
+    "colors": {
+      "body": "#f6df38",
+      "accent": "#ff8a3c",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [
+      "Cursed Body",
+      "Sun Breathing"
+    ],
+    "weapon": null
+  },
+  "stats": {
+    "might": 13,
+    "guard": 7,
+    "speed": 8,
+    "wits": 18,
+    "vigor": 8
+  },
+  "growth": 87.55,
+  "fullness": 0,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 1,
+    "ink": 0,
+    "ember": 4,
+    "goo": 0
+  },
+  "mutations": [
+    {
+      "id": "smoke",
+      "from": "b75bb232e03c",
+      "at": 1793935647305
+    }
+  ],
+  "expanders": 0,
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 0,
+    "total": 0
+  },
+  "training": {
+    "might": 0.495,
+    "guard": 0,
+    "speed": 0,
+    "wits": 14.696000000000002,
+    "vigor": 0
+  },
+  "path": {
+    "line": [
+      "fighter",
+      "berserker"
+    ],
+    "xp": 568.75
+  },
+  "powers": {
+    "stand": null,
+    "speedster": false,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": "#f6df38"
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "weapon": null,
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 0,
+    "gems": 0,
+    "harvested": 0,
+    "duelsWon": 2,
+    "duelsLost": 39,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 0,
+    "monstersLost": 0,
+    "adventureWins": 0,
+    "adventureBest": 0,
+    "plantsEaten": 0
+  },
+  "farm": {
+    "fields": [],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793947992479,
+    "wateredAt": 0,
+    "nextId": 1
+  },
+  "absorbed": [
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "23a52c57578dbcde",
+      "size": 1024,
+      "at": 1793935646476,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "b75bb232e03cdc0f",
+      "size": 1024,
+      "at": 1793935647305,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "74a2c794baff773d",
+      "size": 1024,
+      "at": 1793936205161,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "b173c70a4567e9b7",
+      "size": 1024,
+      "at": 1793936206552,
+      "snippet": ""
+    },
+    {
+      "ext": "ember",
+      "name": "Fire Pepper",
+      "sha": "afedc6c870073311",
+      "size": 1024,
+      "at": 1793936206913,
+      "snippet": ""
+    }
+  ]
+}

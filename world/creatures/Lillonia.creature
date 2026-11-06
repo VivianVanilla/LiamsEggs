@@ -1,0 +1,712 @@
+{
+  "format": "creature/1",
+  "id": "fa2be4bc255b076f",
+  "name": "Lillonia",
+  "lastName": "Zenin",
+  "lineage": "tenshadows",
+  "otherLine": "limitless",
+  "traits": [
+    "ultrainstinct"
+  ],
+  "parents": [],
+  "bredAt": 1793936535900,
+  "household": true,
+  "race": "human",
+  "heritage": null,
+  "pureBlood": false,
+  "born": 1793933600623,
+  "lastSeen": 1793990520183,
+  "summary": {
+    "stage": "Elder",
+    "race": "Human",
+    "job": "Grove Warden",
+    "finalForm": true,
+    "power": 94,
+    "maxHp": 867,
+    "colors": {
+      "body": "#cef4f9",
+      "accent": "#6fe7ff",
+      "tinted": true
+    },
+    "stand": null,
+    "speedster": true,
+    "technique": null,
+    "secondTechnique": null,
+    "legendary": null,
+    "quirks": [],
+    "devilFruit": null,
+    "oneForAllLevel": null,
+    "bornWith": [
+      "Ultra Instinct"
+    ],
+    "timesReborn": null,
+    "weapon": null
+  },
+  "stats": {
+    "might": 13,
+    "guard": 15,
+    "speed": 23,
+    "wits": 12,
+    "vigor": 31
+  },
+  "growth": 1037.56,
+  "fullness": 79.06,
+  "essence": {
+    "bone": 0,
+    "sap": 0,
+    "spark": 14,
+    "ink": 0,
+    "ember": 0,
+    "goo": 0
+  },
+  "mutations": [
+    {
+      "id": "coillegs",
+      "from": "db5c17b6f1af",
+      "at": 1793938623095
+    },
+    {
+      "id": "zaptail",
+      "from": "a23e6d9a427a",
+      "at": 1793938634029
+    },
+    {
+      "id": "antennae",
+      "from": "f2edd3b76eef",
+      "at": 1793938644667
+    },
+    {
+      "id": "jets",
+      "from": "76940e7703cc",
+      "at": 1793938694198
+    }
+  ],
+  "expanders": 0,
+  "palette": {
+    "hues": [
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      },
+      {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "n": 0
+      }
+    ],
+    "grey": 0,
+    "total": 0
+  },
+  "training": {
+    "might": 0,
+    "guard": 0,
+    "speed": 0,
+    "wits": 0,
+    "vigor": 40
+  },
+  "path": {
+    "line": [
+      "farmer",
+      "cultivator",
+      "warden"
+    ],
+    "xp": 14858.800000000021
+  },
+  "powers": {
+    "stand": null,
+    "speedster": true,
+    "technique": null,
+    "technique2": null,
+    "fruit": null,
+    "quirks": []
+  },
+  "ofa": null,
+  "legendary": null,
+  "trophies": [],
+  "legendWins": [],
+  "soulOffer": null,
+  "rebirths": [],
+  "dead": null,
+  "battle": {
+    "stance": "close",
+    "hurt": "fight",
+    "target": "near",
+    "off": []
+  },
+  "bank": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "blue": 0,
+    "purple": 0,
+    "dust": 0,
+    "gems": 0
+  },
+  "look": {
+    "dye": null
+  },
+  "gear": {
+    "owned": [],
+    "worn": []
+  },
+  "weapon": null,
+  "prep": {
+    "paint": null
+  },
+  "larder": {
+    "pepper": 0,
+    "root": 0,
+    "beet": 0,
+    "bean": 0,
+    "melon": 0,
+    "cap": 0
+  },
+  "fruits": {},
+  "record": {
+    "mined": 0,
+    "gems": 0,
+    "harvested": 5700,
+    "duelsWon": 0,
+    "duelsLost": 0,
+    "arenaWins": 0,
+    "arenaLosses": 0,
+    "monstersBeaten": 0,
+    "monstersLost": 0,
+    "adventureWins": 16,
+    "adventureBest": 14,
+    "plantsEaten": 0
+  },
+  "farm": {
+    "fields": [
+      {
+        "id": 1,
+        "x": 8,
+        "y": 124,
+        "cols": 7,
+        "rows": 6,
+        "crop": "beet",
+        "tiles": [
+          {
+            "s": 2,
+            "t": 1793990454319,
+            "c": "beet"
+          },
+          {
+            "s": 2,
+            "t": 1793990510116,
+            "c": "beet"
+          },
+          {
+            "s": 2,
+            "t": 1793990508806,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990333043
+          },
+          {
+            "s": 2,
+            "t": 1793990440756,
+            "c": "beet"
+          },
+          {
+            "s": 2,
+            "t": 1793990439472,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990303379
+          },
+          {
+            "s": 2,
+            "t": 1793990511400,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990316943
+          },
+          {
+            "s": 2,
+            "t": 1793990433332,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990297923
+          },
+          {
+            "s": 1,
+            "t": 1793990281490
+          },
+          {
+            "s": 2,
+            "t": 1793990435801,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990299344
+          },
+          {
+            "s": 2,
+            "t": 1793990512654,
+            "c": "beet"
+          },
+          {
+            "s": 2,
+            "t": 1793990519027,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990330795
+          },
+          {
+            "s": 1,
+            "t": 1793990277398
+          },
+          {
+            "s": 1,
+            "t": 1793990276120
+          },
+          {
+            "s": 1,
+            "t": 1793990286645
+          },
+          {
+            "s": 1,
+            "t": 1793990287930
+          },
+          {
+            "s": 2,
+            "t": 1793990513976,
+            "c": "beet"
+          },
+          {
+            "s": 2,
+            "t": 1793990517750,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990268427
+          },
+          {
+            "s": 1,
+            "t": 1793990269713
+          },
+          {
+            "s": 1,
+            "t": 1793990295617
+          },
+          {
+            "s": 1,
+            "t": 1793990274800
+          },
+          {
+            "s": 1,
+            "t": 1793990289180
+          },
+          {
+            "s": 2,
+            "t": 1793990515267,
+            "c": "beet"
+          },
+          {
+            "s": 2,
+            "t": 1793990516460,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990321884
+          },
+          {
+            "s": 1,
+            "t": 1793990270963
+          },
+          {
+            "s": 1,
+            "t": 1793990272250
+          },
+          {
+            "s": 1,
+            "t": 1793990273503
+          },
+          {
+            "s": 1,
+            "t": 1793990290466
+          },
+          {
+            "s": 2,
+            "t": 1793990449694,
+            "c": "beet"
+          },
+          {
+            "s": 2,
+            "t": 1793990450915,
+            "c": "beet"
+          },
+          {
+            "s": 1,
+            "t": 1793990325115
+          },
+          {
+            "s": 1,
+            "t": 1793990261887
+          },
+          {
+            "s": 1,
+            "t": 1793990260602
+          },
+          {
+            "s": 1,
+            "t": 1793990259279
+          },
+          {
+            "s": 1,
+            "t": 1793990257999
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "x": 209,
+        "y": 148,
+        "cols": 7,
+        "rows": 5,
+        "crop": "bean",
+        "tiles": [
+          {
+            "s": 1,
+            "t": 1793990251494
+          },
+          {
+            "s": 1,
+            "t": 1793990250207
+          },
+          {
+            "s": 1,
+            "t": 1793990334721
+          },
+          {
+            "s": 1,
+            "t": 1793990346340
+          },
+          {
+            "s": 1,
+            "t": 1793990347632
+          },
+          {
+            "s": 1,
+            "t": 1793990359239
+          },
+          {
+            "s": 1,
+            "t": 1793990360497
+          },
+          {
+            "s": 1,
+            "t": 1793990252779
+          },
+          {
+            "s": 1,
+            "t": 1793990328221
+          },
+          {
+            "s": 1,
+            "t": 1793990336016
+          },
+          {
+            "s": 1,
+            "t": 1793990345091
+          },
+          {
+            "s": 1,
+            "t": 1793990348912
+          },
+          {
+            "s": 1,
+            "t": 1793990357956
+          },
+          {
+            "s": 1,
+            "t": 1793990361789
+          },
+          {
+            "s": 2,
+            "t": 1793990445732,
+            "c": "bean"
+          },
+          {
+            "s": 1,
+            "t": 1793990309869
+          },
+          {
+            "s": 1,
+            "t": 1793990337300
+          },
+          {
+            "s": 1,
+            "t": 1793990343805
+          },
+          {
+            "s": 1,
+            "t": 1793990350203
+          },
+          {
+            "s": 1,
+            "t": 1793990356670
+          },
+          {
+            "s": 1,
+            "t": 1793990363064
+          },
+          {
+            "s": 2,
+            "t": 1793990447017,
+            "c": "bean"
+          },
+          {
+            "s": 1,
+            "t": 1793990291883
+          },
+          {
+            "s": 1,
+            "t": 1793990338582
+          },
+          {
+            "s": 1,
+            "t": 1793990342506
+          },
+          {
+            "s": 1,
+            "t": 1793990351515
+          },
+          {
+            "s": 1,
+            "t": 1793990355376
+          },
+          {
+            "s": 1,
+            "t": 1793990364359
+          },
+          {
+            "s": 2,
+            "t": 1793990429761,
+            "c": "bean"
+          },
+          {
+            "s": 1,
+            "t": 1793990293151
+          },
+          {
+            "s": 1,
+            "t": 1793990339900
+          },
+          {
+            "s": 1,
+            "t": 1793990341219
+          },
+          {
+            "s": 1,
+            "t": 1793990352817
+          },
+          {
+            "s": 1,
+            "t": 1793990354091
+          },
+          {
+            "s": 1,
+            "t": 1793990365677
+          }
+        ]
+      }
+    ],
+    "animals": [],
+    "store": 0,
+    "lastTick": 1793990519222,
+    "wateredAt": 0,
+    "nextId": 3
+  },
+  "absorbed": [
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "46fba1286d136365",
+      "size": 1024,
+      "at": 1793938622910,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "db5c17b6f1af4297",
+      "size": 1024,
+      "at": 1793938623095,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "005ba7d64cec3f0b",
+      "size": 1024,
+      "at": 1793938627661,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "1bf26871b14b17ac",
+      "size": 1024,
+      "at": 1793938627845,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "a23e6d9a427a1a6b",
+      "size": 1024,
+      "at": 1793938634029,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "5f536964bd153a95",
+      "size": 1024,
+      "at": 1793938635414,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "fa7104d8cd843d91",
+      "size": 1024,
+      "at": 1793938642976,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "ec711bfced4ef7cd",
+      "size": 1024,
+      "at": 1793938644412,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "f2edd3b76eef983e",
+      "size": 1024,
+      "at": 1793938644667,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "f7211ef55b8e28a4",
+      "size": 1024,
+      "at": 1793938657224,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "1dba67c5536789c2",
+      "size": 1024,
+      "at": 1793938657415,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "6a7cfafafc55ce01",
+      "size": 1024,
+      "at": 1793938657608,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "606840dc54c20ddb",
+      "size": 1024,
+      "at": 1793938694006,
+      "snippet": ""
+    },
+    {
+      "ext": "spark",
+      "name": "Zip Root",
+      "sha": "76940e7703cc41ec",
+      "size": 1024,
+      "at": 1793938694198,
+      "snippet": ""
+    }
+  ]
+}
