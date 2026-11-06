@@ -3,9 +3,12 @@
 // mutations. The Mega Breeder is bought here too, and the Bloodline Altar has a tab of its own.
 
 import { toast } from './flair.js';
-import { G, saveHouse } from '../state.js';
-import { h, fill, button, openNote, getNote } from './notes.js';
-import { stageOf, mutationCap } from '../core/creature.js';
+import { G, saveHouse, inBout } from '../state.js';
+import { h, fill, button, sureButton, openNote, getNote } from './notes.js';
+import { stageOf, mutationCap, fullName, powerOf, negativeShare } from '../core/creature.js';
+import { afterReset, deluxeProblem, buyDeluxe, boostFor, boostProblem, addBoost, activeBoosts, gemMultiplier } from '../core/universe.js';
+import { awayBases } from '../core/village.js';
+import { DELUXE_BREEDER, BOOSTS } from '../data/universe.js';
 import { megaBreederProblem, buyMegaBreeder } from '../core/family.js';
 import { itemCount, itemProblem, useItem } from '../core/items.js';
 import { MEGA_BREEDER } from '../data/family.js';
@@ -16,7 +19,10 @@ import { buildBreed, freshBreed, loadRows, saveAnywhere } from './breed.js';
 import { buildEggs, freshEggs } from './roll.js';
 import { buildAltar } from './altar.js';
 
-const TABS = [['breed', 'Breed'], ['eggs', 'Eggs'], ['bag', 'Items'], ['altar', 'Altar']];
+const TABS = [['breed', 'Breed'], ['eggs', 'Eggs'], ['bag', 'Items'], ['altar', 'Altar'], ['boost', 'Boosts']];
+// The Boosts tab only exists after a universe reset.
+const tabsNow = () => TABS.filter(([id]) => id !== 'boost' || afterReset(G.house));
+const big = (n) => Math.floor(n).toLocaleString('en-US');
 const bagCount = () => ITEM_IDS.reduce((n, id) => n + itemCount(G.house, id), 0);
 
 export async function openNursery(tab = 'breed') {
@@ -39,7 +45,8 @@ export async function openNursery(tab = 'breed') {
       const items = bagCount();
       fill(body,
         megaCard(note),
-        h('div', { class: 'tabs' }, TABS.map(([id, label]) => button(id === 'bag' && items ? `${label} (${items})` : label, () => {
+        deluxeCard(note),
+        h('div', { class: 'tabs' }, tabsNow().map(([id, label]) => button(id === 'bag' && items ? `${label} (${items})` : label, () => {
           spec.tab = id;
           note.rebuild();
         }, spec.tab === id ? 'hot' : ''))),
@@ -49,6 +56,7 @@ export async function openNursery(tab = 'breed') {
       if (spec.tab === 'eggs') buildEggs(page, note);
       else if (spec.tab === 'bag') buildBag(page, note);
       else if (spec.tab === 'altar') buildAltar(page, note);
+      else if (spec.tab === 'boost' && afterReset(G.house)) buildBoosts(page, note);
       else buildBreed(page, note);
     },
     tick(note) {
@@ -76,6 +84,71 @@ function megaCard(note) {
         note.rebuild();
       }, 'hot', !!problem)),
     problem && h('div', { class: 'small' }, `You have ${Math.floor(G.house.bank.gems)} gems.`));
+}
+
+// ---------- the Deluxe Breeder ----------
+
+// Only after a universe reset: the one way Negative blood breeds.
+function deluxeCard(note) {
+  if (!afterReset(G.house)) return null;
+  if (G.house.deluxeBreeder) {
+    return h('div', { class: 'mega owned void small' }, h('b', null, 'Deluxe Breeder: '), `Negative blood breeds with anyone, and every egg can carry ${DELUXE_BREEDER.gifts} more things.`);
+  }
+  const problem = deluxeProblem(G.house);
+  return h('div', { class: 'mega void' },
+    h('div', { class: 'row nowrap' },
+      h('div', { class: 'grow' },
+        h('div', { class: 'hand', style: 'font-weight:700' }, 'The Deluxe Breeder'),
+        h('div', { class: 'small' }, `The only way a creature of the Negative breeds: with another, or with anyone from the light world. Their babies are half of each, Negative blood and all. Every egg after it can carry ${DELUXE_BREEDER.gifts} more things, on top of the Mega Breeder.`)),
+      button(`Buy: ${big(DELUXE_BREEDER.cost)} gems`, async () => {
+        if (!buyDeluxe(G.house)) return;
+        await saveHouse();
+        toast('THE DELUXE BREEDER! NEGATIVE BLOOD CAN BREED NOW!!!', 'rare');
+        note.rebuild();
+      }, 'hot', !!problem)),
+    problem && h('div', { class: 'small' }, `You have ${big(G.house.bank.gems)} gems.`));
+}
+
+// ---------- creature boosts ----------
+
+function clockOf(ms) {
+  const m = Math.max(0, Math.ceil(ms / 60000));
+  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m} min`;
+}
+
+function buildBoosts(page, note) {
+  const house = G.house;
+  const now = Date.now();
+  const running = activeBoosts(house, now);
+  const away = awayBases(house);
+  const rows = note.spec.breed.rows.slice().sort((a, b) => boostFor(b.c) - boostFor(a.c));
+  fill(page,
+    h('div', { class: 'small' }, `Sacrifice a creature, and every gem you earn for the next ${BOOSTS.hours === 1 ? 'hour' : `${BOOSTS.hours} hours`} is multiplied by what it was worth: from mining, the village, expeditions and Adventure alike. Up to ${BOOSTS.max} run at once, and they multiply each other. The stronger it was, the more it is worth: power, rebirths, trophies, and most of all Negative blood.`),
+    h('div', { class: 'purse' },
+      h('span', null, 'Gems: ', h('b', null, `x${gemMultiplier(house, now).toFixed(1)}`)),
+      h('span', null, h('b', null, `${running.length} of ${BOOSTS.max}`), ' boosts running')),
+    running.map((b) => h('div', { class: 'small' }, h('b', null, `x${b.mult} from ${b.name}`), `, ${clockOf(b.until - now)} left.`)),
+    h('div', { class: 'sect' }, 'Sacrifice for a boost'),
+    h('div', { class: 'roster', style: 'max-height:260px' }, rows.map((r) => {
+      const problem = away.has(r.base) ? `${r.c.name} is away on an expedition` : inBout(r.c) ? `${r.c.name} is in a fight` : boostProblem(house, r.c, now);
+      const neg = negativeShare(r.c);
+      return h('div', { class: 'rosterrow' },
+        h('div', { class: 'grow', style: 'min-width:0' },
+          h('div', { class: 'name' }, `${fullName(r.c)}: x${boostFor(r.c)}`),
+          h('div', { class: 'small' }, problem ?? `${stageOf(r.c).name}, power ${powerOf(r.c)}${r.c.rebirths?.length ? `, reborn ${r.c.rebirths.length}` : ''}${neg ? `, ${Math.round(neg * 100)}% Negative` : ''}.`)),
+        sureButton('Sacrifice', () => boostWith(note, r), 'mini', !!problem));
+    })),
+  );
+}
+
+async function boostWith(note, row) {
+  const boost = addBoost(G.house, row.c, Date.now());
+  if (!boost) return;
+  await saveHouse();
+  await G.getRidOf(row.base, row.c, { by: 'a creature boost' });
+  toast(`${row.c.name.toUpperCase()} WAS SACRIFICED. EVERY GEM IS x${boost.mult} FOR AN HOUR!!! (x${gemMultiplier(G.house).toFixed(1)} IN ALL)`, 'rare');
+  note.spec.breed.rows = await loadRows();
+  note.rebuild();
 }
 
 // ---------- the bag ----------

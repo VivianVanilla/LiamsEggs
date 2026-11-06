@@ -5,10 +5,15 @@
 import { h, fill } from './notes.js';
 import { statText, perkText, describeMove } from '../core/sheet.js';
 import { STAT_LABELS, STAT_LIMITS, TRAINING_LIMIT } from '../core/creature.js';
-import { RACES, RACE_IDS, PURE_BLOOD_CHANCE } from '../data/races.js';
+import { RACES, RACE_IDS, PURE_BLOOD_CHANCE, raceMovesOf } from '../data/races.js';
+import {
+  CLASSES, CLASS_IDS, SPELL_LEVELS, NEN_TYPES, NEN_HEXAGON, NEN_TECHNIQUES, NEN_TECHNIQUE_IDS, NEN_POINTS, KO, HATSU_FORMS, VOWS, VOW_IDS, MAX_VOWS,
+  ALCHEMY_SHAPES, ALCHEMY_ELEMENTS, ALCHEMY_COSTS, MAX_CIRCLES, NEG_LEVELS, NEG_BOSSES, NEG_SCALE, ABILITY_KEYS, ABILITY_LABELS, ABILITY_TEXT,
+} from '../data/negative.js';
+import { BOOSTS, DELUXE_BREEDER } from '../data/universe.js';
 import { PATHS, ROOT_PATHS, ABILITIES, TIER_XP } from '../data/paths.js';
 import {
-  TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, EARNED_TRAIT_IDS, TRAIT_ODDS, EARN_RULES, STANDS, STAND_IDS, STAND_WITS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT,
+  TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, EARNED_TRAIT_IDS, TRAIT_ODDS, EARN_RULES, NEG_TRAIT_IDS, NEG_TRAIT_ODDS, STANDS, STAND_IDS, STAND_WITS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT,
   QUIRKS, QUIRK_IDS, MAX_HP_GIVEN, SPEEDSTER, SPEEDSTER_SPEED, LEGENDARY, SIX_EYES_FAMILY,
 } from '../data/powers.js';
 import { FRUITS, FRUIT_IDS, FRUIT_VIGOR } from '../data/fruits.js';
@@ -19,12 +24,12 @@ import { WEAPONS, WEAPON_IDS } from '../data/forge.js';
 import { ITEMS, ITEM_IDS, EXPANDER_SLOTS } from '../data/items.js';
 import { DEADLY_MONSTERS, DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS, TRAINING_MONSTERS, TRAINING_IDS, TROPHY_POINTS, REBORN, LEGEND_WINS_FOR_ULTIMATE } from '../data/monsters.js';
 import { bredRuleText } from '../core/family.js';
-import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED, ADVENTURE_SOULS, ADVENTURE_ACTS } from '../data/adventure.js';
+import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED, ADVENTURE_SOULS, ADVENTURE_ACTS, ADVENTURE_ELITE, ABYSS_LEVELS, ABYSS_BOSSES, ABYSS } from '../data/adventure.js';
 import { EXPEDITIONS, EXPEDITION_IDS, LEGENDARY_MINE } from '../data/village.js';
 
 export const CODEX_PAGES = [
   ['races', 'Races'], ['jobs', 'Jobs'], ['gifts', 'Gifts'], ['mutations', 'Mutations'], ['powers', 'Powers'],
-  ['gear', 'Gear & loot'], ['monsters', 'Monsters'], ['adventure', 'Adventure'],
+  ['gear', 'Gear & loot'], ['monsters', 'Monsters'], ['adventure', 'Adventure'], ['negative', 'The Negative'],
 ];
 
 const pct = (v) => `${Math.round(v * 100)}%`;
@@ -59,7 +64,7 @@ export function buildCodex(body, note, state) {
   }, label))));
   const page = h('div', { class: 'cx-page scrollnote' });
   fill(body, page);
-  ({ races, jobs, gifts, mutations, powers, gear, monsters, adventure }[state.codex] ?? races)(page);
+  ({ races, jobs, gifts, mutations, powers, gear, monsters, adventure, negative }[state.codex] ?? races)(page);
 }
 
 // ---------- races ----------
@@ -67,17 +72,26 @@ export function buildCodex(body, note, state) {
 function races(page) {
   fill(page,
     intro(`Every creature is born into a race, and most are Human. A bred baby is half of each parent's races, down to quarters. Each race gives its share of its stats; at half or more it also brings its move, its passive and its specialty. 1 in ${Math.round(1 / PURE_BLOOD_CHANCE)} babies of mixed race is born a Pure-blood, with every race at full power.`),
-    RACE_IDS.filter((id) => id !== 'halfdevil').map((id) => {
-      const r = RACES[id];
-      return card(r.name, r.color, r.size ? (r.size > 1 ? 'big' : 'small') : null,
-        h('div', { class: 'cx-blurb' }, r.blurb),
-        said('Stats', Object.keys(r.stats).length ? statText(r.stats) : 'no change'),
-        r.move && said('Move', moveLine(r.move)),
-        r.passive && said('In a fight', r.passive.text),
-        r.village && said('At home', r.village.text),
-        said('Where from', r.from));
-    }),
+    head('Born in the light world'),
+    RACE_IDS.filter((id) => id !== 'halfdevil' && !RACES[id].negative).map(raceCard),
+    head('From the Negative Dimension'),
+    intro('Only after a universe reset. Stronger in the light world than any race born there, and the only blood that wounds what lives in Chapter ???. In the Negative itself, each starts with the ability scores shown.'),
+    RACE_IDS.filter((id) => RACES[id].negative).map(raceCard),
   );
+}
+
+// Everything one race does: its stats, every move, in a fight, at home, and where it comes from.
+function raceCard(id) {
+  const r = RACES[id];
+  const tags = [r.negative && 'Negative', r.size && (r.size > 1 ? 'big' : 'small')].filter(Boolean).join(', ');
+  return card(r.name, r.color, tags || null,
+    h('div', { class: 'cx-blurb' }, r.blurb),
+    said('Stats', Object.keys(r.stats).length ? statText(r.stats) : 'no change'),
+    raceMovesOf(id).map((m, i, all) => said(all.length > 1 ? `Move ${i + 1}` : 'Move', moveLine(m))),
+    said('In a fight', r.passive?.text ?? 'nothing special, and no weakness either'),
+    r.village && said('At home', r.village.text),
+    r.neg && said('In the Negative', ABILITY_KEYS.map((k) => `${ABILITY_LABELS[k]} ${r.neg[k]}`).join(', ')),
+    said('Where from', r.from));
 }
 
 // ---------- jobs ----------
@@ -118,6 +132,10 @@ function gifts(page) {
     EARNED_TRAIT_IDS.map((id) => card(TRAITS[id].name, TRAITS[id].color, 'earned',
       h('div', { class: 'cx-blurb' }, TRAITS[id].blurb),
       said('How', EARN_RULES[id].how))),
+    head('From the Negative'),
+    intro('Only an egg of the Negative Dimension hatches with these. A creature keeps them when it crosses over, and in the light world they pass on by breeding like any born-with gift. They work in every fight, in both worlds.'),
+    NEG_TRAIT_IDS.map((id) => card(TRAITS[id].name, TRAITS[id].color, `1 in ${NEG_TRAIT_ODDS[id]} of the Negative`,
+      h('div', { class: 'cx-blurb' }, TRAITS[id].blurb))),
   );
 }
 
@@ -137,7 +155,7 @@ function mutations(page) {
     head('Legendary mutations'),
     intro('The only way to get one is to beat the monster that gives it, in the Challenges note. A creature holds one, and each Legendary Expander makes room for one more, up to 3. Their stats and fight bonuses add up, and its powers fit if any one of them could hold them all.'),
     Object.entries(LEGENDARY).map(([id, l]) => card(l.name, l.color, 'legendary', h('div', { class: 'cx-blurb' }, l.blurb),
-      said('Stats', statText(l.stats)), l.passive && said('In a fight', l.passive.text), said('From', SOUL_FROM[id] ?? 'nothing yet'))),
+      said('Stats', statText(l.stats)), l.passive && said('In a fight', l.passive.text), l.move && said('Its move', moveLine(l.move)), said('From', SOUL_FROM[id] ?? 'nothing yet'))),
   );
 }
 
@@ -197,7 +215,7 @@ function monsters(page) {
     intro(`Also to the death, but no trophies: each one gives a Legendary mutation and nothing else. Win any ${LEGEND_WINS_FOR_ULTIMATE} and the ultimate monsters come out.`),
     LEGEND_IDS.map((id) => monsterCard(id, stats)),
     head('Ultimate monsters'),
-    intro(`They come out once a creature has won ${LEGEND_WINS_FOR_ULTIMATE} fights on the Legendary road, and they kill just the same. Beat all ${ULTIMATE_IDS.length} and it can be reborn: it absorbs one of your creatures, takes up to ${REBORN.takes} of its gifts, and starts over as a Hatchling with nothing but its gifts.`),
+    intro(`They come out once a creature has won ${LEGEND_WINS_FOR_ULTIMATE} fights on the Legendary road, and they kill just the same. Beat all ${ULTIMATE_IDS.length} and it can be reborn: it absorbs one of your creatures, takes up to ${REBORN.takes} of its gifts, and starts over as a Hatchling with nothing but its gifts. Every time it is reborn, the ultimate monsters come back ${REBORN.harder} times as strong for it again.`),
     ULTIMATE_IDS.map((id) => monsterCard(id, stats)),
   );
 }
@@ -221,9 +239,62 @@ function adventure(page) {
       const bits = prize && [prize.gems && `${prize.gems} gems`, prize.ore && `${prize.ore} ore`, ...Object.entries(prize.items ?? {}).map(([id, k]) => `${k > 1 ? `${k} ` : ''}${ITEMS[id].name}`), prize.found && `a ${RACES[prize.found].name} joins you`].filter(Boolean);
       return h('div', { class: `cx-level${boss ? ' boss' : ''}` },
         h('b', null, `${n}. ${lv.name}`),
-        boss && h('span', { class: 'badge boss' }, boss.name ?? DEADLY_MONSTERS[boss.monster].name),
-        bits?.length > 0 && h('span', { class: 'small' }, ` ${bits.join(', ')}`));
+        boss && h('span', { class: 'badge boss' }, `${boss.twin > 1 ? `${boss.twin} x ` : ''}${boss.name ?? DEADLY_MONSTERS[boss.monster].name}`),
+        bits?.length > 0 && h('span', { class: 'small' }, ` ${bits.join(', ')}`),
+        boss?.passive && h('div', { class: 'small' }, boss.passive.text));
+    }),
+    head('Chapter ???: the Abyss Between'),
+    intro(`Only after a universe reset. ${ABYSS_LEVELS.length} levels, each ${ABYSS.grow} times harder than the last, starting past the end of Act 5. Every enemy is a void-touched Elder of a Negative race: anything without Negative blood only lands ${Math.round((1 - ABYSS.voidGuard) * 100)}% of its damage on them. From level ${ADVENTURE_ELITE}, the end of Adventure, every enemy is an Elder trained to the limit.`),
+    ABYSS_LEVELS.map((lv, i) => {
+      const boss = ABYSS_BOSSES[i + 1];
+      return h('div', { class: `cx-level${boss ? ' boss' : ''}` },
+        h('b', null, `?${i + 1}. ${lv.name}`),
+        boss && h('span', { class: 'badge boss' }, `${boss.twin > 1 ? `${boss.twin} x ` : ''}${boss.name}`),
+        boss?.passive && h('div', { class: 'small' }, boss.passive.text));
     }),
     h('div', { class: 'small', style: 'margin-top:6px' }, `Limits: a stat can reach ${STAT_LIMITS[0]} at best, and work and monsters can add up to +${TRAINING_LIMIT} to one.`),
+  );
+}
+
+// ---------- the Negative Dimension ----------
+
+function negative(page) {
+  fill(page,
+    intro(`Only after a universe reset: beat Adventure level ${ADVENTURE_LEVELS.length}, then reset it in the Adventure note, and every creature you have dies. The Negative is a world of its own that nothing in the reset touches, and it runs on its own rules: no mutations, no jobs, no Stands, techniques, fruits or Quirks. Each creature has six ability scores in the hundreds instead of five stats, levels up by fighting, and fights with ${NEG_SCALE} times the health and hits of the light world. It has three powers of its own: a class, Nen and Alchemy.`),
+    head('Ability scores'),
+    ABILITY_KEYS.map((k) => h('div', { class: 'cx-line' }, h('b', null, `${ABILITY_LABELS[k]}: `), `${ABILITY_TEXT[k]}.`)),
+    head('Classes'),
+    intro('Picked once, for good. Its class decides how its scores grow every level, its health, a feature that works in every fight, and the spells it can prepare: one at first, and one more at every 20th level.'),
+    CLASS_IDS.map((id) => {
+      const k = CLASSES[id];
+      return card(k.name, k.color, `health x${k.hitDie}`,
+        h('div', { class: 'cx-blurb' }, k.blurb),
+        said('Each level', ABILITY_KEYS.map((s) => `+${k.grow[s]} ${ABILITY_LABELS[s]}`).join(', ')),
+        said('Feature', k.feature.text),
+        k.spells.map((s, i) => said(`Level ${SPELL_LEVELS[i]}`, moveLine(s))));
+    }),
+    head('Nen'),
+    intro(`Its Nen type is found by water divination, and it can use the types beside it on the hexagon at 80%, the next at 60% and the one across at 40%. Only a Specialist can use Specialization. It spreads ${NEN_POINTS} points of aura over five techniques, can turn on Ko (every ${KO.every}th swing all of its aura in one fist, then wide open for ${KO.open} seconds), makes a Hatsu of its own, and can swear up to ${MAX_VOWS} vows to make the Hatsu stronger.`),
+    NEN_HEXAGON.map((t) => card(NEN_TYPES[t].name, NEN_TYPES[t].color, 'Nen type',
+      h('div', { class: 'cx-blurb' }, `${NEN_TYPES[t].water} ${NEN_TYPES[t].text}`),
+      Object.values(HATSU_FORMS[t]).map((f) => said(f.name, `${f.text} ${describeMove(f.def)}`)))),
+    NEN_TECHNIQUE_IDS.map((id) => h('div', { class: 'cx-line' }, h('b', null, `${NEN_TECHNIQUES[id].name}: `), NEN_TECHNIQUES[id].text)),
+    head('Vows and limitations'),
+    VOW_IDS.map((id) => h('div', { class: 'cx-line' }, h('b', null, `${VOWS[id].name}, ${VOWS[id].mul} times as strong: `), VOWS[id].text)),
+    head('Alchemy'),
+    intro(`Equivalent exchange. Up to ${MAX_CIRCLES} circles, each a move it designs: a shape, an element, and what it pays every use, in health (up to ${Math.round(ALCHEMY_COSTS.hp.max * 100)}%), in time (${ALCHEMY_COSTS.cd.min} to ${ALCHEMY_COSTS.cd.max} seconds) and in toll on its own attack (up to ${Math.round(ALCHEMY_COSTS.toll.max * 100)}%). The more it pays, the stronger it is.`),
+    h('div', { class: 'cx-grid' }, Object.values(ALCHEMY_SHAPES).map((s) => h('div', { class: 'cx-mini' }, h('b', null, s.name), h('span', null, s.text)))),
+    h('div', { class: 'cx-grid' }, Object.values(ALCHEMY_ELEMENTS).map((el) => h('div', { class: 'cx-mini' }, h('b', null, el.name), h('span', null, `It ${el.text}.`)))),
+    head('Its Adventure'),
+    intro(`${NEG_LEVELS.length} levels. Nobody dies, every fight pays XP, and a win pays Void Shards, the money of the Negative. Whoever wins the last level can cross over to the light world, as a Hatchling of its race with its gifts of the Negative.`),
+    NEG_LEVELS.map((lv, i) => {
+      const boss = NEG_BOSSES[i + 1];
+      return h('div', { class: `cx-level${boss ? ' boss' : ''}` },
+        h('b', null, `${i + 1}. ${lv.name}`),
+        boss && h('span', { class: 'badge boss' }, boss.name),
+        boss?.passive && h('div', { class: 'small' }, boss.passive.text));
+    }),
+    head('Back in the light world'),
+    intro(`A creature that crossed over can go on the Bloodline Altar, so eggs hatch as its race. It can be given up for a creature boost: every gem you earn is multiplied by what it was worth for ${BOOSTS.hours === 1 ? 'an hour' : `${BOOSTS.hours} hours`}, up to ${BOOSTS.max} boosts at once, multiplying each other. And with the Deluxe Breeder (${DELUXE_BREEDER.cost.toLocaleString('en-US')} gems) it breeds with anyone.`),
   );
 }

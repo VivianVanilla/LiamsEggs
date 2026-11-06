@@ -8,13 +8,14 @@
 // store, so everything that mines, harvests, eats or spends works on the shared pool without knowing.
 
 import { clamp, num } from '../lib/util.js';
-import { BANK_KEYS, MAX_BANK, CROP_IDS } from '../data/crafting.js';
+import { BANK_KEYS, MAX_BANK, bankMax, CROP_IDS } from '../data/crafting.js';
 import { FRUITS } from '../data/fruits.js';
 import { RACES, DEFAULT_RACE } from '../data/races.js';
 import { EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE, LEGENDARY_MINE } from '../data/village.js';
 import { WEAPON_IDS, MAX_ARMORY, MAX_ORE } from '../data/forge.js';
 import { ITEM_IDS, MAX_ITEMS } from '../data/items.js';
-import { ADVENTURE_LEVELS, ADVENTURE_PARTY } from '../data/adventure.js';
+import { ADVENTURE_LEVELS, ADVENTURE_PARTY, ABYSS_LEVELS } from '../data/adventure.js';
+import { BOOSTS } from '../data/universe.js';
 import { emptyBank } from './craft.js';
 
 export const MAX_STORE = 9999;
@@ -50,13 +51,33 @@ export const emptyHouse = () => ({
   lost: [],
   // The best Adventure level beaten, and the ids of the party last sent.
   adventure: { best: 0, party: [] },
+  // Only after a universe reset (core/universe.js): the Deluxe Breeder, and the creature boosts
+  // running, each { name, mult, until }.
+  deluxeBreeder: false,
+  boosts: [],
+  // How many times the universe was reset, and how far Chapter ??? got. A reset keeps these.
+  universe: { resets: 0, abyssBest: 0, lastReset: 0 },
 });
+
+const HOUR = 3600 * 1000;
+
+export const sanitizeUniverse = (raw) => ({
+  resets: Math.floor(clamp(num(raw?.resets), 0, 1e6)),
+  abyssBest: Math.floor(clamp(num(raw?.abyssBest), 0, ABYSS_LEVELS.length)),
+  lastReset: Math.max(0, num(raw?.lastReset)),
+});
+
+// Boosts that ran out are gone; none can say it lasts longer than a boost does.
+export const sanitizeBoosts = (raw, now = Date.now()) => (Array.isArray(raw) ? raw : [])
+  .filter((b) => b && num(b.until) > now)
+  .slice(0, BOOSTS.max)
+  .map((b) => ({ name: safeStr(b.name, 60), mult: clamp(num(b.mult, 1), 1, BOOSTS.most), until: Math.min(num(b.until), now + BOOSTS.hours * HOUR) }));
 
 // The household file can be edited by hand, so it gets cleaned like a .creature file. Old saves
 // lose their hostile villages and waves, which no longer exist.
 export function sanitizeHouse(raw) {
   const house = emptyHouse();
-  BANK_KEYS.forEach((k) => { house.bank[k] = clamp(num(raw?.bank?.[k]), 0, MAX_BANK); });
+  BANK_KEYS.forEach((k) => { house.bank[k] = clamp(num(raw?.bank?.[k]), 0, bankMax(k)); });
   CROP_IDS.forEach((id) => { house.larder[id] = Math.floor(clamp(num(raw?.larder?.[id]), 0, MAX_BANK)); });
   house.store = clamp(num(raw?.store), 0, MAX_STORE);
   house.fruits = counts(raw?.fruits, Object.keys(FRUITS), 99);
@@ -95,6 +116,10 @@ export function sanitizeHouse(raw) {
     .map((l) => ({ base: safeStr(l.base, 40), by: safeStr(l.by, 60) }));
   house.adventure.best = Math.floor(clamp(num(raw?.adventure?.best), 0, ADVENTURE_LEVELS.length));
   house.adventure.party = creatureIds(raw?.adventure?.party, ADVENTURE_PARTY);
+  house.universe = sanitizeUniverse(raw?.universe);
+  // What only a reset opens can't be in a household that never had one.
+  house.deluxeBreeder = house.universe.resets > 0 && raw?.deluxeBreeder === true;
+  house.boosts = house.universe.resets > 0 ? sanitizeBoosts(raw?.boosts) : [];
   return house;
 }
 
@@ -102,7 +127,7 @@ export function sanitizeHouse(raw) {
 // shared pool, once. From then on its bank, larder, fruits and food store are the shared ones.
 export function joinHouse(house, c) {
   if (!c.household) {
-    BANK_KEYS.forEach((k) => { house.bank[k] = clamp(house.bank[k] + num(c.bank?.[k]), 0, MAX_BANK); });
+    BANK_KEYS.forEach((k) => { house.bank[k] = clamp(house.bank[k] + num(c.bank?.[k]), 0, bankMax(k)); });
     CROP_IDS.forEach((id) => { house.larder[id] = Math.min(MAX_BANK, house.larder[id] + Math.floor(num(c.larder?.[id]))); });
     Object.entries(c.fruits ?? {}).forEach(([id, n]) => {
       if (Object.hasOwn(FRUITS, id)) house.fruits[id] = Math.min(99, (house.fruits[id] ?? 0) + Math.floor(num(n)));

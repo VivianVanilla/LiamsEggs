@@ -156,8 +156,11 @@ export const LEGEND_IDS = Object.keys(DEADLY_MONSTERS).filter((id) => DEADLY_MON
 export const ULTIMATE_IDS = Object.keys(DEADLY_MONSTERS).filter((id) => DEADLY_MONSTERS[id].ultimate);
 
 // Being reborn: it absorbs another creature, takes this many of its gifts, and goes back to being a
-// Hatchling with nothing else but its name, family, race, look and gifts.
-export const REBORN = { takes: 2 };
+// Hatchling with nothing else but its name, family, race, look and gifts. Every time it has been
+// reborn, the ultimate monsters come out `harder` times as strong for it again, in health and in
+// hits: 1.5 times after one rebirth, 2.25 after two, 3.4 after three. Being reborn over and over is
+// never free.
+export const REBORN = { takes: 2, harder: 1.5 };
 
 // Moves only monsters use, added to ABILITIES in data/paths.js.
 export const MONSTER_MOVES = {
@@ -165,4 +168,11 @@ export const MONSTER_MOVES = {
   webshot:  { name: 'Web Shot',   kind: 'bolt', cd: 9,  power: 0.3, stun: 1.4, range: 420, speed: 520, color: '#e8e8f0' },
   stoop:    { name: 'Dive',       kind: 'dash', cd: 7,  power: 1.8, range: 800, color: '#ffe16a' },
   inkcloud: { name: 'Ink Cloud',  kind: 'nova', cd: 10, power: 0.5, range: 200, poison: 0.3, poisonFor: 5, color: '#7a6ad0' },
+  // Only the bosses of Chapter 5, Chapter ??? and the Negative use these.
+  worldbreak: { name: 'World Break', cry: 'WORLD BREAK', loud: true, kind: 'nova', cd: 12, power: 2.2, range: 300, stun: 1.4, push: 90, color: '#ff3a3a' },
+  oblivion:   { name: 'Oblivion',    cry: 'OBLIVION', loud: true, kind: 'bolt', cd: 11, power: 1.4, silence: 4, range: 620, speed: 700, color: '#6a3aff' },
+  devourstar: { name: 'Star Eater',  cry: 'STAR EATER', loud: true, kind: 'cone', cd: 9, power: 2.6, range: 260, poison: 0.5, poisonFor: 5, color: '#ffb03a' },
+  endtime:    { name: 'The End',     cry: 'THE END', loud: true, kind: 'timestop', cd: 26, dur: 2.5, color: '#ffffff' },
+  tendrils:   { name: 'Tendrils',    cry: 'TENDRILS', loud: true, kind: 'summon', cd: 14, count: 3, minion: 'shadow', color: '#4a4560' },
+  lastlight:  { name: 'Last Light',  cry: 'LAST LIGHT', loud: true, kind: 'bomb', cd: 14, power: 4, fuse: 2.5, splash: 200, range: 700, color: '#fff6c0' },
 };

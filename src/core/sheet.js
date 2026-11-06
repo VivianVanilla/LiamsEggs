@@ -11,7 +11,7 @@ import {
   ofaStats, ofaLimitBonus, tuneMove,
 } from '../data/powers.js';
 import { FRUITS } from '../data/fruits.js';
-import { RACES, DEFAULT_RACE, RACE_FULL_SHARE } from '../data/races.js';
+import { RACES, DEFAULT_RACE, RACE_FULL_SHARE, raceMovesOf } from '../data/races.js';
 import { stillToEarn } from './earned.js';
 import { DEADLY_MONSTERS, TROPHY_POINTS } from '../data/monsters.js';
 import { CHARMS, PAINTS, CHARM_SLOTS } from '../data/crafting.js';
@@ -84,6 +84,11 @@ export function describeMove(d) {
   if (d.selfConfuse) bits.push(`Confuses itself for ${d.selfConfuse} seconds`);
   if (d.selfPoison) bits.push('Poisons itself a little too');
   if (d.selfBuff?.dodge) bits.push(`Nothing can touch it for ${d.selfBuff.left} seconds after`);
+  if (d.splash) bits.push(`Hits everything within ${d.splash} of where it lands too`);
+  if (d.drain) bits.push(`Heals it for ${pct(d.drain)} of the damage`);
+  if (d.toll) bits.push(`Costs ${pct(d.toll)} of its own attack for the rest of the fight, every use`);
+  if (d.cornered) bits.push('Only below half its health');
+  if (d.after) bits.push(`Never in the first ${d.after} seconds`);
   bits.push(d.auto ? `Comes up on its own every ${d.cd} seconds` : `Ready every ${d.cd} seconds`);
   return `${bits.join('. ')}.`;
 }
@@ -192,6 +197,7 @@ export function buildSheet(c) {
   // What its races do, in a fight and at home: every race it is half or more of.
   const raceRows = parts.filter(([, share]) => c.pureBlood || share >= RACE_FULL_SHARE).flatMap(([id]) => [
     RACES[id].passive && { name: `${RACES[id].name}, in a fight`, effect: '', detail: RACES[id].passive.text, limited: '' },
+    ...raceMovesOf(id).filter((m) => ABILITIES[m]).map((m) => ({ name: `${RACES[id].name}, ${ABILITIES[m].name}`, effect: '', detail: describeMove(ABILITIES[m]), limited: '' })),
     RACES[id].village && { name: `${RACES[id].name}, at home`, effect: '', detail: RACES[id].village.text, limited: '' },
   ]).filter(Boolean);
   if (raceRows.length) sections.unshift({ title: 'Its race does', rows: raceRows });
@@ -227,7 +233,7 @@ export function buildSheet(c) {
       note: c.souls.length > 1 ? 'Their stats and fight bonuses add up. Its powers fit if any one of them could hold them all.' : '',
       rows: c.souls.map((id) => {
         const l = LEGENDARY[id];
-        return row(c, l.name, l.stats, `${l.blurb}${l.passive ? ` In a fight: ${l.passive.text}` : ''}`);
+        return row(c, l.name, l.stats, `${l.blurb}${l.passive ? ` In a fight: ${l.passive.text}` : ''}${l.move ? ` Its move, ${ABILITIES[l.move].name}: ${describeMove(ABILITIES[l.move])}` : ''}`);
       }),
     });
   }

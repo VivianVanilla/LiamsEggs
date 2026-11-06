@@ -16,6 +16,11 @@ export const PIGMENT_IDS = Object.keys(PIGMENTS);
 export const BANK_LABELS = { ...Object.fromEntries(PIGMENT_IDS.map((id) => [id, PIGMENTS[id].name])), dust: 'Dust', gems: 'Gems' };
 export const BANK_KEYS = Object.keys(BANK_LABELS);
 export const MAX_BANK = 99999;
+// Gems have a far higher ceiling: after a universe reset, creature boosts can make them grow without
+// end (core/universe.js), and the Deluxe Breeder alone costs more than MAX_BANK.
+export const MAX_GEMS = 1e15;
+// The most the bank can hold of one thing.
+export const bankMax = (k) => (k === 'gems' ? MAX_GEMS : MAX_BANK);
 
 export const familyOfBin = (bin) => PIGMENT_IDS.find((id) => PIGMENTS[id].bins.includes(bin));
 

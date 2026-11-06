@@ -5,7 +5,7 @@ import { toast } from './flair.js';
 import { G, saveCreature, saveHouse, inBout } from '../state.js';
 import { h, fill, sureButton, openNote, closeNote } from './notes.js';
 import { fullName, stageOf, pathTitle } from '../core/creature.js';
-import { canBeReborn, takeable, rebornProblem, beReborn, rebornLosses } from '../core/reborn.js';
+import { canBeReborn, takeable, rebornProblem, beReborn, rebornLosses, timesReborn } from '../core/reborn.js';
 import { awayBases } from '../core/village.js';
 import { TRAITS } from '../data/powers.js';
 import { REBORN } from '../data/monsters.js';
@@ -37,6 +37,7 @@ export async function openReborn() {
         h('p', { style: 'margin:0 0 6px' }, `${c.name} absorbs one of your creatures, which is gone for good, and takes up to ${REBORN.takes} of its gifts. Then ${c.name} goes back to being a Hatchling.`),
         h('div', { class: 'small' }, `It keeps its name, family, race, look, farm and every gift it has. ${lost.length ? `It loses everything else: ${lost.join(', ')}.` : 'Everything else starts again from nothing.'}`),
         h('div', { class: 'small' }, 'Then it can climb back up, beat them all again, and be reborn again with more.'),
+        h('div', { class: 'warning' }, `Every rebirth makes the ultimate monsters ${REBORN.harder} times as strong for it again: after this one, ${(REBORN.harder ** (timesReborn(c) + 1)).toFixed(2)} times as strong as the first time.`),
         h('div', { class: 'sect' }, 'Who it absorbs'),
         rows.length === 0 && h('div', { class: 'small' }, 'There is nobody to absorb. Hatch or breed another creature first, in the Nursery.'),
         h('div', { class: 'roster', style: 'max-height:200px' }, rows.map((r) => {

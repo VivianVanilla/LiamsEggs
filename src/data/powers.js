@@ -156,35 +156,46 @@ export const TECHNIQUE_IDS = Object.keys(TECHNIQUES);
 // get one is to beat the monster that gives it, in the Challenges note (`soul` in data/monsters.js).
 // How many powers a soul holds is `slots` (POWER_SLOTS_LEGENDARY if it doesn't say). `noStand`: no
 // Stand comes out of it. `besideFruit`: its second place is only for a pair with a Devil Fruit in it.
-// `passive` works in every fight, the same way a race's does (data/races.js).
+// `passive` works in every fight, the same way a race's does (data/races.js). `move` is the soul's
+// own move, which it brings to every fight on top of everything else. Every soul is worth about as
+// much as a second power: the two that still hold only one power (Iron and Ghost) make up for it
+// with the strongest passives of all.
 export const LEGENDARY = {
   twinsoul: {
-    name: 'Twin Soul', color: '#ffe14a', stats: { might: 1, guard: 1, speed: 1, wits: 1, vigor: 1 },
-    blurb: 'A second soul growing beside the first. It can hold any two of a Stand, speedster powers and a cursed technique, instead of one.',
+    name: 'Twin Soul', color: '#ffe14a', stats: { might: 3, guard: 3, speed: 3, wits: 3, vigor: 3 }, move: 'twinburst',
+    passive: { echo: 0.3, cooldown: 0.15, text: 'Every move it uses has a 30% chance to go off twice, and its moves come back 15% sooner.' },
+    blurb: 'A second soul growing beside the first, and both of them fight. It can hold any two of a Stand, speedster powers and a cursed technique, instead of one.',
   },
   malevolentsoul: {
-    name: 'Malevolent Soul', color: '#c9302c', stats: { might: 3, vigor: 2 }, apart: true, fruit: true,
-    blurb: 'Something cruel has moved in. It can hold a Stand, plus one more: speedster powers, a cursed technique or a Devil Fruit.',
+    name: 'Malevolent Soul', color: '#c9302c', stats: { might: 6, vigor: 3 }, apart: true, fruit: true, move: 'cruelty',
+    passive: { execute: 0.5, feast: 0.15, text: 'Hits 50% harder against anything below half its health, and heals 15% of its max HP whenever something on the other side goes down.' },
+    blurb: 'Something cruel has moved in, and it can smell weakness. It can hold a Stand, plus one more: speedster powers, a cursed technique or a Devil Fruit.',
   },
   ironsoul: {
-    name: 'Iron Soul', color: '#9aa7b8', stats: { guard: 3, vigor: 2 }, slots: 1,
-    passive: { taken: 0.2, hp: 0.15, text: 'Takes 20% less damage, and has 15% more max HP.' },
-    blurb: 'A soul like a wall. It still holds only one power, but very little gets through to it.',
+    name: 'Iron Soul', color: '#9aa7b8', stats: { guard: 8, vigor: 6, might: 2 }, slots: 1, move: 'ironfortress',
+    passive: {
+      taken: 0.35, hp: 0.4, reflect: 0.3, unstoppable: true,
+      text: 'Takes 35% less damage, has 40% more max HP, throws 30% of every hit it takes back at whoever landed it, and nothing can stun, confuse or silence it.',
+    },
+    blurb: 'A soul like a wall. It still holds only one power, but the wall is worth a second: very little gets through, and whatever does goes straight back.',
   },
   ghostsoul: {
-    name: 'Ghost Soul', color: '#b9c6ec', stats: { speed: 2, wits: 3 }, slots: 1,
-    passive: { dodge: 0.1, crit: 0.12, speed: 0.1, text: '10% more likely to dodge, 12% more critical hits, and moves 10% faster.' },
-    blurb: 'Half of it is always somewhere else. It still holds only one power, but it is hard to hit and hits where it hurts.',
+    name: 'Ghost Soul', color: '#b9c6ec', stats: { speed: 6, wits: 6, might: 2 }, slots: 1, move: 'phaseout',
+    passive: {
+      dodge: 0.2, crit: 0.2, critMul: 0.5, speed: 0.25, horizon: true,
+      text: '20% more likely to dodge, even moves that never miss; 20% more critical hits, which land two and a half times as hard instead of twice; moves 25% faster. Every 5 seconds it phases out, and nothing can touch it for a second.',
+    },
+    blurb: 'Half of it is always somewhere else. It still holds only one power, but it is nearly impossible to hit and hits exactly where it hurts.',
   },
   tidesoul: {
-    name: 'Tide Soul', color: '#2f8fd8', stats: { vigor: 3, might: 2 }, fruit: true, besideFruit: true,
-    passive: { poisonproof: true, text: 'Poison can\'t touch it.' },
+    name: 'Tide Soul', color: '#2f8fd8', stats: { vigor: 6, might: 4 }, fruit: true, besideFruit: true, move: 'tidalwave',
+    passive: { poisonproof: true, regen: 0.02, hp: 0.15, text: 'Poison can\'t touch it, it has 15% more max HP, and it heals 2% of its max HP every second.' },
     blurb: 'The sea gives back what a Devil Fruit takes. It can hold a Devil Fruit beside any one power: a Stand, speedster powers or a cursed technique. Without a fruit, it holds one.',
   },
   warsoul: {
-    name: 'War Soul', color: '#d4542a', stats: { might: 2, speed: 1 }, noStand: true,
-    passive: { crit: 0.08, reach: 20, text: '8% more critical hits, and swings from a little further away.' },
-    blurb: 'Nothing in it waits behind it. It can hold speedster powers and a cursed technique together, but a Stand will never come out of it.',
+    name: 'War Soul', color: '#d4542a', stats: { might: 5, speed: 3, guard: 2 }, noStand: true, move: 'warpath',
+    passive: { crit: 0.15, reach: 30, frenzy: 0.03, text: '15% more critical hits, swings from further away, and every hit it lands makes it 3% stronger for the rest of the fight, up to 60%.' },
+    blurb: 'Nothing in it waits behind it, and it only gets angrier. It can hold speedster powers and a cursed technique together, but a Stand will never come out of it.',
   },
 };
 export const LEGENDARY_ID = 'twinsoul';
@@ -327,6 +338,14 @@ export const POWER_MOVES = {
 
   // From a gift awakened by breeding. `push` throws whatever it hits this far back.
   almightypush: { name: 'Almighty Push', cry: 'ALMIGHTY PUSH', loud: true, kind: 'nova', cd: 10, power: 1.1, range: 210, stun: 0.8, push: 90, color: '#a98bff' },
+
+  // Each Legendary mutation's own move.
+  twinburst:    { name: 'Twin Burst',      cry: 'TWIN BURST',        loud: true, kind: 'bolt', cd: 9,  volley: 2, power: 1.1, range: 540, speed: 820, color: '#ffe14a' },
+  cruelty:      { name: 'Cruel Edge',      cry: 'CRUEL EDGE',        loud: true, kind: 'dash', cd: 9,  power: 2.2, poison: 0.3, poisonFor: 4, range: 700, color: '#c9302c' },
+  ironfortress: { name: 'Iron Fortress',   cry: 'IRON FORTRESS',     loud: true, kind: 'buff', cd: 12, dur: 4, guard: 0.6, atk: 0.3, color: '#c5d0dc' },
+  phaseout:     { name: 'Phase Out',       cry: 'PHASE',             kind: 'buff', cd: 5, auto: true, dur: 1, dodge: 1, color: '#d5def5' },
+  tidalwave:    { name: 'Tidal Wave',      cry: 'TIDAL WAVE',        loud: true, kind: 'nova', cd: 10, power: 1.5, range: 230, stun: 0.8, push: 80, color: '#2f8fd8' },
+  warpath:      { name: 'Warpath',         cry: 'WARPATH',           loud: true, kind: 'cone', cd: 8,  power: 2, range: 200, color: '#ff7a3a' },
 };
 
 // ---------- born with ----------
@@ -439,10 +458,59 @@ export const TRAITS = {
     name: 'Will of D.', color: '#ffcf33', earned: true,
     blurb: 'Hits 10% harder, and shrugs off the first stun or confusion in every fight.',
   },
+
+  // From the Negative Dimension: a creature hatched there can be born with these (NEG_TRAIT_ODDS),
+  // and it keeps them when it crosses over to the light world. Here they pass on by breeding like
+  // any born-with gift. No egg of the light world ever hatches with one. `passive` works in every
+  // fight, in both worlds, the same way a race's does.
+  invertedheart: {
+    name: 'Inverted Heart', color: '#e0e0ff', negative: true, passive: { lives: 1 },
+    blurb: 'Its heart beats backwards. The first time it is knocked out in a fight, the heart turns over and it gets back up with half its health.',
+  },
+  eventhorizon: {
+    name: 'Event Horizon', color: '#3b2f6e', negative: true, passive: { horizon: true, dodge: 0.12 },
+    blurb: 'Light bends around it. 12% more likely to dodge, and it can dodge even the moves that never miss.',
+  },
+  nullfield: {
+    name: 'Null Field', color: '#9a9ab0', negative: true, passive: { nullField: true },
+    blurb: 'Every 6 seconds the Negative leaks out of it: everything on the other side within 220 loses its moves for 2 seconds.',
+  },
+  entropy: {
+    name: 'Entropy', color: '#7d8a6a', negative: true, passive: { decay: 0.25 },
+    blurb: 'Every hit it lands starts something rotting: they keep hurting for 3 seconds after.',
+  },
+  abyssalgaze: {
+    name: 'Abyssal Gaze', color: '#5f2a9e', negative: true, passive: { crit: 0.1, critMul: 1.5 },
+    blurb: '10% more critical hits, and its critical hits land three and a half times as hard instead of twice.',
+  },
+  hollowclock: {
+    name: 'Hollow Clock', color: '#c9b46a', negative: true, passive: { cooldown: 0.4 },
+    blurb: 'Time in it runs hollow: every move it has comes back 40% sooner.',
+  },
+  blacksun: {
+    name: 'Black Sun', color: '#2a1f12', negative: true, passive: { damage: 0.35 },
+    blurb: 'A sun that gives off darkness hangs over it: everything it does lands 35% harder.',
+  },
+  mirrorsoul: {
+    name: 'Mirror Soul', color: '#cfe8f5', negative: true, passive: { reflect: 0.3 },
+    blurb: 'Whatever is done to it is done back: 30% of every hit it takes goes straight back to whoever landed it.',
+  },
+  godslayer: {
+    name: 'Godslayer', color: '#ffcc66', negative: true, passive: { monsterDmg: 1 },
+    blurb: 'Made to kill things bigger than the world: twice the damage against monsters and every boss.',
+  },
+  equivalence: {
+    name: 'Equivalent Exchange', color: '#c9302c', negative: true, passive: { absorb: 0.2 },
+    blurb: 'Nothing is taken without something given back: it heals 20% of all the damage it deals.',
+  },
 };
 export const TRAIT_IDS = Object.keys(TRAITS);
-// What an egg can hatch with. The bred ones never come from an egg, and the earned ones never pass on.
-export const BORN_TRAIT_IDS = TRAIT_IDS.filter((id) => !TRAITS[id].earned && !TRAITS[id].bred);
+// What an egg can hatch with. The bred ones never come from an egg, the earned ones never pass on,
+// and the ones from the Negative only hatch there.
+export const BORN_TRAIT_IDS = TRAIT_IDS.filter((id) => !TRAITS[id].earned && !TRAITS[id].bred && !TRAITS[id].negative);
+// The gifts of the Negative, and one egg in this many hatched there is born with each.
+export const NEG_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].negative);
+export const NEG_TRAIT_ODDS = { invertedheart: 10, eventhorizon: 8, nullfield: 12, entropy: 7, abyssalgaze: 12, hollowclock: 10, blacksun: 9, mirrorsoul: 9, godslayer: 14, equivalence: 9 };
 export const BRED_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].bred);
 export const EARNED_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].earned);
 

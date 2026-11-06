@@ -15,6 +15,7 @@ import { FRUITS } from './data/fruits.js';
 import { VEIN_CHANCE, VEIN_SECONDS, VEIN_UNITS, VEIN_GEM_CHANCE, GEM_CHANCE, CROPS, SPOT_MINE } from './data/crafting.js';
 import { nextJob, doJob, eatFromStore, eatPlant } from './sim/farm.js';
 import { isNurse } from './core/family.js';
+import { gainGems } from './core/universe.js';
 import { CARE_HUNGRY, CARE_ROUND, CARE_XP } from './data/family.js';
 import { dropRig, drawCreature, drawStand, standSpot, drawAfterimages, AFTERIMAGE_GAP, heightOf } from './draw/art.js';
 import { drawBubble } from './draw/scene.js';
@@ -361,7 +362,9 @@ export class Pet {
     c.record.mined += 1;
     if (gem) {
       c.record.gems += 1;
-      c.bank.gems += 1;
+      // Creature boosts multiply what it digs up, the same as every other gem.
+      if (c.household) gainGems(G.house, 1);
+      else c.bank.gems += 1;
     }
     dropRig(c);
     if (Math.random() < VEIN_CHANCE) G.veins.push({ x: cx - 13, y: cy - 13, size: 26, color: css, rgb: color, left: VEIN_SECONDS, pet: this });
@@ -385,7 +388,9 @@ export class Pet {
     const gem = Math.random() < VEIN_GEM_CHANCE;
     if (gem) {
       c.record.gems += 1;
-      c.bank.gems += 1;
+      // Creature boosts multiply what it digs up, the same as every other gem.
+      if (c.household) gainGems(G.house, 1);
+      else c.bank.gems += 1;
     }
     dropRig(c);
     G.fx.float(vein.x + vein.size / 2, vein.y - 8, gem ? 'VEIN! GEM!' : 'VEIN!', vein.color, 18);

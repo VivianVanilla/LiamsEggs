@@ -5,7 +5,7 @@ import { toast, rich } from './flair.js';
 import { G, api, saveCreature, saveHouse, memberOf, creatureText } from '../state.js';
 import { h, fill, button } from './notes.js';
 import { parseCreature, fullName, lastName, lineageOf, otherLineOf, creatureColors, addActivityXp, pathTitle, raceName, stageOf, STAGES } from '../core/creature.js';
-import { breedProblem, breedCost, giftsOf, giftLimit, breed, nurseHelp, mixHeritage, mainRace, awakenChances } from '../core/family.js';
+import { breedProblem, breedCost, giftsOf, giftLimit, breed, nurseHelp, mixHeritage, mainRace, awakenChances, pairProblem } from '../core/family.js';
 import { awayBases } from '../core/village.js';
 import { itemCount, itemProblem, useItem } from '../core/items.js';
 import { PURE_BLOOD_CHANCE } from '../data/races.js';
@@ -24,7 +24,7 @@ const freshChoice = () => ({ family: 'a', look: 'a', style: 'a', race: null, gif
 const parentProblem = (row) => (awayBases(G.house).has(row.base) ? `${row.c.name} is away on an expedition` : breedProblem(row.c));
 
 // Everything that helps an egg along: the nurse out on the screen, and the Mega Breeder.
-export const breedHelp = () => ({ ...nurseHelp(G.team.map((m) => m.c)), mega: !!G.house.megaBreeder });
+export const breedHelp = () => ({ ...nurseHelp(G.team.map((m) => m.c)), mega: !!G.house.megaBreeder, deluxe: !!G.house.deluxeBreeder });
 
 // Every living creature, the ones out on the screen as they are right now.
 export async function loadRows() {
@@ -159,7 +159,7 @@ function buildPicker(page, note) {
     return;
   }
   const [rowA, rowB] = picked.map((base) => rows.find((r) => r.base === base));
-  const problem = parentProblem(rowA) ?? parentProblem(rowB);
+  const problem = parentProblem(rowA) ?? parentProblem(rowB) ?? pairProblem(a, b, help);
   const heritage = mixHeritage(a, b);
   const babyRace = raceName({ heritage, race: mainRace(heritage), pureBlood: false });
   const gifts = giftsOf(a, b);
@@ -184,7 +184,7 @@ function buildPicker(page, note) {
       either(note, 'style', (p) => `${p.name}: ${STANCES[p.battle.stance].name}`),
       sublabel('Race'),
       h('div', { class: 'small' }, rich(`${babyRace}: half of each parent's races, down to quarters.${Object.keys(heritage).length > 1 ? ` 1 in ${Math.round(1 / PURE_BLOOD_CHANCE)} is born a Pure-blood, with every race at full power.` : ''}`))),
-    stepCard(3, 'Passes on', h('span', null, pips(choice.gifts.length, limit), ` ${choice.gifts.length} of ${limit}${help.mega ? ', Mega' : ''}`),
+    stepCard(3, 'Passes on', h('span', null, pips(choice.gifts.length, limit), ` ${choice.gifts.length} of ${limit}${help.deluxe ? ', Deluxe' : help.mega ? ', Mega' : ''}`),
       gifts.length === 0
         ? h('div', { class: 'small' }, 'Neither has a gift, a mutation or a Quirk to pass on yet.')
         : h('div', { class: 'chips' }, gifts.map((g) => {

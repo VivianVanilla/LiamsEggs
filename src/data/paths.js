@@ -5,6 +5,7 @@ import { POWER_MOVES } from './powers.js';
 import { MONSTER_MOVES } from './monsters.js';
 import { RACE_MOVES } from './races.js';
 import { FRUIT_MOVES } from './fruits.js';
+import { NEG_MOVES } from './negative.js';
 
 export const ROOT_PATHS = ['miner', 'farmer', 'fighter', 'nurse'];
 
@@ -207,4 +208,6 @@ export const ABILITIES = {
   ...RACE_MOVES,
   // Devil Fruits
   ...FRUIT_MOVES,
+  // The spells of the Negative Dimension
+  ...NEG_MOVES,
 };

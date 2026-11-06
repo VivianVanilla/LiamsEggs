@@ -5,9 +5,9 @@ import { clamp, makeRng } from '../lib/util.js';
 import { computeStats, parseCreature, serializeCreature, addActivityXp, fitsSouls, soulCap, STAT_KEYS, TRAINING_LIMIT } from '../core/creature.js';
 import { Bout, finishBout } from './arena.js';
 import {
-  TRAINING_MONSTERS, DEADLY_MONSTERS, LEGEND_WINS_FOR_ULTIMATE, TRAINING_CHANCE, TRAINING_SCALE, DEADLY_ROLL, FIGHT_HUNGER, MIN_FULLNESS_TO_FIGHT,
+  TRAINING_MONSTERS, DEADLY_MONSTERS, LEGEND_WINS_FOR_ULTIMATE, TRAINING_CHANCE, TRAINING_SCALE, DEADLY_ROLL, FIGHT_HUNGER, MIN_FULLNESS_TO_FIGHT, REBORN,
 } from '../data/monsters.js';
-import { ultimatesOpen } from '../core/reborn.js';
+import { ultimatesOpen, timesReborn } from '../core/reborn.js';
 
 export const isDeadly = (id) => Object.hasOwn(DEADLY_MONSTERS, id);
 export const monsterDef = (id) => (isDeadly(id) ? DEADLY_MONSTERS[id] : TRAINING_MONSTERS[id]);
@@ -37,11 +37,21 @@ export function fightProblem(c, id) {
   return null;
 }
 
+// How many times as strong the ultimate monsters are for it: REBORN.harder again for every time it
+// has been reborn, so being reborn over and over gets harder every time.
+export const ultimateStrength = (c) => REBORN.harder ** timesReborn(c);
+
 export function startChallenge(c, id, options) {
   const def = monsterDef(id);
   const deadly = isDeadly(id);
   const bout = new Bout([parseCreature(serializeCreature(c))], options);
-  bout.addMonster(def, deadly ? deadlyMonsterStats(def, options?.seed ?? 1) : trainingMonsterStats(c, def));
+  const monster = bout.addMonster(def, deadly ? deadlyMonsterStats(def, options?.seed ?? 1) : trainingMonsterStats(c, def));
+  if (def.ultimate) {
+    const k = ultimateStrength(c);
+    monster.maxHp *= k;
+    monster.hp = monster.maxHp;
+    monster.atk *= k;
+  }
   bout.deadly = deadly;
   return bout;
 }

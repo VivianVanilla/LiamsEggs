@@ -1,6 +1,6 @@
 # Files to draw
 
-**1 to draw**, 165 from a free library, 0 drawn by you, out of 166. Run `npm run art` to refresh this list. To see new files in the game, use **Reload art** in the tray menu.
+**1 to draw**, 177 from a free library, 0 drawn by you, out of 178. Run `npm run art` to refresh this list. To see new files in the game, use **Reload art** in the tray menu.
 
 Every file is a **PNG with a transparent background**, saved in this folder under exactly the name below. The sizes are suggestions; only the creature layers must all share one canvas size.
 
@@ -180,7 +180,7 @@ Same trick as mutations: only the new part, lined up with the body. Nothing show
 | library | `quirks/hardening.png` | Hardening. Goes hard as rock and shrugs most of it off. Sits in front of the body. |
 | library | `quirks/electrification.png` | Electrification. Zaps everything nearby, then short-circuits its own brain for a moment. Sits in front of the body. |
 
-## Races (10)
+## Races (22)
 
 Same trick as mutations: only the new part, lined up with the body. Giants and Tontattas only change size, so they have none. Nothing shows until a file exists. Suggested size: same canvas as creature/body.png.
 
@@ -193,9 +193,21 @@ Same trick as mutations: only the new part, lined up with the body. Giants and T
 | library | `races/halfdevil.png` | Half-devil. Idea: a saw. |
 | library | `races/vampire.png` | Vampire. Idea: drops of blood by its head. |
 | library | `races/cursedalien.png` | Cursed Alien. Idea: a flying saucer over its head. |
+| library | `races/voidling.png` | Voidling. Idea: a hole in the ground under its feet, and two dark moons around its head. |
+| library | `races/antiseraph.png` | Antiseraph. Idea: a black halo. |
+| library | `races/abyssaltitan.png` | Abyssal Titan. Idea: fists of stone, and chains at its wrists. |
+| library | `races/hexborn.png` | Hexborn. Idea: a crystal ball, and a cobweb on its shoulder. |
+| library | `races/mirrorkin.png` | Mirrorkin. Idea: a hand mirror, and a glint. |
+| library | `races/entropywraith.png` | Entropy Wraith. Idea: an hourglass on its chest, and dead leaves at its feet. |
+| library | `races/chimera.png` | Chimera. Idea: a bone with meat on it. |
+| library | `races/homunculus.png` | Homunculus. Idea: a red stone in its chest, and an alembic. |
+| library | `races/dreadwyrm.png` | Dreadwyrm. Idea: purple flames on its shoulders. |
 | library | `races/lunarian-back.png` | Lunarian, the part behind the body. Idea: two big black wings, and a fire burning between them. |
 | library | `races/pillarman-back.png` | Pillar Man, the part behind the body. Idea: the stone pillar it slept in, behind it. |
 | library | `races/dragon-back.png` | Dragon, the part behind the body. Idea: two big red wings. |
+| library | `races/antiseraph-back.png` | Antiseraph, the part behind the body. Idea: two wings of ash. |
+| library | `races/chimera-back.png` | Chimera, the part behind the body. Idea: a snake for a tail. |
+| library | `races/dreadwyrm-back.png` | Dreadwyrm, the part behind the body. Idea: two huge dark purple wings. |
 
 ## Cursed techniques (14)
 

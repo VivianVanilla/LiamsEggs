@@ -7,8 +7,9 @@ import { clamp, hashStr, makeRng } from '../lib/util.js';
 import { stageIndex, powerOf, perksOf, fullName, newCreature, isFinalForm, raceVillage } from './creature.js';
 import { MAX_STORE } from './house.js';
 import { addItem, rollDrops } from './items.js';
+import { gainGems, gemMultiplier } from './universe.js';
 import { PATHS } from '../data/paths.js';
-import { PIGMENT_IDS, CROP_IDS, MAX_BANK, familyOfBin } from '../data/crafting.js';
+import { PIGMENT_IDS, CROP_IDS, MAX_BANK, MAX_GEMS, familyOfBin } from '../data/crafting.js';
 import { FRUIT_IDS, FRUIT_FROM_HARVEST, FRUIT_FROM_EXPEDITION } from '../data/fruits.js';
 import { MAX_ORE } from '../data/forge.js';
 import {
@@ -86,7 +87,7 @@ export function hoursDue(house, now) {
 
 // Puts this many hours of village work into the shared pool. Fractions carry over to next time, so
 // a little every minute adds up exactly. Every plant harvested has the farming chance of a fruit.
-export function runVillage(house, list, hours, rng = Math.random) {
+export function runVillage(house, list, hours, rng = Math.random, now = Date.now()) {
   const works = worksOf(list, house.mine ?? []);
   const boost = 1 + careBoost(works);
   const carry = house.village.carry;
@@ -112,8 +113,9 @@ export function runVillage(house, list, hours, rng = Math.random) {
       }
     }
   }
-  gained.gems = take('gems', works.reduce((s, w) => s + w.gems, 0) * boost * hours);
-  house.bank.gems = clamp(house.bank.gems + gained.gems, 0, MAX_BANK);
+  // Creature boosts multiply every gem, the village's too.
+  gained.gems = take('gems', works.reduce((s, w) => s + w.gems, 0) * boost * hours * gemMultiplier(house, now));
+  house.bank.gems = clamp(house.bank.gems + gained.gems, 0, MAX_GEMS);
   gained.store = take('store', works.reduce((s, w) => s + w.store, 0) * boost * hours);
   house.store = clamp(house.store + gained.store, 0, MAX_STORE);
   gained.ore = take('ore', works.reduce((s, w) => s + w.ore, 0) * boost * hours);
@@ -276,7 +278,7 @@ export function finishExpeditions(house, now = Date.now()) {
     house.lost = [...(house.lost ?? []), ...lost.map((p) => ({ base: p.base, by }))];
     if (lost.length && lost.length === exp.party.length) return { exp, gems: 0, find: null, fruit: null, items: [], lost, allLost: true };
     const haul = expeditionHaul(exp);
-    house.bank.gems = clamp(house.bank.gems + haul.gems, 0, MAX_BANK);
+    haul.gems = Math.floor(gainGems(house, haul.gems, now));
     if (haul.fruit) addFruit(house, haul.fruit);
     haul.items.forEach((id) => addItem(house, id));
     if (haul.find) house.found.push({ race: haul.find, where: exp.where, at: now });

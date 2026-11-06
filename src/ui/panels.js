@@ -33,6 +33,8 @@ import { openNursery } from './nursery.js';
 import { openVillage, expeditionClock, tickClocks, clockText } from './village.js';
 import { openCreatures, renameCreature } from './creatures.js';
 import { openAdventure } from './adventure.js';
+import { openNegative } from './negative.js';
+import { afterReset, gemMultiplier, activeBoosts } from '../core/universe.js';
 import { nextStep } from '../core/advice.js';
 
 // ---------- naming ----------
@@ -155,8 +157,9 @@ export function openMenu() {
       // Who it is, at a glance. The details live in the What it has note.
       // The household at a glance, beside who it is.
       const count = G.everyone.length || G.team.length;
+      const mult = gemMultiplier(G.house);
       const household = [
-        `${Math.floor(G.house.bank.gems)} gems`,
+        `${Math.floor(G.house.bank.gems).toLocaleString('en-US')} gems${mult > 1 ? ` (x${mult.toFixed(1)} for ${activeBoosts(G.house).length} boost${activeBoosts(G.house).length === 1 ? '' : 's'})` : ''}`,
         `${Math.floor(G.house.ore)} ore`,
         `${count} creature${count === 1 ? '' : 's'}`,
         G.house.adventure.best > 0 && `Adventure ${G.house.adventure.best}/${ADVENTURE_LEVELS.length}`,
@@ -222,6 +225,12 @@ export function openMenu() {
           hubButton('powers', 'Stands, techniques, Quirks and the rest, how it fights, and everything it has'),
           hubButton('fight', 'Adventure, training and deadly monsters, and the arena', !!G.challenge),
           hubButton('home', 'Every creature you have, eggs and breeding, and the village')),
+        // Only after a universe reset: the other world.
+        afterReset(G.house) && h('div', { class: 'hubs one' }, h('button', {
+          class: 'btn hubbtn hub-negative',
+          title: 'Its own creatures, classes and spells, Nen and Alchemy, its own Adventure, and crossing over',
+          onclick: () => openNegative(),
+        }, h('b', null, 'The Negative Dimension'), h('small', null, `${G.neg.creatures.length} creature${G.neg.creatures.length === 1 ? '' : 's'} · ${Math.floor(G.neg.shards)} Void Shards`))),
         h('div', { class: 'menufoot' },
           footButton('Codex', leaveMenu(() => openGuide('codex'))),
           footButton('Rename', leaveMenu(openRename)),
@@ -281,6 +290,7 @@ const OPEN = {
   eggs: () => openNursery('eggs'),
   items: () => openNursery('bag'),
   adventure: () => openAdventure(),
+  negative: (tab) => openNegative(tab || null),
   settings: () => openSettings(),
   arena: () => openArena(),
   search: () => openSearch(),

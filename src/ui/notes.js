@@ -58,7 +58,7 @@ export function sureButton(label, onSure, cls = '', disabled = false) {
 }
 
 // Notes that belong to no creature in particular.
-const GLOBAL = new Set(['settings', 'arena', 'creatures', 'village', 'nursery', 'adventure', 'farewell', 'naming', 'search']);
+const GLOBAL = new Set(['settings', 'arena', 'creatures', 'village', 'nursery', 'adventure', 'farewell', 'naming', 'search', 'negative']);
 
 // The hubs, and the notes behind each of their tabs.
 export const HUBS = {

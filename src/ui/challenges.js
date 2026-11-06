@@ -8,7 +8,7 @@ import { h, fill, button, openNote, closeNote, getNote, folds } from './notes.js
 import { parseCreature, serializeCreature, computeStats, soulCap, STAT_LABELS, TRAINING_LIMIT, pathTitle, stageOf } from '../core/creature.js';
 import {
   startChallenge, payForFight, settleChallenge, wonChallenge, fightProblem, trainingFull, oddsOfWinning, monsterDef, isDeadly, beatenAlready,
-  takeSoulOffer, keepSoul, swapsFor,
+  takeSoulOffer, keepSoul, swapsFor, ultimateStrength,
 } from '../sim/challenges.js';
 import {
   TRAINING_MONSTERS, TRAINING_IDS, DEADLY_MONSTERS, DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS, LEGEND_WINS_FOR_ULTIMATE, TRAINING_CHANCE, TROPHY_POINTS, REBORN,
@@ -347,6 +347,9 @@ function buildUltimates(body, note) {
     note.spec.message && h('div', { class: 'warning' }, note.spec.message),
     head,
     h('div', { class: 'warning' }, 'Still to the death.'),
+    h('div', { class: 'small' }, timesReborn(c)
+      ? `Reborn ${timesReborn(c)} time${timesReborn(c) === 1 ? '' : 's'}: every ultimate monster is ${ultimateStrength(c).toFixed(2)} times as strong for it, in health and in hits. Each rebirth makes them ${REBORN.harder} times stronger again.`
+      : `Each time it is reborn, every ultimate monster comes back ${REBORN.harder} times as strong for it, and again the time after.`),
     h('div', { class: 'monsters tall' }, ULTIMATE_IDS.map((id) => deadlyRow(id, note))),
     h('div', { class: 'mega' },
       h('div', { class: 'row nowrap' },
