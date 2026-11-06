@@ -18,8 +18,10 @@ export const MAX_CARE_SAVE = 0.9;
 export const MEGA_BREEDER = { cost: 150, gifts: 3 };
 
 // The Bloodline Altar, also bought once with gems. Sacrifice a creature on it and every race it is
-// at least half of becomes a race the Nursery's eggs can hatch as, for good.
-export const ALTAR = { cost: 200, share: 0.5 };
+// at least half of becomes a race the Nursery's eggs can hatch as, for good. You don't pick: each egg
+// has `eggChance` of being one of them, each as likely, and then `eggShares` says how much of it:
+// all of it, half (with Human), or a quarter. The egg shows which before you keep it.
+export const ALTAR = { cost: 200, share: 0.5, eggChance: 0.3, eggShares: [[1, 0.4], [0.5, 0.4], [0.25, 0.2]] };
 
 // Rolling eggs: the egg on offer is free to keep, and each roll for a different one costs this many
 // gems from the shared bank. Hyper roll keeps rolling until it lands what you asked for, spending at

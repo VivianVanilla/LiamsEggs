@@ -199,7 +199,7 @@ test('in a fight: the gates open low, the domain opens on time, and the Will of 
 // ---------- Malevolent Soul with a Devil Fruit ----------
 
 test('a Malevolent Soul can hold a Stand and a Devil Fruit, but a fruit still goes with nothing else', () => {
-  const evil = grown('Evil', { legendary: 'malevolentsoul' });
+  const evil = grown('Evil', { souls: ['malevolentsoul'] });
   evil.training.vigor = 40;
   evil.essence.sap = 200;
   evil.powers.stand = 'theworld';
@@ -208,7 +208,7 @@ test('a Malevolent Soul can hold a Stand and a Devil Fruit, but a fruit still go
   assert.equal(parseCreature(serializeCreature(evil)).powers.fruit, 'mera', 'and a save keeps both');
   assert.equal(parseCreature(serializeCreature(evil)).powers.stand, 'theworld');
   // Fruit first, then a Stand.
-  const later = grown('Later', { legendary: 'malevolentsoul' });
+  const later = grown('Later', { souls: ['malevolentsoul'] });
   later.training.vigor = 40;
   later.essence.sap = 200;
   assert.ok(eatFruit(later, 'gomu'));
@@ -219,12 +219,12 @@ test('a Malevolent Soul can hold a Stand and a Devil Fruit, but a fruit still go
   later.essence.ember = 200;
   assert.equal(canLearnTechnique(later), false, 'but not a technique: that is the fruit\'s place');
   // A technique and a fruit together is still too much, and so is a fruit for a Twin Soul.
-  const both = grown('Both', { legendary: 'malevolentsoul' });
+  const both = grown('Both', { souls: ['malevolentsoul'] });
   both.training.vigor = 40;
   both.essence.sap = 200;
   both.powers.technique = both.lineage;
   assert.match(fruitProblem(both), /only makes room for a Devil Fruit beside a Stand/);
-  const twin = grown('Twin', { legendary: 'twinsoul' });
+  const twin = grown('Twin', { souls: ['twinsoul'] });
   twin.training.vigor = 40;
   twin.essence.sap = 200;
   twin.powers.stand = 'theworld';

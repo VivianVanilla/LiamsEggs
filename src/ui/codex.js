@@ -19,7 +19,7 @@ import { WEAPONS, WEAPON_IDS } from '../data/forge.js';
 import { ITEMS, ITEM_IDS, EXPANDER_SLOTS } from '../data/items.js';
 import { DEADLY_MONSTERS, DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS, TRAINING_MONSTERS, TRAINING_IDS, TROPHY_POINTS, REBORN, LEGEND_WINS_FOR_ULTIMATE } from '../data/monsters.js';
 import { bredRuleText } from '../core/family.js';
-import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED } from '../data/adventure.js';
+import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED, ADVENTURE_SOULS, ADVENTURE_ACTS } from '../data/adventure.js';
 import { EXPEDITIONS, EXPEDITION_IDS, LEGENDARY_MINE } from '../data/village.js';
 
 export const CODEX_PAGES = [
@@ -135,7 +135,7 @@ function mutations(page) {
         h('div', { class: 'cx-grid' }, list.map((id) => h('div', { class: 'cx-mini' }, h('b', null, MUTATIONS[id].name), h('span', null, statText(MUTATIONS[id].stats))))));
     }),
     head('Legendary mutations'),
-    intro('A creature holds one at a time, and the only way to get one is to beat the monster that gives it, in the Challenges note. If it wins another, you choose which to keep.'),
+    intro('The only way to get one is to beat the monster that gives it, in the Challenges note. A creature holds one, and each Legendary Expander makes room for one more, up to 3. Their stats and fight bonuses add up, and its powers fit if any one of them could hold them all.'),
     Object.entries(LEGENDARY).map(([id, l]) => card(l.name, l.color, 'legendary', h('div', { class: 'cx-blurb' }, l.blurb),
       said('Stats', statText(l.stats)), l.passive && said('In a fight', l.passive.text), said('From', SOUL_FROM[id] ?? 'nothing yet'))),
   );
@@ -213,7 +213,7 @@ function monsterCard(id, stats) {
 
 function adventure(page) {
   fill(page,
-    intro(`${ADVENTURE_LEVELS.length} levels in two acts, for a party of three. Nobody can die. From level ${ADVENTURE_ARMED} the enemy carries forged weapons. The first win of each level pays gems, and some pay more.`),
+    intro(`${ADVENTURE_LEVELS.length} levels in ${ADVENTURE_ACTS.length} acts, for a party of three. Nobody can die. From level ${ADVENTURE_ARMED} the enemy carries forged weapons, from level ${ADVENTURE_SOULS[1]} a Legendary mutation each, and from level ${ADVENTURE_SOULS[2]} two. Each act gets harder faster than the one before. The first win of each level pays gems, and some pay more.`),
     ADVENTURE_LEVELS.map((lv, i) => {
       const n = i + 1;
       const boss = ADVENTURE_BOSSES[n];

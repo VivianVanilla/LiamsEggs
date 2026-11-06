@@ -37,8 +37,8 @@ export function buildAltar(page, note) {
   const away = awayBases(house);
   const offer = rows.filter((r) => altarRacesOf(r.c).length > 0);
   fill(page,
-    h('div', { class: 'small', style: 'font-weight:600' }, `Eggs can hatch as: ${raceList(eggRaces(house))}. Pick one in the Eggs tab.`),
-    h('div', { class: 'small' }, `A creature sacrificed here is gone for good, its file a gravestone. Every race it is at least ${Math.round(ALTAR.share * 100)}% of joins the altar. Human eggs need nothing.`),
+    h('div', { class: 'small', style: 'font-weight:600' }, `Eggs can hatch as: ${raceList(eggRaces(house))}. Nobody picks: each egg has a ${Math.round(ALTAR.eggChance * 100)}% chance of being one of the altar's races, whole, half or a quarter, and the Eggs tab shows which.`),
+    h('div', { class: 'small' }, `A creature sacrificed here is gone for good, its file a gravestone. Every race it is at least ${Math.round(ALTAR.share * 100)}% of joins the altar, so a half-and-half creature adds both. A quarter isn't enough.`),
     h('div', { class: 'sect' }, 'Sacrifice'),
     offer.length === 0 && h('div', { class: 'small' }, 'None of your creatures is at least half of any race but Human. Expeditions, Adventure and breeding bring other races home.'),
     h('div', { class: 'roster', style: 'max-height:220px' }, offer.map((r) => {

@@ -1,6 +1,6 @@
 # Your own creatures, saves, settings and graveyard. The game makes a fresh world folder the first
 # time it starts, so anyone who pulls this gets their own egg instead of your creatures.
-/world/
+/world/ 
 # Each person's world, on its own branch: see "Worlds on their own branches" in the README.
 /Play *.cmd
 

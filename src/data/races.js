@@ -1,7 +1,7 @@
 // Races. Every creature is born into one, and each brings an innate bonus, a fight move, a passive
 // in every fight, and a specialty in the village. Most creatures are Human, the best workers of all.
 // The others come home with expeditions or Adventure, or are bred.
-// The names come from the shows (One Piece, Chainsaw Man). The pictures do not: races/<id>.png are
+// The names come from the shows (One Piece, Chainsaw Man, JoJo's Bizarre Adventure). The pictures do not: races/<id>.png are
 // library pictures placed on the canvas, a Giant is simply drawn bigger and a Tontatta smaller.
 //
 //   passive   in every fight: taken (less damage taken), hp (more max HP), dodge, crit, speed,
@@ -76,6 +76,35 @@ export const RACES = {
     village: { gemsFlat: 0.25, text: 'Makes deals: about a gem every 4 hours, whatever its job.' },
     from: 'Expeditions across the open sea, very rarely, and Adventure level 27.',
   },
+  // From the Bizarre expeditions, which can kill whoever goes. Stronger than any race before them.
+  vampire: {
+    name: 'Vampire', stats: { might: 5, speed: 5, vigor: 6 }, move: 'stingyeyes', color: '#9b1b3a', skin: '#e6e1ee',
+    blurb: 'Made by a stone mask, long ago. Pale, very fast, and it heals from almost anything.',
+    passive: { hp: 0.15, feast: 0.15, poisonproof: true, text: '15% more max HP, poison can\'t touch it, and it heals 15% of its max HP whenever something on the other side goes down.' },
+    village: { gemsFlat: 0.5, text: 'Works all night: about a gem every 2 hours, whatever its job.' },
+    from: 'Bizarre expeditions into the stone ruins.',
+  },
+  pillarman: {
+    name: 'Pillar Man', stats: { might: 8, guard: 5, vigor: 5 }, size: 1.15, move: 'sandstorm', color: '#d9a441', skin: '#b4835a',
+    blurb: 'One of the ancient ones who made the stone masks, asleep inside a pillar for thousands of years. It is drawn a little bigger.',
+    passive: { taken: 0.2, hp: 0.15, text: 'Takes 20% less damage, and has 15% more max HP.' },
+    village: { colors: 0.75, text: 'Digs 75% more colors in the village.' },
+    from: 'Bizarre expeditions into the stone ruins, rarely.',
+  },
+  dragon: {
+    name: 'Dragon', stats: { might: 7, guard: 4, speed: 3, vigor: 4 }, move: 'dragonbreath', color: '#e0472b', skin: '#4f8052',
+    blurb: 'Scaled, winged and very old. It breathes fire, and it hoards anything that shines.',
+    passive: { taken: 0.1, crit: 0.1, reach: 16, text: 'Takes 10% less damage, 10% more critical hits, and swings from a little further away.' },
+    village: { gems: 1, text: 'Hoards: finds twice as many gems in the village.' },
+    from: 'Bizarre expeditions through the rift in the sky, rarely.',
+  },
+  cursedalien: {
+    name: 'Cursed Alien', stats: { wits: 8, speed: 5, might: 3 }, move: 'abduction', color: '#5fd38a', skin: '#86c76e',
+    blurb: 'Fell out of the sky carrying a curse nobody here understands. It knows what you will do, and takes you somewhere else before you do it.',
+    passive: { dodge: 0.12, crit: 0.12, text: '12% more likely to dodge, and 12% more critical hits.' },
+    village: { finds: 2, text: 'An expedition with a Cursed Alien in it is three times as likely to find someone.' },
+    from: 'Bizarre expeditions through the rift in the sky.',
+  },
   halfdevil: {
     name: 'Half-devil', stats: { might: 5, wits: 1, vigor: 1 }, move: 'devilform', color: '#e0503c',
     blurb: 'Half human, half devil. It turns into its devil form in the middle of a fight.',
@@ -89,8 +118,8 @@ export const DEFAULT_RACE = 'human';
 // RACE_BACKS also have races/<id>-back.png, drawn behind the body, for wings and the like.
 // A race with `skin` shades the body toward that color by SKIN_MIX, once it is at least half that
 // race. A dye from the workshop still covers everything.
-export const RACE_PICTURES = ['fishman', 'mink', 'lunarian', 'devil', 'halfdevil'];
-export const RACE_BACKS = ['lunarian'];
+export const RACE_PICTURES = ['fishman', 'mink', 'lunarian', 'devil', 'halfdevil', 'vampire', 'cursedalien'];
+export const RACE_BACKS = ['lunarian', 'pillarman', 'dragon'];
 export const SKIN_MIX = 0.65;
 export const RACE_IDEAS = {
   fishman: 'a wave around its feet',
@@ -98,9 +127,13 @@ export const RACE_IDEAS = {
   lunarian: 'small flames on its shoulders',
   devil: 'a trident',
   halfdevil: 'a saw',
+  vampire: 'drops of blood by its head',
+  cursedalien: 'a flying saucer over its head',
 };
 export const RACE_BACK_IDEAS = {
   lunarian: 'two big black wings, and a fire burning between them',
+  pillarman: 'the stone pillar it slept in, behind it',
+  dragon: 'two big red wings',
 };
 
 // Their fight moves, added to ABILITIES in data/paths.js.
@@ -113,6 +146,10 @@ export const RACE_MOVES = {
   longreach: { name: 'Long Reach', cry: 'LONG REACH', loud: true, kind: 'bolt', cd: 7, power: 1.1, range: 320, speed: 900, color: '#b08ad6' },
   impactdial: { name: 'Impact Dial', cry: 'IMPACT', loud: true, kind: 'bolt', cd: 9, power: 1.4, stun: 0.5, range: 260, speed: 800, color: '#9fd8ff' },
   devilpact: { name: 'Devil\'s Contract', cry: 'CONTRACT', loud: true, kind: 'bolt', cd: 12, power: 0.6, silence: 3, poison: 0.2, poisonFor: 4, range: 460, speed: 560, color: '#c9302c' },
+  stingyeyes: { name: 'Space Ripper Stingy Eyes', cry: 'SPACE RIPPER STINGY EYES', loud: true, kind: 'bolt', cd: 8, power: 1.6, range: 560, speed: 1200, color: '#e8f4ff' },
+  sandstorm: { name: 'Divine Sandstorm', cry: 'DIVINE SANDSTORM', loud: true, kind: 'cone', cd: 10, power: 1.7, range: 220, stun: 0.8, color: '#d9b26a' },
+  dragonbreath: { name: 'Dragon Breath', cry: 'DRAGON BREATH', loud: true, kind: 'cone', cd: 9, power: 1.8, range: 230, poison: 0.25, poisonFor: 4, color: '#ff6a2a' },
+  abduction: { name: 'Abduction Beam', cry: 'ABDUCTION', loud: true, kind: 'bolt', cd: 10, power: 0.8, stun: 1.8, silence: 2, range: 520, speed: 650, color: '#7dff9a' },
   devilform: { name: 'Devil Form', cry: 'DEVIL FORM', loud: true, kind: 'buff', cd: 14, dur: 4, atk: 0.5, dodge: 0.15, color: '#e0503c' },
 };
 

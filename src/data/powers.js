@@ -339,6 +339,11 @@ export const SLAYER_MARK = { damage: 0.15, speed: 0.15 };
 export const ACKERMAN = { twice: 0.35 };
 // Scarlet Eyes: its moves come back this much sooner.
 export const SCARLET_EYES = { moves: 0.35 };
+// Void Aura: this much more damage, from everything it does. Born with, from an egg.
+export const VOID_AURA = 0.1;
+// Philosopher's Heart: the one move picked for it in the battle plan comes back this much sooner.
+// Born with, from an egg.
+export const PHILOSOPHER_HEART = 0.6;
 const pctOf = (v) => `${Math.round(v * 100)}%`;
 
 // Rare gifts it hatched with, or got from a parent. Nobody can buy or train one. The creature has
@@ -379,6 +384,14 @@ export const TRAITS = {
   onepunch: {
     name: 'One Punch', color: '#f2d66b',
     blurb: 'Every 10th swing is a Serious Punch, for five times the damage.',
+  },
+  voidaura: {
+    name: 'Void Aura', color: '#6a4bd8',
+    blurb: `A darkness hangs around it: all its damage is ${pctOf(VOID_AURA)} higher, swings, moves and poison alike.`,
+  },
+  philosopher: {
+    name: 'Philosopher\'s Heart', color: '#d0263f',
+    blurb: `A red stone where its heart should be: pick one of its moves in the battle plan, and that move comes back ${pctOf(PHILOSOPHER_HEART)} sooner. A 10-second move is ready again in ${Math.round(10 * (1 - PHILOSOPHER_HEART))}.`,
   },
 
   // Awakened by breeding: no egg ever hatches with one. A bred baby can awaken one when its parents
@@ -457,7 +470,7 @@ export const EARN_RULES = {
 
 // One hatchling in this many is born with each. Six Eyes is only ever born into the Gojo family,
 // though a parent can pass it to anyone.
-export const TRAIT_ODDS = { sixeyes: 5, sharingan: 12, cursedbody: 12, titanshifter: 25, saiyan: 30, haki: 25, sunbreathing: 20, ninetails: 40, onepunch: 30 };
+export const TRAIT_ODDS = { sixeyes: 5, sharingan: 12, cursedbody: 12, titanshifter: 25, saiyan: 30, haki: 25, sunbreathing: 20, ninetails: 40, onepunch: 30, voidaura: 15, philosopher: 30 };
 export const SIX_EYES_FAMILY = 'limitless';
 export const SIX_EYES_EVERY = 4;
 // A copy is never quite as strong as the real thing.

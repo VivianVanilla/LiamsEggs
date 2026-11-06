@@ -2,13 +2,26 @@
 // a roll is a new id. Pure logic with no DOM, so tests can run it.
 
 import { uid } from '../lib/util.js';
-import { newCreature, lineageFromId, otherLineFromId, bornWith } from './creature.js';
+import { newCreature, lineageFromId, otherLineFromId, bornWith, eggRoll } from './creature.js';
 import { TECHNIQUE_IDS, TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY } from '../data/powers.js';
-import { RACES } from '../data/races.js';
+import { RACES, DEFAULT_RACE } from '../data/races.js';
+import { ALTAR } from '../data/family.js';
 
-export const eggFromId = (id) => {
+// What race an egg hatches as, from its id and the races on the Bloodline Altar: null for Human, or
+// a heritage like { giant: 0.5, human: 0.5 }.
+export function eggHeritage(id, altarRaces = []) {
+  const races = altarRaces.filter((r) => Object.hasOwn(RACES, r) && r !== DEFAULT_RACE);
+  if (!races.length || eggRoll(id, 'altar') >= ALTAR.eggChance) return null;
+  const race = races[Math.floor(eggRoll(id, 'altar race') * races.length)];
+  const roll = eggRoll(id, 'altar share');
+  let edge = 0;
+  const share = ALTAR.eggShares.find(([, p]) => roll < (edge += p))?.[0] ?? 1;
+  return share === 1 ? { [race]: 1 } : { [race]: share, [DEFAULT_RACE]: 1 - share };
+}
+
+export const eggFromId = (id, altarRaces = []) => {
   const lineage = lineageFromId(id);
-  return { id, lineage, otherLine: otherLineFromId(id, lineage), traits: bornWith(id, lineage) };
+  return { id, lineage, otherLine: otherLineFromId(id, lineage), traits: bornWith(id, lineage), heritage: eggHeritage(id, altarRaces) };
 };
 
 export const rollEgg = (rng = Math.random) => eggFromId(uid(rng));
@@ -38,14 +51,17 @@ export function hyperRoll(want, budget, rng = Math.random) {
   return { egg, rolls: budget, found: false };
 }
 
-// The egg you keep hatches into a creature with exactly that family and those gifts, and as the race
-// asked for, if the Bloodline Altar has it.
-export function hatchEgg(egg, name, now = Date.now(), race = null) {
+// The egg you keep hatches into a creature with exactly that family, those gifts and that race.
+export function hatchEgg(egg, name, now = Date.now()) {
   const c = newCreature(name, now);
   c.id = egg.id;
   c.lineage = egg.lineage;
   c.otherLine = egg.otherLine;
   c.traits = TRAIT_IDS.filter((t) => egg.traits.includes(t));
-  if (race && Object.hasOwn(RACES, race)) c.race = race;
+  if (egg.heritage) {
+    const [race, share] = Object.entries(egg.heritage).find(([r]) => r !== DEFAULT_RACE);
+    c.race = race;
+    if (share < 1) c.heritage = { ...egg.heritage };
+  }
   return c;
 }

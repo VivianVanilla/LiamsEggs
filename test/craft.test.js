@@ -192,10 +192,10 @@ test('a move switched off is never used, and every stance can finish a fight', (
 
 test('a battle plan survives saving, and a hostile one is defused', () => {
   const c = plainCreature('Planner');
-  c.battle = { stance: 'bounce', hurt: 'berserk', target: 'weak', off: ['zap'] };
+  c.battle = { stance: 'bounce', hurt: 'berserk', target: 'weak', off: ['zap'], heart: 'zap' };
   assert.deepEqual(parseCreature(serializeCreature(c)).battle, c.battle);
   const evil = sanitizeCreature({ format: 'creature/1', battle: { stance: '__proto__', hurt: 'constructor', target: 5, off: ['zap', 'zap', '__proto__', 7, 'nothing'] } });
-  assert.deepEqual(evil.battle, { stance: 'close', hurt: 'fight', target: 'near', off: ['zap'] });
+  assert.deepEqual(evil.battle, { stance: 'close', hurt: 'fight', target: 'near', off: ['zap'], heart: null });
   assert.equal(sanitizeCreature({ format: 'creature/1' }).battle.stance, 'close', 'old saves keep close');
   STANCE_IDS.forEach((id) => assert.ok(STANCES[id].name && STANCES[id].blurb));
   Object.values(HURT_PLANS).forEach((p) => assert.ok(p.name && p.blurb));
@@ -266,7 +266,7 @@ test('it can only be one of the three', () => {
 
 test('a Legendary mutation makes room for exactly one more', () => {
   const c = readyForAll();
-  c.legendary = LEGENDARY_ID;
+  c.souls = [LEGENDARY_ID];
   assert.equal(powerSlots(c), 2);
   assert.ok(learnTechnique(c));
   assert.ok(becomeSpeedster(c));
@@ -274,7 +274,7 @@ test('a Legendary mutation makes room for exactly one more', () => {
   assert.equal(canAwakenStand(c), false, 'two is the limit');
   assert.equal(awakenStand(c), null);
   const back = parseCreature(serializeCreature(c));
-  assert.equal(back.legendary, LEGENDARY_ID);
+  assert.deepEqual(back.souls, [LEGENDARY_ID]);
   assert.equal(back.powers.technique, lineageOf(c));
   assert.equal(back.powers.speedster, true);
 });
@@ -282,7 +282,7 @@ test('a Legendary mutation makes room for exactly one more', () => {
 test('a Malevolent Soul holds a Stand and one other, but never the other two together', () => {
   const maker = () => {
     const c = readyForAll();
-    c.legendary = MALEVOLENT_ID;
+    c.souls = [MALEVOLENT_ID];
     return c;
   };
   assert.ok(LEGENDARY[MALEVOLENT_ID].apart && !LEGENDARY[LEGENDARY_ID].apart);
@@ -314,14 +314,14 @@ test('a Malevolent Soul holds a Stand and one other, but never the other two tog
 
   // Twin Soul has no such rule.
   const e = readyForAll();
-  e.legendary = LEGENDARY_ID;
+  e.souls = [LEGENDARY_ID];
   assert.ok(becomeSpeedster(e));
   assert.ok(learnTechnique(e), 'any two');
   assert.equal(powersHeld(e), 2);
 
   // A file gets the same rule, and it survives a save.
   const back = parseCreature(serializeCreature(a));
-  assert.equal(back.legendary, MALEVOLENT_ID);
+  assert.deepEqual(back.souls, [MALEVOLENT_ID]);
   assert.deepEqual([!!back.powers.stand, back.powers.speedster], [true, true]);
   const evil = sanitizeCreature({ format: 'creature/1', legendary: MALEVOLENT_ID, powers: { speedster: true, technique: 'shrine' } });
   assert.equal(evil.powers.speedster, true);
@@ -332,7 +332,7 @@ test('a Malevolent Soul holds a Stand and one other, but never the other two tog
   // Its bonus really counts, and the sheet explains it.
   const plain = plainCreature('Plain');
   const cruel = parseCreature(serializeCreature(plain));
-  cruel.legendary = MALEVOLENT_ID;
+  cruel.souls = [MALEVOLENT_ID];
   assert.equal(computeStats(cruel).might, computeStats(plain).might + LEGENDARY[MALEVOLENT_ID].stats.might);
   assert.ok(buildSheet(cruel)[0].rows[0].detail.includes('Stand'));
 });
@@ -345,7 +345,7 @@ test('a file can\'t hold more powers than it has places for', () => {
   const legend = sanitizeCreature({ format: 'creature/1', powers: all, legendary: LEGENDARY_ID });
   assert.equal(powersHeld(legend), 2);
   const fake = sanitizeCreature({ format: 'creature/1', powers: all, legendary: '__proto__' });
-  assert.equal(fake.legendary, null);
+  assert.deepEqual(fake.souls, []);
   assert.equal(powersHeld(fake), 1);
   assert.equal(sanitizeCreature({ format: 'creature/1', powers: { technique: 'constructor' } }).powers.technique, null);
 });
@@ -430,15 +430,15 @@ test('food never grows a Legendary mutation, and one doesn\'t take a mutation pl
     const hex = (n) => n.toString(16).padStart(8, '0');
     absorbFile(c, { ext: 'ink', name: 'a', sha: `${hex(i * 2654435761 >>> 0)}${hex((i * 40503 + 7) >>> 0)}aa`, size: 32 * 1024, snippet: '' });
     assert.equal(c.mutations.length, 1);
-    assert.equal(c.legendary, null);
+    assert.deepEqual(c.souls, []);
   }
 
   const c = plainCreature('Twice');
-  c.legendary = LEGENDARY_ID;
+  c.souls = [LEGENDARY_ID];
   for (let i = 0; i < MAX_MUTATIONS + 3; i++) c.mutations.push({ id: MUTATION_IDS[i], from: '', at: 0 });
   c.mutations.length = MAX_MUTATIONS;
   const stats = computeStats(c);
-  c.legendary = null;
+  c.souls = [];
   const without = computeStats(c);
   assert.ok(STAT_KEYS.every((k) => stats[k] >= without[k]), 'it only ever helps');
   assert.equal(c.mutations.length, MAX_MUTATIONS);
@@ -452,7 +452,7 @@ test('only beating the monster that gives it grows a Legendary mutation, and a s
   for (const id of [...TRAINING_IDS, ...Object.keys(DEADLY_MONSTERS)].filter((m) => !DEADLY_MONSTERS[m]?.soul)) {
     const c = plainCreature('Plain');
     [0, 0.001, 0.01, 0.5, 0.99].forEach((roll) => settleChallenge(c, id, true, roll));
-    assert.equal(c.legendary, null, `${id} gives none`);
+    assert.deepEqual(c.souls, [], `${id} gives none`);
     assert.equal(c.soulOffer, null);
   }
 
@@ -460,35 +460,36 @@ test('only beating the monster that gives it grows a Legendary mutation, and a s
   const res = settleChallenge(slayer, 'dragon', true, 0.99);
   assert.equal(res.legendary, LEGENDARY_ID);
   assert.equal(res.trophy, 'might', 'and its trophy as well');
-  assert.equal(slayer.legendary, LEGENDARY_ID);
+  assert.deepEqual(slayer.souls, [LEGENDARY_ID]);
   // A second one waits for you: nothing changes until you choose, even through a save.
   const second = settleChallenge(slayer, 'rex', true, 0);
   assert.equal(second.legendary, null);
   assert.equal(second.offer, MALEVOLENT_ID);
-  assert.equal(slayer.legendary, LEGENDARY_ID);
+  assert.deepEqual(slayer.souls, [LEGENDARY_ID]);
   assert.equal(parseCreature(serializeCreature(slayer)).soulOffer, MALEVOLENT_ID);
   keepSoul(slayer);
   assert.equal(slayer.soulOffer, null);
-  assert.equal(slayer.legendary, LEGENDARY_ID);
+  assert.deepEqual(slayer.souls, [LEGENDARY_ID]);
   slayer.soulOffer = MALEVOLENT_ID;
-  assert.equal(takeSoulOffer(slayer), LEGENDARY_ID, 'it says what it gave up');
-  assert.equal(slayer.legendary, MALEVOLENT_ID);
+  assert.equal(takeSoulOffer(slayer), false, 'no room: it has to give one up');
+  assert.equal(takeSoulOffer(slayer, LEGENDARY_ID), true);
+  assert.deepEqual(slayer.souls, [MALEVOLENT_ID]);
   assert.equal(slayer.soulOffer, null);
-  assert.equal(takeSoulOffer(slayer), false, 'nothing left to take');
+  assert.equal(takeSoulOffer(slayer, MALEVOLENT_ID), false, 'nothing left to take');
   // A file can't offer it the soul it already has.
   slayer.soulOffer = MALEVOLENT_ID;
   assert.equal(parseCreature(serializeCreature(slayer)).soulOffer, null);
 
   // A new soul can't cost it a power: a Stand with a Devil Fruit beside it doesn't fit a Twin Soul.
   const fruity = plainCreature('Fruity');
-  fruity.legendary = MALEVOLENT_ID;
+  fruity.souls = [MALEVOLENT_ID];
   fruity.powers.stand = 'theworld';
   fruity.powers.fruit = Object.keys(FRUITS)[0];
   const kept = settleChallenge(fruity, 'dragon', true, 0.99);
   assert.equal(kept.noFit, LEGENDARY_ID);
   assert.equal(kept.offer, undefined);
   assert.equal(fruity.soulOffer, null);
-  assert.equal(fruity.legendary, MALEVOLENT_ID);
+  assert.deepEqual(fruity.souls, [MALEVOLENT_ID]);
   assert.equal(parseCreature(serializeCreature(fruity)).powers.fruit, fruity.powers.fruit, 'and it keeps its fruit');
 });
 
@@ -710,7 +711,7 @@ test('a snack is free, fills it and grows it, and never changes it', () => {
     eatSnack(c);
   }
   assert.equal(c.mutations.length, 0, 'no amount of snacks mutates it');
-  assert.equal(c.legendary, null);
+  assert.deepEqual(c.souls, []);
   assert.ok(Object.values(c.essence).every((v) => v === 0), 'and they add no essence');
   assert.equal(c.absorbed.length, 0);
   c.fullness = 95;
@@ -821,7 +822,7 @@ test('plants respect the mutation limit, and never bring a Legendary mutation', 
   }
   assert.ok(c.mutations.length <= MAX_MUTATIONS);
   assert.equal(c.mutations.length, MAX_MUTATIONS);
-  assert.equal(c.legendary, null);
+  assert.deepEqual(c.souls, []);
 });
 
 // ---------- the sheet says what everything does ----------
@@ -845,7 +846,7 @@ test('the sheet lists what it has and what each thing does', () => {
   c.path.line = ['fighter', 'tactician', 'grandmaster'];
   c.powers.stand = 'theworld';
   c.powers.quirks.push('oneforall');
-  c.legendary = LEGENDARY_ID;
+  c.souls = [LEGENDARY_ID];
   c.powers.technique = 'shrine';
   c.trophies.push('rat');
   c.bank = { ...emptyBank(), dust: 500 };

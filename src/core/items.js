@@ -1,7 +1,7 @@
 // The household's bag of loot, and using what is in it. Pure logic with no DOM, so tests can run it.
 
 import { clamp } from '../lib/util.js';
-import { ITEMS, MAX_ITEMS, CHAMBER_STAGE, CHAMBER_FULLNESS, MAX_EXPANDERS } from '../data/items.js';
+import { ITEMS, MAX_ITEMS, CHAMBER_STAGE, CHAMBER_FULLNESS, MAX_EXPANDERS, MAX_SOUL_EXPANDERS } from '../data/items.js';
 import { STAGES, stageIndex } from './creature.js';
 
 export const itemCount = (house, id) => house.items?.[id] ?? 0;
@@ -21,6 +21,7 @@ export function itemProblem(house, id, c) {
   if (!c || c.dead) return 'It only works on a living creature';
   if (id === 'chamber' && stageIndex(c) >= CHAMBER_STAGE) return `${c.name} is already ${STAGES[CHAMBER_STAGE].name}`;
   if (id === 'expander' && (c.expanders ?? 0) >= MAX_EXPANDERS) return `${c.name} has already taken ${MAX_EXPANDERS}`;
+  if (id === 'soulexpander' && (c.soulExpanders ?? 0) >= MAX_SOUL_EXPANDERS) return `${c.name} has already taken ${MAX_SOUL_EXPANDERS}`;
   return null;
 }
 
@@ -32,5 +33,6 @@ export function useItem(house, id, c) {
     c.fullness = Math.max(c.fullness, CHAMBER_FULLNESS);
   }
   if (id === 'expander') c.expanders = (c.expanders ?? 0) + 1;
+  if (id === 'soulexpander') c.soulExpanders = (c.soulExpanders ?? 0) + 1;
   return true;
 }

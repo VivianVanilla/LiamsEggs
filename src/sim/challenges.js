@@ -2,7 +2,7 @@
 // The fight itself uses a copy, so nothing here changes the creature until settleChallenge().
 
 import { clamp, makeRng } from '../lib/util.js';
-import { computeStats, parseCreature, serializeCreature, addActivityXp, fitsSoul, STAT_KEYS, TRAINING_LIMIT } from '../core/creature.js';
+import { computeStats, parseCreature, serializeCreature, addActivityXp, fitsSouls, soulCap, STAT_KEYS, TRAINING_LIMIT } from '../core/creature.js';
 import { Bout, finishBout } from './arena.js';
 import {
   TRAINING_MONSTERS, DEADLY_MONSTERS, LEGEND_WINS_FOR_ULTIMATE, TRAINING_CHANCE, TRAINING_SCALE, DEADLY_ROLL, FIGHT_HUNGER, MIN_FULLNESS_TO_FIGHT,
@@ -53,31 +53,35 @@ export function payForFight(c, id) {
 
 export const wonChallenge = (bout) => bout.winner?.team === 0;
 
-// A Legendary mutation it won. With none yet it just grows it. With one already, the new one waits
-// in c.soulOffer for you to take it or keep the old one. Either way, only if its powers all fit:
-// trading souls can't cost it a power.
+// The Legendary mutations it could give up to make room for this one: any whose place it could
+// take without costing it a power.
+export const swapsFor = (c, soul) => c.souls.filter((old) => fitsSouls(c, c.souls.map((s) => (s === old ? soul : s))));
+
+// A Legendary mutation it won. With room for it, it just grows it: one more never costs a power.
+// With no room left, it waits in c.soulOffer for you to choose one to give up, or keep what it has.
 function winSoul(c, soul, result) {
-  if (c.legendary === soul) return;
-  if (!fitsSoul(c, soul)) {
-    result.noFit = soul;
-  } else if (!c.legendary) {
-    c.legendary = soul;
+  if (c.souls.includes(soul)) return;
+  if (c.souls.length < soulCap(c)) {
+    c.souls.push(soul);
     result.legendary = soul;
-  } else {
+  } else if (swapsFor(c, soul).length) {
     c.soulOffer = soul;
     result.offer = soul;
+  } else {
+    result.noFit = soul;
   }
 }
 
-// Takes the Legendary mutation waiting in its offer, in place of the one it has. Returns the one it
-// gave up (or null if it had none), or false if there is nothing to take or its powers don't fit.
-export function takeSoulOffer(c) {
+// Takes the Legendary mutation waiting in its offer: into a free place, or in place of `old`.
+// Returns true, or false if there is nothing to take or that swap would cost it a power.
+export function takeSoulOffer(c, old = null) {
   const soul = c.soulOffer;
-  if (!soul || !fitsSoul(c, soul)) return false;
-  const old = c.legendary;
-  c.legendary = soul;
+  if (!soul || c.souls.includes(soul)) return false;
+  if (c.souls.length < soulCap(c)) c.souls.push(soul);
+  else if (swapsFor(c, soul).includes(old)) c.souls = c.souls.map((s) => (s === old ? soul : s));
+  else return false;
   c.soulOffer = null;
-  return old;
+  return true;
 }
 
 export const keepSoul = (c) => { c.soulOffer = null; };

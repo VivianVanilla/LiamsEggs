@@ -1,15 +1,18 @@
 // The Powers note. A Stand, a speedster or a cursed technique, one at a time, unless a Legendary
 // mutation makes room for two. A Devil Fruit takes the place of all of them. Quirks are separate,
-// and are paid for with max HP. What it was born with, and its race, show at the top.
+// and are paid for with max HP.
+// At the top, a card with everything it holds at a glance. Under it, one fold for each kind of power,
+// one open at a time, each title saying whether it has it, is ready for it, or what it still needs.
 
 import { toast } from './flair.js';
 import { G, saveCreature, saveHouse } from '../state.js';
-import { h, fill, button, sureButton, openNote } from './notes.js';
+import { h, fill, button, sureButton, openNote, folds } from './notes.js';
 import {
   computeStats, STAT_LABELS, maxHpOf, hpGivenUp, soulLean, standCard, powersHeld, powerSlots, hasRoomFor, lineageOf, lastName, fullName,
   canAwakenStand, awakenStand, canBecomeSpeedster, becomeSpeedster, canLearnTechnique, learnTechnique, canGainQuirk, gainQuirk,
-  hasTrait, otherLineOf, canLearnSecondTechnique, learnSecondTechnique, ofaLevel, fruitProblem, eatFruit, raceName, raceParts, raceStats,
+  hasTrait, otherLineOf, canLearnSecondTechnique, learnSecondTechnique, ofaLevel, fruitProblem, eatFruit, raceName, raceParts, raceStats, soulCap,
 } from '../core/creature.js';
+import { MAX_SOUL_EXPANDERS } from '../data/items.js';
 import { FRUITS, FRUIT_IDS, FRUIT_VIGOR, FRUIT_FROM_HARVEST, FRUIT_FROM_EXPEDITION } from '../data/fruits.js';
 import { RACES } from '../data/races.js';
 import { statText, ofaText } from '../core/sheet.js';
@@ -23,10 +26,11 @@ import {
 import { dropRig, hasArt, artUrl, heightOf } from '../draw/art.js';
 import { DEADLY_MONSTERS } from '../data/monsters.js';
 
-// How many monsters give a Legendary mutation, each its own.
-const SOUL_MONSTERS = Object.values(DEADLY_MONSTERS).filter((m) => m.soul).length;
+// Which monster gives each Legendary mutation: the only way to get one.
+const SOUL_FROM = Object.fromEntries(Object.values(DEADLY_MONSTERS).filter((m) => m.soul).map((m) => [m.soul, m.name]));
 // The souls that let a Devil Fruit sit beside another power.
 const FRUIT_SOULS = Object.values(LEGENDARY).filter((l) => l.fruit).map((l) => l.name).join(' or ');
+const SPEEDSTER_COLOR = '#ffe14a';
 
 const moveNames = (ids) => ids.map((id) => ABILITIES[id].name).join(', ');
 
@@ -52,117 +56,149 @@ function needs(have, need, label) {
   ];
 }
 
-// The rule at the top: which of the three it has, and how it could have two.
-function pathIntro(body, note) {
-  const c = G.creature;
-  const held = powersHeld(c);
+// A power's name, its words, and what it gives, as one block.
+function powerBlock(name, color, blurb, stats, moves, extra) {
+  return h('div', { class: 'powerblock', style: `--c:${color ?? '#888'}` },
+    h('div', { class: 'pb-name' }, name),
+    h('div', { class: 'small' }, blurb),
+    h('div', { class: 'pb-gives' }, `${statText(stats)}.${moves?.length ? ` Moves: ${moveNames(moves)}.` : ''}`),
+    extra);
+}
+
+const chip = (label, color, title = '') => h('span', { class: 'pchip', style: `--c:${color ?? '#888'}`, title }, label);
+
+// ---------- the card at the top ----------
+
+// Each power it holds fills a place; the places still free show as empty.
+function heldPowers(c) {
+  const { stand, speedster, technique, technique2, fruit } = c.powers;
+  return [
+    stand && chip(`「${STANDS[stand].name}」`, STANDS[stand].color, 'Stand'),
+    speedster && chip('Speedster', SPEEDSTER_COLOR),
+    technique && chip(technique2 ? `${TECHNIQUES[technique].name} + ${TECHNIQUES[technique2].name}` : TECHNIQUES[technique].name, TECHNIQUES[technique].color, 'Cursed technique'),
+    fruit && chip(FRUITS[fruit].name, FRUITS[fruit].color, 'Devil Fruit'),
+  ].filter(Boolean);
+}
+
+function summaryCard(c) {
+  const held = heldPowers(c);
   const slots = powerSlots(c);
-  fill(body,
-    c.legendary
-      ? h('div', { class: 'callout' }, h('b', null, `Legendary mutation: ${LEGENDARY[c.legendary].name}. `), `${LEGENDARY[c.legendary].blurb}${LEGENDARY[c.legendary].passive ? ` In a fight: ${LEGENDARY[c.legendary].passive.text}` : ''} It has ${held} of ${slots}. ${statText(LEGENDARY[c.legendary].stats)}.`)
-      : h('div', { class: 'small', style: 'font-weight:600' }, `It can be one of these three, for good: a Stand, a speedster, or a cursed technique. Or it can eat a Devil Fruit instead of all of them. It has ${held} of ${slots}.`),
-    !c.legendary && h('div', { class: 'small' }, `A Legendary mutation can make room for a second. The only way to get one is to beat the monster that gives it in Challenges: ${SOUL_MONSTERS} monsters each give their own, and it holds one at a time.`),
-    h('div', { class: 'small', style: 'margin-top:3px' },
-      h('b', { style: `color:${RACES[c.race]?.color ?? '#888'}` }, `${raceName(c)}: `),
-      raceParts(c).length > 1 ? `${c.pureBlood ? 'Pure-blooded, so every race in it is at full power.' : 'A mix: each race gives its share of its bonuses.'}` : RACES[raceParts(c)[0][0]].blurb,
-      Object.keys(raceStats(c)).length ? ` ${statText(raceStats(c))}.` : ''),
-    c.traits.length > 0 && sect(note, 'born', 'Born with'),
-    c.traits.map((id) => h('div', { class: 'small', style: 'margin-top:2px' }, h('b', { style: `color:${TRAITS[id].color}` }, `${TRAITS[id].name}: `), TRAITS[id].blurb)),
-    c.rebirths?.length > 0 && h('div', { class: 'small', style: 'margin-top:3px;font-weight:600' },
-      `Reborn ${c.rebirths.length} time${c.rebirths.length === 1 ? '' : 's'}: ${c.rebirths.map((r) => `absorbed ${r.absorbed}${r.took.length ? ` for ${r.took.map((id) => TRAITS[id].name).join(' and ')}` : ''}`).join('; ')}.`),
-    h('div', { class: 'row', style: 'margin-top:4px' }, button('Every chance in the game', () => openGuide('chances'), 'mini')),
+  const free = Math.max(0, slots - held.length);
+  const given = hpGivenUp(c);
+  const line = (label, kids, count) => h('div', { class: 'pc-row' },
+    h('span', { class: 'pc-label' }, label),
+    h('div', { class: 'pc-items' }, kids),
+    count && h('span', { class: 'pc-count' }, count));
+  return h('div', { class: 'powercard' },
+    line('Powers', [held, Array.from({ length: free }, () => h('span', { class: 'pchip empty' }, 'free'))], `${powersHeld(c)} of ${slots}`),
+    line('Legendary', c.souls.length ? c.souls.map((id) => chip(LEGENDARY[id].name, LEGENDARY[id].color, LEGENDARY[id].blurb)) : h('span', { class: 'small' }, 'none yet'), `${c.souls.length} of ${soulCap(c)}`),
+    line('Quirks', c.powers.quirks.length ? c.powers.quirks.map((id) => chip(id === OFA_ID ? `One For All ${ofaLevel(c)}` : QUIRKS[id].name, QUIRKS[id].color, statText(QUIRKS[id].stats))) : h('span', { class: 'small' }, 'none'), given ? `${given}% HP given` : ''),
+    line('Born', [chip(raceName(c), RACES[c.race]?.color, 'Race'), c.traits.map((id) => chip(TRAITS[id].name, TRAITS[id].color, TRAITS[id].blurb))]),
   );
 }
 
-// Why a locked power is locked, once the stat is not the problem.
+// ---------- why a power is locked ----------
+
 function noRoomLine(c, kind) {
   if (hasRoomFor(c, kind)) return false;
-  const soul = c.legendary ? LEGENDARY[c.legendary] : null;
+  const soul = c.souls.length === 1 ? LEGENDARY[c.souls[0]] : null;
+  const anyFruit = c.souls.some((id) => LEGENDARY[id].fruit);
   let text = 'It already has its one.';
-  if (c.powers.fruit && !soul?.fruit) text = `It ate the ${FRUITS[c.powers.fruit].name}, and nothing else goes with a Devil Fruit${soul ? '' : `, unless a ${FRUIT_SOULS} makes room`}.`;
+  if (c.powers.fruit && !anyFruit) text = `It ate the ${FRUITS[c.powers.fruit].name}, and nothing else goes with a Devil Fruit, unless a ${FRUIT_SOULS} makes room.`;
   else if (kind === 'stand' && soul?.noStand) text = `A Stand never comes out of a ${soul.name}.`;
-  else if (soul) text = powersHeld(c) >= powerSlots(c) ? (powerSlots(c) > 1 ? 'It already holds two.' : 'It already has its one.') : `A ${soul.name} can't hold this alongside what it already has.`;
-  return h('div', { class: 'small', style: 'font-weight:600' }, text);
+  else if (powersHeld(c) >= powerSlots(c)) text = powerSlots(c) > 1 ? 'It already holds two.' : 'It already has its one. A Legendary mutation can make room for a second.';
+  else if (c.souls.length) text = 'None of its Legendary mutations can hold this alongside what it already has.';
+  return h('div', { class: 'small warning' }, text);
 }
 
-function standSection(body, note) {
-  const c = G.creature;
-  fill(body, sect(note, 'stand', 'Stand'));
-  if (!c.powers.stand) {
-    fill(body,
-      needs(computeStats(c).wits, STAND_WITS, 'Wits'),
-      h('div', { class: 'small' }, `You don't pick a Stand. It comes out of its soul, so whatever it leans on most when it awakens decides which one. Right now that is ${STAT_LABELS[soulLean(c)]}.`),
-      noRoomLine(c, 'stand'),
-      h('div', { class: 'row gap' }, sureButton('Awaken its Stand', () => {
-        const id = awakenStand(c);
-        if (!id) return;
-        const stand = STANDS[id];
-        announce(`「${stand.name}」`, stand.color);
-        if (G.pet) G.fx.menace(G.pet.x, G.pet.y, stand.color);
-        G.pet?.say('it was behind me the whole time', 4, true);
+// The summary beside a fold's title: has it, ready for it, no room, or how close it is.
+function status(has, ready, room, have, need, label) {
+  if (has) return { tag: has, tagCls: 'has' };
+  if (ready) return { tag: 'Ready!', tagCls: 'ready' };
+  if (!room) return { tag: 'no room', tagCls: 'locked' };
+  return { tag: `${have} of ${need} ${label}` };
+}
+
+// ---------- each kind of power ----------
+
+function soulsFold(c) {
+  const cap = soulCap(c);
+  return {
+    id: 'souls',
+    title: 'Legendary mutations',
+    tag: `${c.souls.length} of ${cap}`,
+    tagCls: c.souls.length ? 'has' : '',
+    build: () => [
+      h('div', { class: 'small' }, `Only from beating the monster that gives each one, in Challenges. It holds ${cap}${cap < 1 + MAX_SOUL_EXPANDERS ? `; each Legendary Expander makes room for one more, up to ${1 + MAX_SOUL_EXPANDERS}` : ''}.${c.souls.length > 1 ? ' Their stats and fight bonuses add up, and its powers fit if any one of them could hold them all.' : ''}`),
+      c.souls.map((id) => {
+        const l = LEGENDARY[id];
+        return powerBlock(l.name, l.color, l.blurb, l.stats, null, l.passive && h('div', { class: 'small' }, `In a fight: ${l.passive.text}`));
+      }),
+      h('div', { class: 'small', style: 'margin-top:5px' }, `Where to win them: ${Object.entries(SOUL_FROM).map(([id, m]) => `${LEGENDARY[id].name} from ${m}`).join(', ')}.`),
+    ],
+  };
+}
+
+function standFold(c, note) {
+  const stand = c.powers.stand && STANDS[c.powers.stand];
+  return {
+    id: 'stand',
+    title: 'Stand',
+    ...status(stand && `「${stand.name}」`, canAwakenStand(c), hasRoomFor(c, 'stand'), computeStats(c).wits, STAND_WITS, 'Wits'),
+    build: () => {
+      if (stand) {
+        const file = `stands/${c.powers.stand}.png`;
+        return [
+          h('div', { class: 'row nowrap' },
+            hasArt(file) && h('img', { class: 'standpic', src: artUrl(file), alt: '' }),
+            h('div', { class: 'grow' }, powerBlock(`「${stand.name}」`, stand.color, stand.blurb, stand.stats, stand.moves))),
+          h('div', { class: 'chart' }, standCard(c).map(([label, grade]) => h('div', null, h('b', null, grade), h('span', null, label)))),
+        ];
+      }
+      return [
+        needs(computeStats(c).wits, STAND_WITS, 'Wits'),
+        h('div', { class: 'small' }, `You don't pick a Stand. It comes out of its soul, so whatever it leans on most when it awakens decides which one. Right now that is ${STAT_LABELS[soulLean(c)]}.`),
+        noRoomLine(c, 'stand'),
+        h('div', { class: 'row gap' }, sureButton('Awaken its Stand', () => {
+          const id = awakenStand(c);
+          if (!id) return;
+          const s = STANDS[id];
+          announce(`「${s.name}」`, s.color);
+          if (G.pet) G.fx.menace(G.pet.x, G.pet.y, s.color);
+          G.pet?.say('it was behind me the whole time', 4, true);
+          changed(note);
+        }, 'big', !canAwakenStand(c))),
+      ];
+    },
+  };
+}
+
+function speedsterFold(c, note) {
+  const perks = `Runs ${SPEEDSTER.walkMul} times as fast on your screen, digs faster, moves and hits faster in the ring, and leaves afterimages. It also gets hungry ${SPEEDSTER.hungerMul} times as fast.`;
+  return {
+    id: 'speedster',
+    title: 'Speedster',
+    ...status(c.powers.speedster && 'Has it', canBecomeSpeedster(c), hasRoomFor(c, 'speedster'), computeStats(c).speed, SPEEDSTER_SPEED, 'Speed'),
+    build: () => [
+      !c.powers.speedster && needs(computeStats(c).speed, SPEEDSTER_SPEED, 'Speed'),
+      powerBlock('Speedster', SPEEDSTER_COLOR, perks, SPEEDSTER.stats, [SPEEDSTER.move]),
+      !c.powers.speedster && noRoomLine(c, 'speedster'),
+      !c.powers.speedster && h('div', { class: 'row gap' }, sureButton('Become a speedster', () => {
+        if (!becomeSpeedster(c)) return;
+        announce('SPEEDSTER', SPEEDSTER_COLOR);
+        G.pet?.say('i have already left', 4, true);
         changed(note);
-      }, 'big', !canAwakenStand(c))),
-    );
-    return;
-  }
-  const stand = STANDS[c.powers.stand];
-  const file = `stands/${c.powers.stand}.png`;
-  fill(body,
-    h('div', { class: 'row nowrap' },
-      hasArt(file) && h('img', { class: 'standpic', src: artUrl(file), alt: '' }),
-      h('div', { class: 'grow' },
-        h('div', { class: 'nameline' }, `「${stand.name}」`),
-        h('div', { class: 'small' }, stand.blurb),
-        h('div', { class: 'small', style: 'margin-top:3px' }, `${statText(stand.stats)}. Arena moves: ${moveNames(stand.moves)}`))),
-    h('div', { class: 'chart' }, standCard(c).map(([label, grade]) => h('div', null, h('b', null, grade), h('span', null, label)))),
-  );
-}
-
-function speedsterSection(body, note) {
-  const c = G.creature;
-  fill(body, sect(note, 'speedster', 'Speedster'));
-  const perks = `${statText(SPEEDSTER.stats)}. Runs ${SPEEDSTER.walkMul} times as fast on your screen, digs faster, moves and hits faster in the ring, and leaves afterimages. It also gets hungry ${SPEEDSTER.hungerMul} times as fast.`;
-  if (c.powers.speedster) {
-    fill(body,
-      h('div', { class: 'small' }, `It is a speedster. ${perks}`),
-      h('div', { class: 'small', style: 'margin-top:3px' }, `Arena move: ${ABILITIES[SPEEDSTER.move].name}`),
-    );
-    return;
-  }
-  fill(body,
-    needs(computeStats(c).speed, SPEEDSTER_SPEED, 'Speed'),
-    h('div', { class: 'small' }, perks),
-    noRoomLine(c, 'speedster'),
-    h('div', { class: 'row gap' }, sureButton('Become a speedster', () => {
-      if (!becomeSpeedster(c)) return;
-      announce('SPEEDSTER', '#ffe14a');
-      G.pet?.say('i have already left', 4, true);
-      changed(note);
-    }, 'big', !canBecomeSpeedster(c))),
-  );
-}
-
-// A section heading the jump bar at the top can scroll to.
-function sect(note, key, label, style = '') {
-  const el = h('div', { class: 'sect', style }, label);
-  (note.refs.jump ??= {})[key] = el;
-  return el;
+      }, 'big', !canBecomeSpeedster(c))),
+    ],
+  };
 }
 
 // A Cursed Body can hold the technique from the other side of its family too.
-function secondTechnique(body, note) {
-  const c = G.creature;
-  if (!hasTrait(c, 'cursedbody')) return;
+function secondTechnique(c, note) {
+  if (!hasTrait(c, 'cursedbody')) return null;
   const t = TECHNIQUES[c.powers.technique2 ?? otherLineOf(c)];
-  if (c.powers.technique2) {
-    fill(body,
-      h('div', { class: 'nameline', style: 'margin-top:6px' }, `${t.name} (Cursed Body)`),
-      h('div', { class: 'small' }, t.blurb),
-      h('div', { class: 'small', style: 'margin-top:3px' }, `${statText(t.stats)}. Arena moves: ${moveNames(t.moves)}`),
-    );
-    return;
-  }
-  fill(body,
+  if (c.powers.technique2) return powerBlock(`${t.name} (Cursed Body)`, t.color, t.blurb, t.stats, t.moves);
+  return [
     h('div', { class: 'small', style: 'margin-top:6px;font-weight:600' }, `Cursed Body: once it has its own technique, it can also awaken ${t.name}, from the ${t.family} side of its family. It shares the same place, so it doesn't take a second one.`),
     h('div', { class: 'row gap' }, sureButton('Awaken its second technique', () => {
       if (!learnSecondTechnique(c)) return;
@@ -170,119 +206,142 @@ function secondTechnique(body, note) {
       G.pet?.say('my other hand feels cursed too', 4, true);
       changed(note);
     }, 'big', !canLearnSecondTechnique(c))),
-  );
+  ];
 }
 
-function techniqueSection(body, note) {
-  const c = G.creature;
-  fill(body, sect(note, 'technique', 'Cursed technique'));
-  const flash = `Melee swings have a ${Math.round(BLACK_FLASH.chance * 100)}% chance of a Black Flash, for ${BLACK_FLASH.power} times the damage.`;
-  if (c.powers.technique) {
-    const t = TECHNIQUES[c.powers.technique];
-    fill(body,
-      h('div', { class: 'nameline' }, t.name),
-      h('div', { class: 'small' }, t.blurb),
-      h('div', { class: 'small', style: 'margin-top:3px' }, `${statText(t.stats)}. Arena moves: ${moveNames(t.moves)}`),
-      h('div', { class: 'small' }, flash),
-    );
-    secondTechnique(body, note);
-    return;
-  }
-  const t = TECHNIQUES[lineageOf(c)];
-  fill(body,
-    needs(computeStats(c).might, TECHNIQUE_MIGHT, 'Might'),
-    h('div', { class: 'small' }, `You don't pick this. It runs in the family, and every ${lastName(c)} has ${t.name}.`),
-    h('div', { class: 'nameline', style: 'margin-top:3px' }, t.name),
-    h('div', { class: 'small' }, t.blurb),
-    h('div', { class: 'small', style: 'margin-top:3px' }, `${statText(t.stats)}. Arena moves: ${moveNames(t.moves)}`),
-    h('div', { class: 'small' }, flash),
-    noRoomLine(c, 'technique'),
-    h('div', { class: 'row gap' }, sureButton('Awaken its technique', () => {
-      if (!learnTechnique(c)) return;
-      announce(t.name, t.color);
-      G.pet?.say('my hands feel cursed', 4, true);
-      changed(note);
-    }, 'big', !canLearnTechnique(c))),
-  );
-  secondTechnique(body, note);
+function techniqueFold(c, note) {
+  const flash = h('div', { class: 'small' }, `Melee swings have a ${Math.round(BLACK_FLASH.chance * 100)}% chance of a Black Flash, for ${BLACK_FLASH.power} times the damage.`);
+  const has = c.powers.technique && TECHNIQUES[c.powers.technique];
+  const s = status(has && has.name, canLearnTechnique(c), hasRoomFor(c, 'technique'), computeStats(c).might, TECHNIQUE_MIGHT, 'Might');
+  if (has && canLearnSecondTechnique(c)) Object.assign(s, { tag: 'Ready: a second!', tagCls: 'ready' });
+  return {
+    id: 'technique',
+    title: 'Cursed technique',
+    ...s,
+    build: () => {
+      if (has) return [powerBlock(has.name, has.color, has.blurb, has.stats, has.moves, flash), secondTechnique(c, note)];
+      const t = TECHNIQUES[lineageOf(c)];
+      return [
+        needs(computeStats(c).might, TECHNIQUE_MIGHT, 'Might'),
+        h('div', { class: 'small' }, `You don't pick this. It runs in the family, and every ${lastName(c)} has ${t.name}.`),
+        powerBlock(t.name, t.color, t.blurb, t.stats, t.moves, flash),
+        noRoomLine(c, 'technique'),
+        h('div', { class: 'row gap' }, sureButton('Awaken its technique', () => {
+          if (!learnTechnique(c)) return;
+          announce(t.name, t.color);
+          G.pet?.say('my hands feel cursed', 4, true);
+          changed(note);
+        }, 'big', !canLearnTechnique(c))),
+        secondTechnique(c, note),
+      ];
+    },
+  };
 }
 
 // A Devil Fruit: the fourth power. The pool holds any your creatures found, and one can eat one.
-function fruitSection(body, note) {
-  const c = G.creature;
-  fill(body, sect(note, 'fruit', 'Devil Fruit'));
-  if (c.powers.fruit) {
-    const f = FRUITS[c.powers.fruit];
-    fill(body,
-      h('div', { class: 'nameline', style: `color:${f.color}` }, f.name),
-      h('div', { class: 'small' }, `A ${f.type}. ${f.blurb}`),
-      h('div', { class: 'small', style: 'margin-top:3px' }, `${statText(f.stats)}. Arena moves: ${moveNames(f.moves)}`),
-      h('div', { class: 'small' }, 'It can never have a Stand, speedster powers or a cursed technique now, and it can\'t swim.'),
-    );
-    return;
-  }
-  const have = FRUIT_IDS.filter((id) => (G.house.fruits[id] ?? 0) > 0);
+function fruitFold(c, note) {
+  const has = c.powers.fruit && FRUITS[c.powers.fruit];
+  const pool = FRUIT_IDS.filter((id) => (G.house.fruits[id] ?? 0) > 0);
   const problem = fruitProblem(c);
-  fill(body,
-    needs(computeStats(c).vigor, FRUIT_VIGOR, 'Vigor'),
-    h('div', { class: 'small' }, `Very strong, and alone: a creature that eats one can never also have a Stand, speedster powers or a cursed technique, not even with a Legendary mutation. Quirks are still fine. They turn up in ${FRUIT_FROM_HARVEST * 100}% of farm harvests and ${Math.round(FRUIT_FROM_EXPEDITION * 100)}% of expeditions, and wait in the shared pool.`),
-    have.length === 0
-      ? h('div', { class: 'small', style: 'font-weight:600' }, 'No fruit in the pool yet.')
-      : h('div', { class: 'quirks' }, have.map((id) => {
-        const f = FRUITS[id];
-        return h('div', { class: 'quirk' },
-          h('div', { class: 'grow' },
-            h('div', { class: 'name', style: `color:${f.color}` }, `${f.name} x${G.house.fruits[id]}`),
-            h('div', { class: 'small' }, `A ${f.type}. ${f.blurb}`),
-            h('div', { class: 'small' }, `${statText(f.stats)}. Arena moves: ${moveNames(f.moves)}`)),
-          sureButton('Eat it', () => {
-            if ((G.house.fruits[id] ?? 0) < 1 || !eatFruit(c, id)) return;
-            G.house.fruits[id] -= 1;
-            if (!G.house.fruits[id]) delete G.house.fruits[id];
-            saveHouse();
-            announce(f.name, f.color);
-            G.pet?.say('that tasted awful. i feel amazing', 4, true);
-            changed(note);
-          }, '', !!problem));
-      })),
-    have.length > 0 && problem && h('div', { class: 'small', style: 'font-weight:600' }, `${problem}.`),
-  );
+  const vigor = computeStats(c).vigor;
+  let tag;
+  if (has) tag = { tag: has.name, tagCls: 'has' };
+  else if (problem && vigor >= FRUIT_VIGOR) tag = { tag: 'no room', tagCls: 'locked' };
+  else if (!pool.length) tag = { tag: 'none in the pool' };
+  else if (problem) tag = { tag: `${vigor} of ${FRUIT_VIGOR} Vigor` };
+  else tag = { tag: 'Ready!', tagCls: 'ready' };
+  return {
+    id: 'fruit',
+    title: 'Devil Fruit',
+    ...tag,
+    build: () => {
+      if (has) {
+        return powerBlock(has.name, has.color, `A ${has.type}. ${has.blurb}`, has.stats, has.moves,
+          h('div', { class: 'small' }, 'It can never have a Stand, speedster powers or a cursed technique now, unless a Legendary mutation makes room, and it can\'t swim.'));
+      }
+      return [
+        needs(vigor, FRUIT_VIGOR, 'Vigor'),
+        h('div', { class: 'small' }, `Very strong, and alone: one that eats a fruit can't also have a Stand, speedster powers or a cursed technique, unless a ${FRUIT_SOULS} makes room. Quirks are still fine. They turn up in ${FRUIT_FROM_HARVEST * 100}% of farm harvests and ${Math.round(FRUIT_FROM_EXPEDITION * 100)}% of expeditions, and wait in the shared pool.`),
+        pool.length === 0
+          ? h('div', { class: 'small', style: 'font-weight:600' }, 'No fruit in the pool yet.')
+          : h('div', { class: 'quirks' }, pool.map((id) => {
+            const f = FRUITS[id];
+            return h('div', { class: 'quirk' },
+              h('div', { class: 'grow' }, powerBlock(`${f.name} x${G.house.fruits[id]}`, f.color, `A ${f.type}. ${f.blurb}`, f.stats, f.moves)),
+              sureButton('Eat it', () => {
+                if ((G.house.fruits[id] ?? 0) < 1 || !eatFruit(c, id)) return;
+                G.house.fruits[id] -= 1;
+                if (!G.house.fruits[id]) delete G.house.fruits[id];
+                saveHouse();
+                announce(f.name, f.color);
+                G.pet?.say('that tasted awful. i feel amazing', 4, true);
+                changed(note);
+              }, '', !!problem));
+          })),
+        pool.length > 0 && problem && h('div', { class: 'small warning' }, `${problem}.`),
+      ];
+    },
+  };
 }
 
-function quirkSection(body, note) {
-  const c = G.creature;
+function quirksFold(c, note) {
   const given = hpGivenUp(c);
-  fill(body,
-    sect(note, 'quirks', 'Quirks'),
-    h('div', { class: 'small' }, `Separate from the three above. Max HP ${maxHpOf(c)}. ${given ? `It has given up ${given}% for good` : 'It has given up none'}, and can give up ${MAX_HP_GIVEN}% at most.`),
-    h('div', { class: 'bar green', style: 'margin:3px 0 5px' }, h('i', { style: `width:${100 - given}%` })),
-    c.powers.quirks.length
-      ? h('div', { class: 'chips' }, c.powers.quirks.map((id) => h('span', { class: 'chip', style: `--c:${QUIRKS[id].color}`, title: statText(QUIRKS[id].stats) }, QUIRKS[id].name)))
-      : h('div', { class: 'small' }, 'Quirkless, for now.'),
-  );
-  if (c.powers.quirks.includes(OFA_ID)) {
-    const level = ofaLevel(c);
-    fill(body, sect(note, 'ofa', 'One For All'), h('div', { class: 'way', style: 'margin-top:3px' },
-      h('div', { class: 'top' }, `Level ${level} of ${OFA_MAX_LEVEL}`, h('span', null, statText(ofaStats(level)))),
-      h('div', { class: 'small' }, ofaText(c)),
-      h('div', { class: 'row', style: 'margin-top:4px' }, button('Pass it on', () => openPassOn(), 'mini hot'))));
-  }
   const open = QUIRK_IDS.filter((id) => !c.powers.quirks.includes(id));
-  if (!open.length) return;
-  fill(body, h('div', { class: 'quirks' }, open.map((id) => {
-    const q = QUIRKS[id];
-    return h('div', { class: 'quirk' },
-      h('div', { class: 'grow' },
-        h('div', { class: 'name' }, q.name),
-        h('div', { class: 'small' }, q.blurb),
-        h('div', { class: 'small' }, `${statText(q.stats)}. Arena move: ${ABILITIES[q.move].name}`)),
-      sureButton(`Give ${q.cost}%`, () => {
-        if (!gainQuirk(c, id)) return;
-        announce(`${q.name}!`, q.color, 24);
-        G.pet?.say('PLUS ULTRA', 3, true);
-        changed(note);
-      }, '', !canGainQuirk(c, id)));
-  })));
+  const ready = open.some((id) => canGainQuirk(c, id));
+  return {
+    id: 'quirks',
+    title: 'Quirks',
+    tag: `${c.powers.quirks.length} held${given ? `, ${given}% HP given` : ''}`,
+    tagCls: c.powers.quirks.length ? 'has' : ready ? '' : '',
+    build: () => [
+      h('div', { class: 'small' }, `Separate from the powers above, and paid for with max HP, for good. Max HP ${maxHpOf(c)}. ${given ? `It has given up ${given}%` : 'It has given up none'}, of ${MAX_HP_GIVEN}% at most.`),
+      h('div', { class: 'bar green', style: 'margin:3px 0 5px' }, h('i', { style: `width:${100 - given}%` })),
+      open.length > 0 && h('div', { class: 'quirks' }, open.map((id) => {
+        const q = QUIRKS[id];
+        return h('div', { class: 'quirk' },
+          h('div', { class: 'grow' }, powerBlock(q.name, q.color, q.blurb, q.stats, [q.move])),
+          sureButton(`Give ${q.cost}%`, () => {
+            if (!gainQuirk(c, id)) return;
+            announce(`${q.name}!`, q.color, 24);
+            G.pet?.say('PLUS ULTRA', 3, true);
+            changed(note);
+          }, '', !canGainQuirk(c, id)));
+      })),
+    ],
+  };
+}
+
+function ofaFold(c) {
+  if (!c.powers.quirks.includes(OFA_ID)) return null;
+  const level = ofaLevel(c);
+  return {
+    id: 'ofa',
+    title: 'One For All',
+    tag: `level ${level} of ${OFA_MAX_LEVEL}`,
+    tagCls: 'has',
+    build: () => [
+      h('div', { class: 'pb-gives' }, statText(ofaStats(level))),
+      h('div', { class: 'small' }, ofaText(c)),
+      h('div', { class: 'row', style: 'margin-top:4px' }, button('Pass it on', () => openPassOn(), 'mini hot')),
+    ],
+  };
+}
+
+function originFold(c) {
+  return {
+    id: 'origin',
+    title: 'Race and gifts',
+    tag: `${raceName(c)}${c.traits.length ? `, ${c.traits.length} gift${c.traits.length === 1 ? '' : 's'}` : ''}`,
+    build: () => [
+      powerBlock(raceName(c), RACES[c.race]?.color,
+        raceParts(c).length > 1 ? (c.pureBlood ? 'Pure-blooded, so every race in it is at full power.' : 'A mix: each race gives its share of its bonuses.') : RACES[raceParts(c)[0][0]].blurb,
+        raceStats(c)),
+      c.traits.map((id) => h('div', { class: 'small', style: 'margin-top:3px' }, h('b', { style: `color:${TRAITS[id].color}` }, `${TRAITS[id].name}: `), TRAITS[id].blurb)),
+      c.rebirths?.length > 0 && h('div', { class: 'small', style: 'margin-top:3px;font-weight:600' },
+        `Reborn ${c.rebirths.length} time${c.rebirths.length === 1 ? '' : 's'}: ${c.rebirths.map((r) => `absorbed ${r.absorbed}${r.took.length ? ` for ${r.took.map((id) => TRAITS[id].name).join(' and ')}` : ''}`).join('; ')}.`),
+      h('div', { class: 'row', style: 'margin-top:4px' }, button('Every chance in the game', () => openGuide('chances'), 'mini')),
+    ],
+  };
 }
 
 export function openPowers() {
@@ -290,26 +349,14 @@ export function openPowers() {
   if (!c) return;
   openNote('powers', {
     title: `${fullName(c)}'s powers`,
-    width: 372,
-    help: 'chances',
+    width: 380,
     build(body, note) {
-      const scroll = h('div', { class: 'scrollnote' });
-      // Jumps to each part of this long note.
-      const parts = [
-        c.traits.length > 0 && ['born', 'Born with'], ['stand', 'Stand'], ['speedster', 'Speedster'], ['technique', 'Technique'], ['fruit', 'Devil Fruit'], ['quirks', 'Quirks'],
-        c.powers.quirks.includes(OFA_ID) && ['ofa', 'One For All'],
-      ].filter(Boolean);
-      fill(body, h('div', { class: 'jumpbar' }, parts.map(([key, label]) => h('button', {
-        class: 'chip',
-        onclick: () => note.refs.jump?.[key]?.scrollIntoView({ block: 'start', behavior: 'smooth' }),
-      }, label))));
-      pathIntro(scroll, note);
-      standSection(scroll, note);
-      speedsterSection(scroll, note);
-      techniqueSection(scroll, note);
-      fruitSection(scroll, note);
-      quirkSection(scroll, note);
-      fill(body, scroll);
+      const items = [soulsFold(c), standFold(c, note), speedsterFold(c, note), techniqueFold(c, note), fruitFold(c, note), quirksFold(c, note), ofaFold(c), originFold(c)];
+      // Whatever it is ready for opens by itself.
+      const ready = items.find((it) => it?.tagCls === 'ready');
+      fill(body,
+        summaryCard(c),
+        h('div', { class: 'scrollnote', style: 'max-height:min(470px, calc(100vh - 260px))' }, folds(note, 'powers', items, ready?.id ?? null)));
     },
   });
 }

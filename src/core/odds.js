@@ -13,7 +13,9 @@ import { MUTATION_THRESHOLDS, MAX_MUTATIONS } from '../data/mutations.js';
 import { BREED_GIFTS, ROLL_COST, MEGA_BREEDER } from '../data/family.js';
 import { FRUITS, FRUIT_FROM_HARVEST, FRUIT_FROM_EXPEDITION, FRUIT_IDS } from '../data/fruits.js';
 import { RACES, PURE_BLOOD_CHANCE } from '../data/races.js';
-import { EXPEDITIONS, EXPEDITION_IDS } from '../data/village.js';
+import { EXPEDITIONS, EXPEDITION_IDS, EXPEDITION_DANGER } from '../data/village.js';
+import { ALTAR } from '../data/family.js';
+import { MAX_SOUL_EXPANDERS } from '../data/items.js';
 import { ITEMS } from '../data/items.js';
 import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL } from '../data/adventure.js';
 
@@ -115,6 +117,14 @@ export function chanceSections(c = null) {
       ],
     },
     {
+      title: 'Bizarre expeditions',
+      rows: EXPEDITION_IDS.filter((where) => EXPEDITIONS[where].danger).map((where) => ({
+        name: `Not coming back, ${EXPEDITIONS[where].name.toLowerCase()}`,
+        odds: `${pct(EXPEDITION_DANGER.least)}-${pct(EXPEDITIONS[where].danger)}`,
+        detail: `For each one who goes. The stronger it is when it sets off, the less likely: every ${Math.round(EXPEDITION_DANGER.safePower / 10)} power takes a tenth off, down to ${pct(EXPEDITION_DANGER.least)}. If nobody comes back, nothing they found does either.`,
+      })),
+    },
+    {
       title: 'Expedition finds',
       rows: EXPEDITION_IDS.flatMap((where) => Object.entries(EXPEDITIONS[where].finds).map(([race, chance]) => ({
         name: `${RACES[race].name}, ${EXPEDITIONS[where].name.toLowerCase()}`,
@@ -131,7 +141,7 @@ export function chanceSections(c = null) {
           odds: 'every win',
           detail: `Only from beating ${m.name}${m.road === 'legend' ? ' on the Legendary road' : ''} in the Challenges note. ${LEGENDARY[m.soul].blurb}`,
         })),
-        { name: 'Only one', odds: 'at a time', detail: 'A creature holds one Legendary mutation at a time. If it wins another, you choose which to keep. Being reborn takes it away, so it can win them again.' },
+        { name: 'How many', odds: `1 to ${1 + MAX_SOUL_EXPANDERS}`, detail: `A creature holds one, and each Legendary Expander makes room for one more. With no room left, a new one is yours to swap in or turn down. Being reborn takes them all away, so it can win them again.` },
       ],
     },
     {
@@ -158,6 +168,12 @@ export function chanceSections(c = null) {
       title: 'Eggs and Adventure',
       rows: [
         { name: 'A rolled egg', odds: `${ROLL_COST} gem`, detail: 'Each roll is a brand new egg, with the same chances as any egg above.' },
+        { name: 'An altar race', odds: pct(ALTAR.eggChance), detail: 'Of eggs, once the Bloodline Altar has a race: one of its races, each as likely. Nobody picks, and the egg shows it before you keep it.' },
+        ...ALTAR.eggShares.map(([share, p]) => ({
+          name: share === 1 ? 'All of that race' : share === 0.5 ? 'Half of it' : 'A quarter of it',
+          odds: pct(p),
+          detail: share === 1 ? 'Of altar-race eggs: the whole creature is that race.' : `Of altar-race eggs: ${share === 0.5 ? 'half' : 'a quarter'} that race, and the rest Human.`,
+        })),
         { name: 'Adventure bosses', odds: `${BOSS_LEVELS.length} of ${LEVEL_COUNT}`, detail: `Levels ${andList(BOSS_LEVELS)} are led by a monster from the Challenges note, ending with ${dragon.name}.` },
       ],
     },

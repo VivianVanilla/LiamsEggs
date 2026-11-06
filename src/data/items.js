@@ -10,6 +10,10 @@ export const ITEMS = {
     name: 'Limit Expander', color: '#ff7ad9',
     text: 'Lets one creature hold 2 more mutations than usual. Each creature can take 2 of them.',
   },
+  soulexpander: {
+    name: 'Legendary Expander', color: '#ffd24a',
+    text: 'Makes room for one more Legendary mutation. A creature holds 1, and can take 2 of these, for 3.',
+  },
 };
 export const ITEM_IDS = Object.keys(ITEMS);
 // The bag holds at most this many of each.
@@ -21,3 +25,5 @@ export const CHAMBER_FULLNESS = 90;
 // Each Limit Expander makes room for this many more mutations, and one creature can take this many.
 export const EXPANDER_SLOTS = 2;
 export const MAX_EXPANDERS = 2;
+// Each Legendary Expander makes room for one more Legendary mutation, and one creature can take this many.
+export const MAX_SOUL_EXPANDERS = 2;

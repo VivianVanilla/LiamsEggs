@@ -1,6 +1,6 @@
 // Startup, the main loop, drawing order and mouse and file-drop input.
 
-import { toast, calm, seen } from './ui/flair.js';
+import { toast } from './ui/flair.js';
 import { clamp } from './lib/util.js';
 import { G, api, saveCreature, saveTeam, saveHouse, creatureText, memberOf, inBout, rememberTeam } from './state.js';
 import { emptyHouse, sanitizeHouse, joinHouse } from './core/house.js';
@@ -8,8 +8,8 @@ import { Pet } from './pet.js';
 import { parseCreature, digestTime, pathChoice, canAwakenStand, canBecomeSpeedster, canLearnTechnique, canLearnSecondTechnique, fullName } from './core/creature.js';
 import { TILE, tickFarm, ANIMALS } from './sim/farm.js';
 import { TEAM_MAX } from './data/family.js';
-import { loadArt, drawArt, drawAnimal, dropRig, setPictureScale, heightOf } from './draw/art.js';
-import { drawFields, drawFileSprite, drawArenaFloor, drawFighter, drawHealthBar, drawBolts, drawVeins, drawHint } from './draw/scene.js';
+import { loadArt, drawArt, drawAnimal, dropRig, setPictureScale } from './draw/art.js';
+import { drawFields, drawFileSprite, drawArenaFloor, drawFighter, drawHealthBar, drawBolts, drawVeins } from './draw/scene.js';
 import { closeNotesOf, noteRects, tickNotes, getNote, syncFocus, cancelPicking, showNotesFor } from './ui/notes.js';
 import { openMenu, toggleMenu, openAny, openSettings, openNaming, createCreature, feedPaths, openFeed, openPathChoice, refreshMenu } from './ui/panels.js';
 import { onBoutEnded, forgetFighter } from './ui/boards.js';
@@ -413,9 +413,16 @@ function tickVillage() {
   gained.fruits.forEach((id) => shoutNews(`THE VILLAGE FOUND A DEVIL FRUIT: ${FRUITS[id].name}!!!`, FRUITS[id].color, 22, 'rare'));
   const back = finishExpeditions(G.house, now);
   for (const b of back) {
+    const names = b.lost.map((p) => p.name.split(' ')[0].toUpperCase()).join(' AND ');
+    if (b.allLost) {
+      shoutNews(`NOBODY CAME BACK FROM THE EXPEDITION. ${names} ${b.lost.length === 1 ? 'IS' : 'ARE'} GONE FOREVER...`, '#ff6b5e', 20, 'bad');
+      continue;
+    }
     const finds = [b.find && `a ${RACES[b.find].name}`, b.fruit && `the ${FRUITS[b.fruit].name}`, ...b.items.map((id) => `a ${ITEMS[id].name}`)].filter(Boolean);
     shoutNews(`EXPEDITION BACK! +${b.gems} gems${finds.length ? `, and ${finds.join(' and ')}!!!` : '!'}`, finds.length ? '#ffd24a' : '#e9ffd9', 20, finds.length ? 'rare' : 'good');
+    if (b.lost.length) shoutNews(`${names} DIDN'T COME BACK. GONE FOREVER...`, '#ff6b5e', 20, 'bad');
   }
+  buryLost();
   if (back.length) loadVillage();
   if (gained.ore || back.length) {
     getNote('village')?.rebuild();
@@ -425,6 +432,29 @@ function tickVillage() {
 }
 // A countdown that runs out asks for this straight away, so a party is home on the dot.
 G.tickVillage = () => tickVillage();
+
+// Anyone a Bizarre expedition took goes to the graveyard, like any death. The list is kept in the
+// household file, so a party that came home while the game was closed is still dealt with.
+let burying = false;
+async function buryLost() {
+  if (burying || !G.house.lost?.length) return;
+  burying = true;
+  try {
+    const files = await api.listCreatures();
+    for (const { base, by } of G.house.lost.slice()) {
+      let c = null;
+      try {
+        const f = files.find((x) => x.base === base);
+        c = f ? parseCreature(f.text) : null;
+      } catch { c = null; }
+      if (c && !c.dead) await G.getRidOf(base, c, { by });
+      G.house.lost = G.house.lost.filter((l) => l.base !== base);
+    }
+    saveHouse();
+  } finally {
+    burying = false;
+  }
+}
 
 const onScreen = () => G.team.filter((m) => !inBout(m.c));
 
@@ -479,17 +509,13 @@ function draw() {
   if (G.egg) drawArt(ctx, 'creature/egg.png', G.egg.x, G.egg.y, EGG_SIZE);
   G.fx.drawTop(ctx);
   for (const m of onScreen()) m.pet.drawOverlay(ctx);
-  // Until its menu has been opened once, the creature says where to click.
-  if (showClickMe()) drawHint(ctx, 'CLICK ME!', G.pet.x, G.pet.y - heightOf(G.pet.c) - 34, performance.now() / 1000);
 }
 
 // Still pictures need no redrawing until something actually moves, so idle creatures cost next
 // to nothing. Once a second it redraws anyway, for crops slowly growing.
-const showClickMe = () => !!G.pet && !calm() && !seen('menu') && !G.hidden;
 
 function needsDraw(dt) {
   sinceDraw += dt;
-  if (showClickMe()) return true;
   if (G.bout || G.egg || G.drops.length || G.veins.length || G.fx.busy()) return true;
   if (G.team.some((m) => m.pet.trailing())) return true;
   let stamp = `${G.dragHover > 0}`;

@@ -112,7 +112,7 @@ test('a Devil Fruit needs Vigor and no other power, and then nothing else fits',
   c.training.wits = 40;
   c.training.speed = 40;
   c.training.might = 40;
-  c.legendary = 'twinsoul';
+  c.souls = ['twinsoul'];
   assert.ok(!canAwakenStand(c) && !canBecomeSpeedster(c) && !canLearnTechnique(c));
   assert.equal(eatFruit(c, 'gomu'), false, 'one fruit only');
   // And something with a power already can't eat one.
@@ -251,11 +251,11 @@ test('only legendary Miners can work the Legendary Mine, three at most', () => {
   // A Legendary mutation is enough, even without a final form.
   const lucky = grown('Lucky');
   choosePath(lucky, 'miner');
-  lucky.legendary = 'twinsoul';
+  lucky.souls = ['twinsoul'];
   assert.ok(isLegendaryMiner(lucky));
   const farmer = grown('Farmer');
   choosePath(farmer, 'farmer');
-  farmer.legendary = 'twinsoul';
+  farmer.souls = ['twinsoul'];
   assert.equal(isLegendaryMiner(farmer), false, 'it has to be a Miner');
   const crew = [1, 2, 3, 4].map((i) => legendaryMiner(`Deep ${i}`));
   crew.slice(0, LEGENDARY_MINE.slots).forEach((c) => assert.ok(joinMine(house, c)));

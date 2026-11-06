@@ -4,6 +4,33 @@ import { G, saveCreature } from '../state.js';
 import { h, fill, button, openNote } from './notes.js';
 import { STANCES, STANCE_IDS, HURT_PLANS, TARGET_PLANS } from '../data/battle.js';
 import { moveList } from '../core/sheet.js';
+import { hasTrait } from '../core/creature.js';
+import { TRAITS, PHILOSOPHER_HEART } from '../data/powers.js';
+
+const secs = (v) => `${Math.round(v * 10) / 10}s`;
+
+// A Philosopher's Heart speeds up one move: you pick which, from the ones with a cooldown.
+function heartSection(c, moves, note) {
+  if (!hasTrait(c, 'philosopher')) return null;
+  const choices = moves.filter((m) => m.cd > 0);
+  const picked = choices.find((m) => m.id === c.battle.heart);
+  return [
+    h('div', { class: 'sect' }, TRAITS.philosopher.name),
+    h('div', { class: 'small' }, `Pick one move. It comes back ${Math.round(PHILOSOPHER_HEART * 100)}% sooner in every fight.${picked ? ` Now: ${picked.name}, every ${secs(picked.cd * (1 - PHILOSOPHER_HEART))} instead of ${secs(picked.cd)}.` : ' Nothing picked yet.'}`),
+    choices.length === 0
+      ? h('div', { class: 'small' }, 'It has no move with a cooldown yet.')
+      : h('div', { class: 'chips', style: 'margin-top:4px' }, choices.map((m) => h('button', {
+        class: `chip${m.id === c.battle.heart ? ' on' : ''}`,
+        style: `--c:${TRAITS.philosopher.color}`,
+        title: `${secs(m.cd)} down to ${secs(m.cd * (1 - PHILOSOPHER_HEART))}`,
+        onclick: () => {
+          c.battle.heart = m.id === c.battle.heart ? null : m.id;
+          saveCreature();
+          note.rebuild();
+        },
+      }, `${m.name} ${secs(m.cd)} → ${secs(m.cd * (1 - PHILOSOPHER_HEART))}`))),
+  ];
+}
 import { practiceStances } from '../sim/practice.js';
 
 // A row of buttons that choose one setting.
@@ -60,6 +87,7 @@ export function openPlan() {
         })),
         state.practice && h('div', { class: 'small', style: 'margin-top:3px' },
           `Out of 16 practice fights against a rival about its size: ${STANCE_IDS.map((id) => `${STANCES[id].name} won ${Math.round(state.practice[id] * 16)}`).join(', ')}.`),
+        heartSection(c, moves, note),
         h('div', { class: 'sect' }, `Its moves (${moves.length})`),
         moves.length === 0
           ? h('div', { class: 'small' }, 'None yet. Two mutations from one kind of food teach a move, and so do final jobs, Stands, Quirks and being a speedster.')
@@ -72,7 +100,7 @@ export function openPlan() {
             note.rebuild();
           }, m.on ? 'hot mini' : 'mini')),
           h('div', { class: 'small' }, m.what),
-          h('div', { class: 'small' }, `${m.rangeWord}. From ${m.from}.`)))),
+          h('div', { class: 'small' }, `${m.rangeWord}. From ${m.from}.${m.cd ? ` Every ${hasTrait(c, 'philosopher') && m.id === c.battle.heart ? `${secs(m.cd * (1 - PHILOSOPHER_HEART))}, thanks to its ${TRAITS.philosopher.name}` : secs(m.cd)}.` : ''}`)))),
       );
     },
   });

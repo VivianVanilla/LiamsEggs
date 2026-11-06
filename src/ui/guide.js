@@ -20,10 +20,12 @@ import { buildCodex } from './codex.js';
 const PAGES = [['start', 'Start here'], ['codex', 'Codex'], ['stats', 'Stats'], ['chances', 'Chances'], ['breeding', 'Breeding']];
 const SOURCE_LABELS = { start: 'Start', age: 'Age', training: 'Training', mutations: 'Mutations', food: 'Food', colors: 'Colors', job: 'Job', powers: 'Powers', charms: 'Charms', trophies: 'Trophies' };
 
-// page: 'start', 'stats', 'chances' or 'breeding', or a stat, which opens the stats page on it.
+// page: 'start', 'stats', 'chances' or 'breeding', or a stat, which opens the stats page on it, or
+// 'codex/<page>' for one page of the Codex.
 export function openGuide(page = 'start') {
-  const isStat = STAT_KEYS.includes(page);
-  const state = { page: isStat ? 'stats' : page, stat: isStat ? page : null };
+  const [main, sub] = String(page).split('/');
+  const isStat = STAT_KEYS.includes(main);
+  const state = { page: isStat ? 'stats' : main, stat: isStat ? main : null, codex: main === 'codex' && sub ? sub : undefined };
   openNote('guide', {
     title: 'Guide',
     width: state.page === 'codex' ? 440 : 384,
@@ -61,7 +63,7 @@ function buildStart(body, c) {
     ['2. Give it a job', `Once it is a Sprout, pick ${jobs.slice(0, -1).join(', ')} or ${jobs[jobs.length - 1]}. Each job splits twice, into ${finals} final forms in all.`, []],
     ['3. Mine and farm', 'Mining digs real colors off your screen. Colors, gems and harvests go into one pool that all your creatures share, to spend in the workshop or eat.', [['Mine colors', 'mine'], ['Farm', 'farm'], ['Workshop', 'workshop']]],
     ['4. Powers', `At ${STAND_WITS} Wits a Stand, at ${SPEEDSTER_SPEED} Speed speedster powers, at ${TECHNIQUE_MIGHT} Might its family's cursed technique. It gets one, unless a Legendary mutation makes room for two. Or, at ${FRUIT_VIGOR} Vigor, it can eat a Devil Fruit instead of all of them. Quirks cost max HP, and go with anything.`, [['Powers', 'powers']]],
-    ['5. Fight', 'Training monsters can\'t kill it. Deadly ones can, forever. Adventure is a 20-level campaign for a party of three where nobody can die. The battle plan decides how it fights.', [['Adventure', 'adventure'], ['Challenges', 'challenges'], ['Battle plan', 'plan'], ['Arena', 'arena']]],
+    ['5. Fight', 'Training monsters can\'t kill it. Deadly ones can, forever. Adventure is a 50-level campaign for a party of three where nobody can die. The battle plan decides how it fights.', [['Adventure', 'adventure'], ['Challenges', 'challenges'], ['Battle plan', 'plan'], ['Arena', 'arena']]],
     ['6. Your village', `Up to ${TEAM_MAX} mains are out on your screen. Everyone else lives in the village and works for the pool you all share. Legendary Miners dig ore in the Legendary Mine for the forge, and parties go on expeditions for gems and loot.`, [['Village', 'village'], ['Legendary Mine', 'mine'], ['Expeditions', 'expeditions']]],
     ['7. More creatures', 'The Nursery is where they come from: breed two and choose what the egg gets, or hatch eggs until you like one. Its Items tab uses the loot Adventure and expeditions bring home. Your creatures shows everyone at once.', [['Nursery', 'nursery'], ['Eggs', 'nursery:eggs'], ['Your creatures', 'creatures']]],
   ];

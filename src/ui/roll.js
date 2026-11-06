@@ -6,15 +6,15 @@ import { toast, rich } from './flair.js';
 import { uid } from '../lib/util.js';
 import { G, saveHouse } from '../state.js';
 import { h, fill, button } from './notes.js';
-import { fullName } from '../core/creature.js';
+import { fullName, raceName } from '../core/creature.js';
 import { eggFromId, rollEgg, matchChance, hyperRoll, hatchEgg } from '../core/roll.js';
 import { TECHNIQUES, TECHNIQUE_IDS, TRAITS, BORN_TRAIT_IDS } from '../data/powers.js';
-import { ROLL_COST, HYPER_BUDGETS } from '../data/family.js';
+import { ROLL_COST, HYPER_BUDGETS, ALTAR } from '../data/family.js';
 import { RACES, DEFAULT_RACE } from '../data/races.js';
 import { eggRaces } from '../core/family.js';
 import { createCreature } from './panels.js';
 import { openNursery } from './nursery.js';
-import { loadRows } from './breed.js';
+import { loadRows, stepCard } from './breed.js';
 
 const gems = () => Math.floor(G.house.bank.gems);
 
@@ -25,15 +25,15 @@ export function eggOnOffer() {
     G.house.egg = { id: uid() };
     saveHouse();
   }
-  return eggFromId(G.house.egg.id);
+  return eggFromId(G.house.egg.id, G.house.altar ? G.house.altarRaces : []);
 }
 
-// The race the egg on offer hatches as: Human, unless the Bloodline Altar has another and it was picked.
-const eggRace = () => (eggRaces(G.house).includes(G.house.eggRace) ? G.house.eggRace : DEFAULT_RACE);
+// The race an egg hatches as, in words: "Human", "Giant", "Half Giant" and so on.
+const eggRaceName = (egg) => raceName({ race: DEFAULT_RACE, heritage: egg.heritage, pureBlood: false });
 
 // The egg on offer hatches as this creature, and the next one waits in its place.
 export function takeEgg(name) {
-  const c = hatchEgg(eggOnOffer(), name, Date.now(), eggRace());
+  const c = hatchEgg(eggOnOffer(), name, Date.now());
   G.house.egg = null;
   saveHouse();
   return c;
@@ -66,48 +66,48 @@ export function buildEggs(page, note) {
   input.addEventListener('input', () => { st.name = input.value; });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') keep(note, input); });
   const chip = (label, on, onclick, color) => h('button', { class: `chip${on ? ' on' : ''}`, style: color ? `--c:${color}` : '', onclick }, label);
+  const fact = (label, ...kids) => h('div', { class: 'eggfact' }, h('span', { class: 'pc-label' }, label), kids);
+  const raceColor = egg.heritage ? RACES[Object.keys(egg.heritage).find((r) => r !== DEFAULT_RACE)].color : RACES[DEFAULT_RACE].color;
   fill(page,
-    h('div', { class: 'row nowrap' },
-      h('div', { class: 'small grow' }, 'The egg on offer is free to keep. Rolling a different one costs a gem from the shared bank.'),
-      h('b', { class: 'gems' }, `Gems: ${have}`)),
-    h('div', { class: 'eggcard' },
-      eggPicture(egg),
-      h('div', { class: 'grow' },
-        h('div', { class: 'nameline', style: 'font-size:16px' }, familyText(egg.lineage)),
-        h('div', { class: 'small' }, `The other side of its family: ${TECHNIQUES[egg.otherLine].family}.`),
-        h('div', { class: 'small', style: 'font-weight:600' }, rich(`Born with: ${giftsText(egg)}.`)))),
-    // With the Bloodline Altar, the egg can hatch as any race sacrificed on it.
-    eggRaces(G.house).length > 1 && h('div', { class: 'row', style: 'margin-top:4px' },
-      h('span', { class: 'small' }, 'Hatches as'),
-      h('div', { class: 'chips' }, eggRaces(G.house).map((id) => chip(RACES[id].name, eggRace() === id, () => {
-        G.house.eggRace = id === DEFAULT_RACE ? null : id;
-        saveHouse();
+    stepCard(null, 'The egg on offer', h('b', { class: 'gems' }, `${have} gems`),
+      h('div', { class: 'eggshow' },
+        eggPicture(egg),
+        h('div', { class: 'eggfacts' },
+          h('div', { class: 'nameline', style: 'font-size:16px' }, familyText(egg.lineage)),
+          fact('Other side', h('span', { class: 'small' }, `the ${TECHNIQUES[egg.otherLine].family} family`)),
+          fact('Born with', egg.traits.length
+            ? h('div', { class: 'chips' }, egg.traits.map((id) => h('span', { class: 'pchip', style: `--c:${TRAITS[id].color}`, title: TRAITS[id].blurb }, TRAITS[id].name)))
+            : h('span', { class: 'small' }, 'nothing')),
+          fact('Hatches as', h('span', { class: 'pchip', style: `--c:${raceColor}` }, eggRaceName(egg))))),
+      // With the Bloodline Altar, any egg can turn out to be one of its races. Nobody picks.
+      eggRaces(G.house).length > 1 && h('div', { class: 'small', style: 'margin-top:4px' }, `The Bloodline Altar gives every egg a ${Math.round(ALTAR.eggChance * 100)}% chance of hatching as one of its races (${eggRaces(G.house).filter((id) => id !== DEFAULT_RACE).map((id) => RACES[id].name).join(', ')}): all of it, half or a quarter.`),
+      h('div', { class: 'hatchbar' }, input, button('Keep it', () => keep(note, input), 'big hot')),
+      h('div', { class: 'row gap', style: 'margin-top:5px' },
+        button(`Roll a different one: ${ROLL_COST} gem`, () => rollOnce(note), 'big', have < ROLL_COST),
+        h('span', { class: 'small grow' }, have < ROLL_COST ? 'No gems left. Mining, the village, expeditions and Adventure all bring them in.' : 'This one is free to keep.'))),
+    stepCard(null, 'Hyper roll', !asked ? 'pick something' : chance > 0 ? `about 1 in ${Math.round(1 / chance)}` : 'impossible',
+      h('div', { class: 'small' }, 'Keeps rolling by itself until it gets everything you pick here.'),
+      h('div', { class: 'sublabel' }, 'Gifts'),
+      h('div', { class: 'chips', style: 'margin-top:4px' }, BORN_TRAIT_IDS.map((id) => chip(TRAITS[id].name, st.want.traits.includes(id), () => {
+        st.want.traits = st.want.traits.includes(id) ? st.want.traits.filter((t) => t !== id) : [...st.want.traits, id];
         note.rebuild();
-      }, RACES[id].color)))),
-    h('div', { class: 'row gap' }, input, button('Keep it', () => keep(note, input), 'hot')),
-    h('div', { class: 'row gap' }, button(`Roll again: ${ROLL_COST} gem`, () => rollOnce(note), 'big', have < ROLL_COST)),
-    have < ROLL_COST && h('div', { class: 'small' }, 'No gems left. Mining, the village, expeditions and Adventure all bring them in.'),
-    h('div', { class: 'sect' }, 'Hyper roll'),
-    h('div', { class: 'small' }, 'Keeps rolling by itself until it gets everything you pick here.'),
-    h('div', { class: 'chips', style: 'margin-top:4px' }, BORN_TRAIT_IDS.map((id) => chip(TRAITS[id].name, st.want.traits.includes(id), () => {
-      st.want.traits = st.want.traits.includes(id) ? st.want.traits.filter((t) => t !== id) : [...st.want.traits, id];
-      note.rebuild();
-    }, TRAITS[id].color))),
-    h('div', { class: 'chips', style: 'margin-top:4px' }, [null, ...TECHNIQUE_IDS].map((t) => chip(t ? TECHNIQUES[t].family : 'Any family', st.want.family === t, () => {
-      st.want.family = t;
-      note.rebuild();
-    }, t ? TECHNIQUES[t].color : null))),
-    h('div', { class: 'small', style: 'margin-top:4px' }, !asked
-      ? 'Pick a gift or a family first.'
-      : chance > 0 ? `About 1 roll in ${Math.round(1 / chance)} lands that.` : 'No egg can hatch with that: Six Eyes only comes with the Gojo family.'),
-    h('div', { class: 'row', style: 'margin-top:4px' },
-      h('span', { class: 'small' }, 'Spend up to'),
-      HYPER_BUDGETS.map((b) => chip(`${b} gems`, st.budget === b, () => {
-        st.budget = b;
+      }, TRAITS[id].color))),
+      h('div', { class: 'sublabel' }, 'Family'),
+      h('div', { class: 'chips', style: 'margin-top:4px' }, [null, ...TECHNIQUE_IDS].map((t) => chip(t ? TECHNIQUES[t].family : 'Any family', st.want.family === t, () => {
+        st.want.family = t;
         note.rebuild();
-      }))),
-    h('div', { class: 'row gap' }, button('Hyper roll', () => hyper(note), 'big hot', !asked || !chance || have < ROLL_COST)),
-    st.result && h('div', { class: 'small', style: 'font-weight:600;margin-top:5px' }, rich(st.result)),
+      }, t ? TECHNIQUES[t].color : null))),
+      h('div', { class: 'small', style: 'margin-top:4px' }, !asked
+        ? 'Pick a gift or a family first.'
+        : chance > 0 ? `About 1 roll in ${Math.round(1 / chance)} lands that.` : 'No egg can hatch with that: Six Eyes only comes with the Gojo family.'),
+      h('div', { class: 'row', style: 'margin-top:4px' },
+        h('span', { class: 'small' }, 'Spend up to'),
+        HYPER_BUDGETS.map((b) => chip(`${b} gems`, st.budget === b, () => {
+          st.budget = b;
+          note.rebuild();
+        }))),
+      h('div', { class: 'row gap' }, button('Hyper roll', () => hyper(note), 'big hot', !asked || !chance || have < ROLL_COST))),
+    st.result && h('div', { class: 'callout small', style: 'font-weight:600' }, rich(st.result)),
   );
 }
 
@@ -144,7 +144,7 @@ async function keep(note, input) {
   const egg = eggOnOffer();
   const made = await createCreature(name, takeEgg(name));
   note.spec.eggs.name = '';
-  const race = made.c.race !== DEFAULT_RACE ? `a ${RACES[made.c.race].name}, ` : '';
+  const race = made.c.race !== DEFAULT_RACE ? `${eggRaceName(egg)}, ` : '';
   note.spec.eggs.result = `${made.c.name} hatched: ${race}${familyText(egg.lineage)}, born with ${giftsText(egg)}. A new egg is on offer.`;
   const m = await G.bringOut(made.base, made.c);
   if (m) m.pet.say(`i am ${fullName(made.c)}`, 4, true);

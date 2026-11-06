@@ -13,6 +13,7 @@ import { FOODS } from '../data/foods.js';
 import { PATHS, ABILITIES } from '../data/paths.js';
 import { WEAPONS } from '../data/forge.js';
 import { EXPEDITIONS } from '../data/village.js';
+import { ADVENTURE_LEVELS } from '../data/adventure.js';
 import { STANDS, QUIRKS, TECHNIQUES, LEGENDARY, TRAITS, OFA_ID } from '../data/powers.js';
 import { FRUITS } from '../data/fruits.js';
 import { RACES, DEFAULT_RACE } from '../data/races.js';
@@ -22,7 +23,8 @@ import { dropRig, drawPortrait, hasArt, artUrl, setPictureScale } from '../draw/
 import { openDuel } from './duel.js';
 import { openArena } from './boards.js';
 import { openPowers } from './powers.js';
-import { openChallenges } from './challenges.js';
+import { openChallenges, openUltimates } from './challenges.js';
+import { openSearch, searchBox } from './search.js';
 import { openGuide } from './guide.js';
 import { openPlan } from './plan.js';
 import { openSheet } from './sheet.js';
@@ -115,7 +117,7 @@ function powerSummary(c) {
   const names = [
     raceName(c) !== RACES[DEFAULT_RACE].name && raceName(c),
     ...c.traits.map((id) => TRAITS[id].name),
-    c.legendary && LEGENDARY[c.legendary].name,
+    ...c.souls.map((id) => LEGENDARY[id].name),
     stand && STANDS[stand].name,
     speedster && 'Speedster',
     technique && TECHNIQUES[technique].name,
@@ -134,6 +136,7 @@ export function openMenu() {
   openNote('menu', {
     title: fullName(c),
     width: 344,
+    headExtra: () => searchBox(),
     help: 'start',
     build(body, note) {
       const canvas = h('canvas', { class: 'portrait' });
@@ -156,7 +159,7 @@ export function openMenu() {
         `${Math.floor(G.house.bank.gems)} gems`,
         `${Math.floor(G.house.ore)} ore`,
         `${count} creature${count === 1 ? '' : 's'}`,
-        G.house.adventure.best > 0 && `Adventure ${G.house.adventure.best}/20`,
+        G.house.adventure.best > 0 && `Adventure ${G.house.adventure.best}/${ADVENTURE_LEVELS.length}`,
       ].filter(Boolean).join(', ');
       fill(body, h('div', { class: 'row nowrap' },
         canvas,
@@ -204,22 +207,20 @@ export function openMenu() {
       fill(body,
         h('div', { class: 'gap', style: 'display:grid;gap:3px;margin-top:6px' }, STAT_KEYS.map((k) => statRow(k, stats[k], limits[k]))),
         h('div', { class: 'small', style: 'margin-top:3px' }, `Only one stat can reach ${best}, one ${second}, one ${third}, one ${fourth}, one ${worst}.`),
-        // Two things to do right now, and everything else in four places.
+        // Three things it does all the time, and everything else in four places.
         h('div', { class: 'actions quick' },
-          act('Snack', () => {
-            const problem = G.pet?.feedSnack();
-            if (problem) G.pet.say(problem, 2.5, true);
-          }, 'A free snack: it fills up and grows a little'),
+          act('Farm', leaveMenu(openFarm), 'Its fields and animals: farmed food is the only thing that grows mutations'),
           mining
-            ? (note.refs.stopMine = act(`Stop mining (${clockText((G.pet.mineLeft ?? 0) * 1000)})`, () => {
+            ? (note.refs.stopMine = act(`Stop (${clockText((G.pet.mineLeft ?? 0) * 1000)})`, () => {
               G.pet.stopRequested = true;
               note.close();
             }, 'Stop digging and come back', 'hot'))
-            : act('Mine colors', leaveMenu(beginMine), `Click a spot on your screen, and it digs the colors out of it for ${Math.round(SPOT_MINE.seconds / 60)} minutes`)),
+            : act('Mine colors', leaveMenu(beginMine), `Click a spot on your screen, and it digs the colors out of it for ${Math.round(SPOT_MINE.seconds / 60)} minutes`),
+          act('Duel', leaveMenu(openDuel), 'A puzzle duel')),
         h('div', { class: 'hubs' },
-          hubButton('care', 'Farmed food, its fields and animals, dye, charms and weapons'),
+          hubButton('care', 'Snacks, farmed food, dye, charms and weapons'),
           hubButton('powers', 'Stands, techniques, Quirks and the rest, how it fights, and everything it has'),
-          hubButton('fight', 'Adventure, training and deadly monsters, the arena and puzzle duels', !!G.challenge),
+          hubButton('fight', 'Adventure, training and deadly monsters, and the arena', !!G.challenge),
           hubButton('home', 'Every creature you have, eggs and breeding, and the village')),
         h('div', { class: 'menufoot' },
           footButton('Codex', leaveMenu(() => openGuide('codex'))),
@@ -238,7 +239,7 @@ export function openMenu() {
       const { canvas, food, grow, stage } = note.refs;
       if (!canvas) return;
       tickClocks(note);
-      if (note.refs.stopMine && G.pet) note.refs.stopMine.textContent = `Stop mining (${clockText((G.pet.mineLeft ?? 0) * 1000)})`;
+      if (note.refs.stopMine && G.pet) note.refs.stopMine.textContent = `Stop (${clockText((G.pet.mineLeft ?? 0) * 1000)})`;
       drawPortrait(canvas, c);
       food.style.width = `${c.fullness}%`;
       grow.style.width = `${growthProgress(c) * 100}%`;
@@ -282,6 +283,7 @@ const OPEN = {
   adventure: () => openAdventure(),
   settings: () => openSettings(),
   arena: () => openArena(),
+  search: () => openSearch(),
 };
 const FOR_ONE = {
   rename: () => openRename(),
@@ -290,8 +292,12 @@ const FOR_ONE = {
   feed: () => openFeed(),
   farm: () => openFarm(),
   mine: () => beginMine(),
-  workshop: () => openWorkshop(),
+  workshop: (tab) => openWorkshop(tab || 'dye'),
   challenges: () => openChallenges(),
+  ultimates: () => {
+    openChallenges();
+    openUltimates();
+  },
   plan: () => openPlan(),
   powers: () => openPowers(),
   sheet: () => openSheet(),
@@ -304,7 +310,7 @@ export function openAny(what = 'menu') {
   if (key === 'guide') openGuide(page || 'start');
   else if (OPEN[key]) OPEN[key](page);
   else if (!G.creature) openCreatures();
-  else (FOR_ONE[key] ?? FOR_ONE.menu)();
+  else (FOR_ONE[key] ?? FOR_ONE.menu)(page);
 }
 G.open = openAny;
 

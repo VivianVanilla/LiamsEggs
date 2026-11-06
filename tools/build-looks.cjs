@@ -24,6 +24,12 @@ const EXTRA = {
     credit: '`1fabd.svg` from Twemoji 15.1.0, recolored black',
     colors: { '#CAD4DB': '#3a3441', '#97A8B3': '#1e1a24' },
   },
+  'wing-red': {
+    url: `${TWEMOJI_15}1fabd.svg`,
+    file: 'twemoji-15.1.0-1fabd.svg',
+    credit: '`1fabd.svg` from Twemoji 15.1.0, recolored red',
+    colors: { '#CAD4DB': '#d9452b', '#97A8B3': '#8e2316' },
+  },
 };
 
 function recolor(svg, colors) {
@@ -120,6 +126,10 @@ const LOOKS = {
   'races/lunarian.png': [['1f525', 186, 196, 58, -15], ['1f525', 326, 196, 58, 15, true]],
   // Behind the body: black wings, and the fire on its back burning up between them.
   'races/lunarian-back.png': [['wing-black', 384, 158, 214], ['wing-black', 128, 158, 214, 0, true], ['1f525', 256, 118, 150]],
+  'races/vampire.png': [['1fa78', 196, 92, 40, -12], ['1fa78', 316, 92, 40, 12, true], ['1fa78', 176, 150, 30], ['1fa78', 336, 150, 30]],
+  'races/cursedalien.png': [['1f6f8', 256, 46, 80]],
+  'races/pillarman-back.png': [['1f3db', 256, 300, 420]],
+  'races/dragon-back.png': [['wing-red', 384, 158, 214], ['wing-red', 128, 158, 214, 0, true]],
   'races/devil.png': [['1f531', 350, 300, 132]],
   'races/halfdevil.png': [['1fa9a', 352, 300, 104, -30]],
 

@@ -28,7 +28,7 @@ const DATA_KEYS = new Set(['arena', 'household']);
 const DWELL_MS = 220; // the cursor must rest on the creature this long, so quick clicks reach your apps
 const APP_ID = 'creature.overlay.game';
 const TEAM_MAX = 3;
-const OPENABLE = new Set(['menu', 'feed', 'nursery', 'creatures', 'village', 'adventure', 'powers']);
+const OPENABLE = new Set(['menu', 'feed', 'nursery', 'creatures', 'village', 'adventure', 'powers', 'search']);
 // Creature.exe, when the game was started with it (tools/launcher/Creature.cs). A pinned taskbar
 // button and the jump list then start the game through it, with its icon, and in the same world.
 const LAUNCHER = (() => {
@@ -273,9 +273,10 @@ function setJumpList() {
   try {
     app.setUserTasks([
       task('Open the menu', 'menu', 'Opens the creature menu'),
+      task('Search everything', 'search', 'Find any menu, monster, race, power or item'),
       task('Your creatures', 'creatures', 'Every creature you have, in one place'),
       task('Nursery', 'nursery', 'Breed, hatch eggs and use items'),
-      task('Adventure', 'adventure', 'The 20-level campaign'),
+      task('Adventure', 'adventure', 'The 50-level campaign'),
       task('Village', 'village', 'Work, the Legendary Mine and expeditions'),
       task('Hide or show', 'hide', 'Hides everything, or brings it back'),
     ]);

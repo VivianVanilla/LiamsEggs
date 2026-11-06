@@ -96,17 +96,17 @@ const LEGEND_ROAD = {
   },
   leopard: {
     name: 'The Ghost Leopard', soul: 'ghostsoul', size: 140, moves: ['stoop', 'snare', 'hex'], stance: 'bounce',
-    stats: { might: 42, guard: 24, speed: 54, wits: 44, vigor: 32 },
+    stats: { might: 40, guard: 22, speed: 50, wits: 40, vigor: 30 },
     blurb: 'You only ever see where it was.',
   },
   shark: {
     name: 'The Sea King', soul: 'tidesoul', size: 170, moves: ['stoop', 'regrow', 'quake'],
-    stats: { might: 52, guard: 32, speed: 38, wits: 24, vigor: 60 },
+    stats: { might: 46, guard: 28, speed: 34, wits: 22, vigor: 50 },
     blurb: 'The sea belongs to it, and so does anything that falls in.',
   },
   gorilla: {
     name: 'The Silverback', soul: 'warsoul', size: 160, moves: ['reckoning', 'warcry', 'quake'],
-    stats: { might: 62, guard: 36, speed: 30, wits: 20, vigor: 56 },
+    stats: { might: 60, guard: 34, speed: 30, wits: 20, vigor: 54 },
     blurb: 'It beats its chest once. That is the only warning.',
   },
 };

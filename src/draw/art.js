@@ -127,7 +127,8 @@ function paintCreature(ctx, c, x, feetY, size) {
   if (speedster) layer('powers/speedster.png');
   if (c.powers.technique) layer(`techniques/${c.powers.technique}.png`);
   if (c.powers.technique2) layer(`techniques/${c.powers.technique2}.png`);
-  if (c.legendary) layer(`legendary/${c.legendary}.png`);
+  // Only the first Legendary mutation is drawn: the pictures sit in the same places.
+  if (c.souls.length) layer(`legendary/${c.souls[0]}.png`);
   quirks.filter((id) => !QUIRKS[id].behind).forEach((id) => layer(`quirks/${id}.png`));
   const job = c.path.line[c.path.line.length - 1];
   if (job) layer(`jobs/${job}.png`);
