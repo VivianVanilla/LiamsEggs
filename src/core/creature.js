@@ -10,11 +10,11 @@ import { WEAPONS } from '../data/forge.js';
 import { EXPANDER_SLOTS, MAX_EXPANDERS } from '../data/items.js';
 import {
   STANDS, STAND_IDS, STAND_WITS, QUIRKS, QUIRK_IDS, SPEEDSTER, SPEEDSTER_SPEED, MAX_HP_GIVEN,
-  TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, POWER_SLOTS, POWER_SLOTS_LEGENDARY, POWER_CATEGORIES, LEGENDARY, LEGENDARY_ID, LEGENDARY_ONE_IN,
+  TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, POWER_SLOTS, POWER_SLOTS_LEGENDARY, POWER_CATEGORIES, LEGENDARY,
   TRAITS, BORN_TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, OFA_ID, ofaLevelFor, ofaStats, ofaLimitBonus, OFA_MOVES,
 } from '../data/powers.js';
-import { DEADLY_MONSTERS, TROPHY_POINTS } from '../data/monsters.js';
-import { RACES, DEFAULT_RACE, RACE_PICTURES, WILD_RACES, RACE_FULL_SHARE } from '../data/races.js';
+import { DEADLY_MONSTERS, LEGEND_IDS, TROPHY_POINTS } from '../data/monsters.js';
+import { RACES, DEFAULT_RACE, RACE_PICTURES, RACE_BACKS, SKIN_MIX, WILD_RACES, RACE_FULL_SHARE } from '../data/races.js';
 import { FRUITS, FRUIT_VIGOR } from '../data/fruits.js';
 import { STANCES, HURT_PLANS, TARGET_PLANS, defaultBattlePlan } from '../data/battle.js';
 import { CHARMS, CHARM_SLOTS, PAINTS, CROP_IDS, BANK_KEYS, MAX_BANK, familyOfBin } from '../data/crafting.js';
@@ -45,6 +45,7 @@ export const STAT_LIMITS = [60, 45, 30, 18, 12];
 export const TRAINING_LIMIT = 10;
 
 const MAX_ABSORBED = 200;
+const MAX_REBIRTHS = 50;
 const FULL_AT = 92;
 
 export function newCreature(name, now = Date.now()) {
@@ -81,6 +82,12 @@ export function newCreature(name, now = Date.now()) {
     heritage: null,
     pureBlood: false,
     trophies: [],
+    // The Legendary road monsters it has beaten (data/monsters.js). They give no trophy.
+    legendWins: [],
+    // A Legendary mutation it won while it already had one, waiting for you to take it or not.
+    soulOffer: null,
+    // Each time it was reborn: when, who it absorbed, and which of that one's gifts it took.
+    rebirths: [],
     dead: null,
     battle: defaultBattlePlan(),
     bank: emptyBank(),
@@ -137,7 +144,7 @@ export function eatSnack(c) {
   const stageBefore = stageIndex(c);
   c.growth += SNACK.growth;
   c.fullness = clamp(c.fullness + SNACK.fullness, 0, 100);
-  return { seen: false, nutrition: SNACK.growth, essence: 0, mutation: null, legendary: null, noRoom: false, stageUp: stageIndex(c) > stageBefore };
+  return { seen: false, nutrition: SNACK.growth, essence: 0, mutation: null, noRoom: false, stageUp: stageIndex(c) > stageBefore };
 }
 
 // Farmed food: the only food that grows mutations. sim/farm.js turns a plant into this.
@@ -159,8 +166,7 @@ export function absorbFile(c, food, now = Date.now()) {
 
   const noRoom = mutationsFull(c);
   const mutation = maybeMutate(c, family, food.sha, now);
-  const legendary = mutation ? maybeLegendary(c, food.sha) : null;
-  return { seen, nutrition, essence, mutation, legendary, noRoom, stageUp: stageIndex(c) > stageBefore };
+  return { seen, nutrition, essence, mutation, noRoom, stageUp: stageIndex(c) > stageBefore };
 }
 
 // How many mutations it can hold, with any Limit Expanders it has used.
@@ -178,15 +184,6 @@ function maybeMutate(c, family, sha, now) {
   const m = { id, from: sha ? String(sha).slice(0, 12) : '', at: now };
   c.mutations.push(m);
   return m;
-}
-
-// The file decides this too, so the same file always gives the same answer.
-function maybeLegendary(c, sha) {
-  if (c.legendary) return null;
-  const seed = parseInt(String(sha).slice(8, 16), 16) || hashStr(String(sha));
-  if (seed % LEGENDARY_ONE_IN !== 0) return null;
-  c.legendary = LEGENDARY_ID;
-  return c.legendary;
 }
 
 // ---------- colors ----------
@@ -238,8 +235,11 @@ export function creatureColors(c) {
   if (foodTint) body = mixHex(body, foodTint, clamp(c.essence[topFood] / 24, 0.08, 0.32));
   if (swatches.length) body = mixHex(body, swatches[0].hex, clamp(coloured / 300, 0.15, 0.92));
   const accent = swatches[1]?.hex ?? swatches[0]?.hex ?? foodTint ?? '#ff6b5e';
+  // Some races have a skin of their own, which shades whatever colors it wears.
+  const skins = fullRaces(c).filter((race) => race.skin);
+  skins.forEach((race) => { body = mixHex(body, race.skin, SKIN_MIX / skins.length); });
   // A dye from the workshop covers all of that, until it is washed off.
-  return { body: c.look.dye ?? body, accent, tinted: !!c.look.dye || !!foodTint || swatches.length > 0 };
+  return { body: c.look.dye ?? body, accent, tinted: !!c.look.dye || !!foodTint || swatches.length > 0 || skins.length > 0 };
 }
 
 // ---------- stats ----------
@@ -340,16 +340,25 @@ export const raceSize = (c) => raceParts(c).reduce((m, [id, share]) => m * (1 + 
 // The races it is enough of to have their passive and specialty: half or more, or pure-blooded.
 const fullRaces = (c) => raceParts(c).filter(([, share]) => c.pureBlood || share >= RACE_FULL_SHARE).map(([id]) => RACES[id]);
 
+function addPassive(out, passive) {
+  for (const [k, v] of Object.entries(passive ?? {})) {
+    if (k === 'text') continue;
+    if (k === 'poisonproof') out.poisonproof = out.poisonproof || !!v;
+    else out[k] += v;
+  }
+}
+
 // What its races do for it in a fight, all added together.
 export function racePassive(c) {
   const out = { taken: 0, hp: 0, dodge: 0, crit: 0, speed: 0, reach: 0, poisonproof: false, feast: 0 };
-  for (const race of fullRaces(c)) {
-    for (const [k, v] of Object.entries(race.passive ?? {})) {
-      if (k === 'text') continue;
-      if (k === 'poisonproof') out.poisonproof = out.poisonproof || !!v;
-      else out[k] += v;
-    }
-  }
+  for (const race of fullRaces(c)) addPassive(out, race.passive);
+  return out;
+}
+
+// Its races and its Legendary mutation, together: everything that works in every fight.
+export function fightPassive(c) {
+  const out = racePassive(c);
+  if (c.legendary) addPassive(out, LEGENDARY[c.legendary].passive);
   return out;
 }
 
@@ -379,6 +388,9 @@ export function racePictures(c) {
     .map(([id, share]) => (id === 'devil' && share < 1 && !c.pureBlood ? 'halfdevil' : id))
     .filter((id) => RACE_PICTURES.includes(id));
 }
+
+// The ones of those with a picture behind the body too, like a Lunarian's wings.
+export const raceBackPictures = (c) => racePictures(c).filter((id) => RACE_BACKS.includes(id));
 
 // One For All's level, from its stockpile. 0 if it doesn't hold it.
 export const ofaLevel = (c) => (c.powers.quirks.includes(OFA_ID) ? ofaLevelFor(c.ofa?.stockpile ?? 0) : 0);
@@ -439,22 +451,36 @@ export const fullName = (c) => `${c.name} ${lastName(c)}`;
 export const hasTrait = (c, id) => (c.traits ?? []).includes(id);
 
 // A Stand, speedster powers and a cursed technique share these places. A Devil Fruit takes them all.
+const POWER_KINDS = ['stand', 'speedster', 'technique', 'fruit'];
 export const powersHeld = (c) => [c.powers.stand, c.powers.speedster, c.powers.technique, c.powers.fruit].filter(Boolean).length;
-export const powerSlots = (c) => (c.legendary ? POWER_SLOTS_LEGENDARY : POWER_SLOTS);
+const soulSlots = (legendary) => (legendary ? LEGENDARY[legendary].slots ?? POWER_SLOTS_LEGENDARY : POWER_SLOTS);
+export const powerSlots = (c) => soulSlots(c.legendary);
 export const hasPowerRoom = (c) => powersHeld(c) < powerSlots(c);
 
 // Whether a set of powers has room for this one, under the soul it has.
 function roomFor(powers, legendary, kind) {
   const soul = legendary ? LEGENDARY[legendary] : null;
-  const held = ['stand', 'speedster', 'technique', 'fruit'].filter((k) => powers[k]);
+  const held = POWER_KINDS.filter((k) => powers[k]);
   if (held.includes(kind)) return false;
-  // A Devil Fruit goes with nothing else, unless its soul makes room for one (Malevolent Soul).
+  if (kind === 'stand' && soul?.noStand) return false;
+  // A Devil Fruit goes with nothing else, unless its soul makes room for one (`fruit`).
   if ((kind === 'fruit' || powers.fruit) && held.length && !soul?.fruit) return false;
-  if (held.length >= (soul ? POWER_SLOTS_LEGENDARY : POWER_SLOTS)) return false;
+  if (held.length >= soulSlots(legendary)) return false;
+  if (soul?.besideFruit && held.length && kind !== 'fruit' && !powers.fruit) return false;
   return !(soul?.apart && held.some((k) => POWER_CATEGORIES[k] === POWER_CATEGORIES[kind]));
 }
 
 export const hasRoomFor = (c, kind) => roomFor(c.powers, c.legendary, kind);
+
+// Whether everything it holds now would still fit under that Legendary mutation.
+export function fitsSoul(c, legendary) {
+  const built = {};
+  for (const kind of POWER_KINDS.filter((k) => c.powers[k])) {
+    if (!roomFor(built, legendary, kind)) return false;
+    built[kind] = c.powers[kind];
+  }
+  return true;
+}
 
 export const canAwakenStand = (c) => hasRoomFor(c, 'stand') && computeStats(c).wits >= STAND_WITS;
 export const canBecomeSpeedster = (c) => hasRoomFor(c, 'speedster') && computeStats(c).speed >= SPEEDSTER_SPEED;
@@ -495,7 +521,7 @@ export const fruitProblem = (c) => {
   if (c.powers.stand || c.powers.speedster || c.powers.technique) {
     const soul = c.legendary ? LEGENDARY[c.legendary] : null;
     if (!soul?.fruit) return 'It already has a power, and a Devil Fruit can\'t go with any other';
-    if (!roomFor(c.powers, c.legendary, 'fruit')) return `${soul.name} only makes room for a Devil Fruit beside a Stand`;
+    if (!roomFor(c.powers, c.legendary, 'fruit')) return soul.apart ? `${soul.name} only makes room for a Devil Fruit beside a Stand` : `${soul.name} has no room left for a Devil Fruit`;
   }
   if (computeStats(c).vigor < FRUIT_VIGOR) return `It needs ${FRUIT_VIGOR} Vigor`;
   return null;
@@ -562,6 +588,7 @@ export function movesOf(c) {
   if (c.powers.technique) TECHNIQUES[c.powers.technique].moves.forEach((id) => list.push({ id, from: TECHNIQUES[c.powers.technique].name }));
   if (c.powers.technique2) TECHNIQUES[c.powers.technique2].moves.forEach((id) => list.push({ id, from: `${TECHNIQUES[c.powers.technique2].name} (Cursed Body)` }));
   if (c.powers.fruit) FRUITS[c.powers.fruit].moves.forEach((id) => list.push({ id, from: FRUITS[c.powers.fruit].name }));
+  (c.traits ?? []).filter((id) => TRAITS[id]?.move).forEach((id) => list.push({ id: TRAITS[id].move, from: TRAITS[id].name }));
   const level = ofaLevel(c);
   c.powers.quirks.forEach((id) => {
     if (id !== OFA_ID) {
@@ -702,7 +729,16 @@ export function sanitizeCreature(raw, now = Date.now()) {
     ? { stockpile: safeNum(raw.ofa?.stockpile, 0, 1e6), holders: Array.isArray(raw.ofa?.holders) ? raw.ofa.holders.slice(-12).map((n) => safeStr(n, 60)) : [] }
     : null;
   c.trophies = Array.isArray(raw.trophies)
-    ? [...new Set(raw.trophies)].filter((id) => typeof id === 'string' && Object.hasOwn(DEADLY_MONSTERS, id))
+    ? [...new Set(raw.trophies)].filter((id) => typeof id === 'string' && Object.hasOwn(DEADLY_MONSTERS, id) && DEADLY_MONSTERS[id].trophy)
+    : [];
+  c.legendWins = Array.isArray(raw.legendWins) ? [...new Set(raw.legendWins)].filter((id) => LEGEND_IDS.includes(id)) : [];
+  c.soulOffer = typeof raw.soulOffer === 'string' && Object.hasOwn(LEGENDARY, raw.soulOffer) && raw.soulOffer !== c.legendary ? raw.soulOffer : null;
+  c.rebirths = Array.isArray(raw.rebirths)
+    ? raw.rebirths.slice(-MAX_REBIRTHS).filter((r) => r && typeof r === 'object').map((r) => ({
+      at: safeNum(r.at, 0, now),
+      absorbed: safeStr(r.absorbed, 60),
+      took: Array.isArray(r.took) ? [...new Set(r.took)].filter((id) => typeof id === 'string' && Object.hasOwn(TRAITS, id)).slice(0, 8) : [],
+    }))
     : [];
   // Once dead, always dead. A file can't come back by leaving out a date or a killer.
   c.dead = raw.dead ? { at: safeNum(raw.dead.at, 0, now), by: safeStr(raw.dead.by, 40), ...(raw.dead.to ? { to: safeStr(raw.dead.to, 40) } : {}) } : null;
@@ -855,6 +891,7 @@ export function serializeCreature(c) {
       devilFruit: c.powers.fruit ? FRUITS[c.powers.fruit].name : null,
       oneForAllLevel: ofaLevel(c) || null,
       bornWith: c.traits.map((id) => TRAITS[id].name),
+      timesReborn: c.rebirths?.length || null,
       weapon: c.weapon ? WEAPONS[c.weapon].name : null,
     },
     stats: computeStats(c),
@@ -874,6 +911,9 @@ export function serializeCreature(c) {
     ofa: c.ofa,
     legendary: c.legendary,
     trophies: c.trophies,
+    legendWins: c.legendWins ?? [],
+    soulOffer: c.soulOffer ?? null,
+    rebirths: c.rebirths ?? [],
     dead: c.dead,
     battle: c.battle,
     bank: c.bank,

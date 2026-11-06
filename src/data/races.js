@@ -42,8 +42,8 @@ export const RACES = {
     from: 'Expeditions to the deep forest and the open sea.',
   },
   lunarian: {
-    name: 'Lunarian', stats: { guard: 3, vigor: 2 }, move: 'lunarflame', color: '#ff9a3c',
-    blurb: 'Nearly gone from the world. Flames burn on its back, and while they do it shrugs off almost anything.',
+    name: 'Lunarian', stats: { guard: 3, vigor: 2 }, move: 'lunarflame', color: '#ff9a3c', skin: '#5c3d2e',
+    blurb: 'Nearly gone from the world. Dark skin, black wings, and flames burning on its back, and while they burn it shrugs off almost anything.',
     passive: { poisonproof: true, text: 'Poison can\'t touch it.' },
     village: { gems: 0.5, text: 'Finds 50% more gems in the village.' },
     from: 'Expeditions across the open sea and up to the sky island, and Adventure level 23.',
@@ -86,13 +86,21 @@ export const RACE_IDS = Object.keys(RACES);
 export const DEFAULT_RACE = 'human';
 
 // Races with a picture of their own, in races/<id>.png. The rest only change size or nothing.
+// RACE_BACKS also have races/<id>-back.png, drawn behind the body, for wings and the like.
+// A race with `skin` shades the body toward that color by SKIN_MIX, once it is at least half that
+// race. A dye from the workshop still covers everything.
 export const RACE_PICTURES = ['fishman', 'mink', 'lunarian', 'devil', 'halfdevil'];
+export const RACE_BACKS = ['lunarian'];
+export const SKIN_MIX = 0.65;
 export const RACE_IDEAS = {
   fishman: 'a wave around its feet',
   mink: 'paw prints and a spark of lightning',
-  lunarian: 'flames on its shoulders',
+  lunarian: 'small flames on its shoulders',
   devil: 'a trident',
   halfdevil: 'a saw',
+};
+export const RACE_BACK_IDEAS = {
+  lunarian: 'two big black wings, and a fire burning between them',
 };
 
 // Their fight moves, added to ABILITIES in data/paths.js.

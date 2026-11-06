@@ -14,6 +14,21 @@ const ART = path.join(__dirname, '..', 'art');
 const CACHE = path.join(os.tmpdir(), 'creature-art-sources');
 const TWEMOJI = 'https://raw.githubusercontent.com/twitter/twemoji/v14.0.2/assets/svg/';
 const FIGURE_URL = 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Aiga_toiletsq_men.svg';
+// Twemoji 15.1.0, kept going by its community at github.com/jdecked/twemoji under the same CC-BY 4.0
+// license, for the few pictures Twemoji 14 doesn't have. `colors` swaps the picture's own colors.
+const TWEMOJI_15 = 'https://raw.githubusercontent.com/jdecked/twemoji/v15.1.0/assets/svg/';
+const EXTRA = {
+  'wing-black': {
+    url: `${TWEMOJI_15}1fabd.svg`,
+    file: 'twemoji-15.1.0-1fabd.svg',
+    credit: '`1fabd.svg` from Twemoji 15.1.0, recolored black',
+    colors: { '#CAD4DB': '#3a3441', '#97A8B3': '#1e1a24' },
+  },
+};
+
+function recolor(svg, colors) {
+  return Object.entries(colors).reduce((s, [from, to]) => s.split(`"${from}"`).join(`"${to}"`).split(`"${from.toLowerCase()}"`).join(`"${to}"`), svg);
+}
 
 // Where the sign figure's own coordinates land on the canvas.
 const K = 0.44;
@@ -103,6 +118,8 @@ const LOOKS = {
   'races/fishman.png': [['1f30a', 256, 452, 112]],
   'races/mink.png': [['1f43e', 166, 362, 54], ['26a1', 352, 296, 70, 15]],
   'races/lunarian.png': [['1f525', 186, 196, 58, -15], ['1f525', 326, 196, 58, 15, true]],
+  // Behind the body: black wings, and the fire on its back burning up between them.
+  'races/lunarian-back.png': [['wing-black', 384, 158, 214], ['wing-black', 128, 158, 214, 0, true], ['1f525', 256, 118, 150]],
   'races/devil.png': [['1f531', 350, 300, 132]],
   'races/halfdevil.png': [['1fa9a', 352, 300, 104, -30]],
 
@@ -161,6 +178,10 @@ const LOOKS = {
   // The Legendary mutations.
   'legendary/twinsoul.png': [['1f31f', 256, 32, 62], ['2728', 150, 90, 54], ['2728', 362, 90, 54], ['2728', 118, 300, 40], ['2728', 394, 300, 40]],
   'legendary/malevolentsoul.png': [['1f5a4', 256, 215, 62], ['26d3', 124, 270, 84], ['26d3', 388, 270, 84, 0, true], ['1fa78', 134, 130, 46], ['1fa78', 378, 130, 46]],
+  'legendary/ironsoul.png': [['2699', 256, 32, 62], ['1f529', 138, 112, 46, 30], ['1f529', 374, 112, 46, -30, true]],
+  'legendary/ghostsoul.png': [['1f319', 256, 32, 60], ['1f4a8', 118, 250, 70, 0, true], ['1f4a8', 394, 250, 70]],
+  'legendary/tidesoul.png': [['1f30a', 256, 34, 64], ['1fae7', 134, 116, 50], ['1fae7', 378, 116, 50], ['1f4a7', 118, 300, 40], ['1f4a7', 394, 300, 40]],
+  'legendary/warsoul.png': [['2694', 256, 32, 62], ['1f525', 134, 118, 48], ['1f525', 378, 118, 48]],
 
   // Charms.
   'crafts/ruby.png': [['1f534', 256, 256, 480]],
@@ -197,6 +218,17 @@ const LOOKS = {
   'monsters/mammoth.png': [['1f9a3', 256, 256, 500, 0, true]],
   'monsters/rex.png': [['1f996', 256, 256, 500, 0, true]],
   'monsters/dragon.png': [['1f409', 256, 256, 500, 0, true]],
+  // The Legendary road.
+  'monsters/rhino.png': [['1f98f', 256, 256, 500, 0, true]],
+  'monsters/leopard.png': [['1f406', 256, 256, 500, 0, true]],
+  'monsters/shark.png': [['1f988', 256, 256, 500, 0, true]],
+  'monsters/gorilla.png': [['1f98d', 256, 256, 500, 0, true]],
+  // The ultimate monsters.
+  'monsters/lobster.png': [['1f99e', 256, 256, 500]],
+  'monsters/tiger.png': [['1f405', 256, 256, 500, 0, true]],
+  'monsters/leviathan.png': [['1f40b', 256, 256, 500, 0, true]],
+  'monsters/kraken.png': [['1f419', 256, 256, 500]],
+  'monsters/behemoth.png': [['1f99b', 256, 256, 500, 0, true]],
 
   // The living shadow from that Quirk.
   'animals/shadow.png': [figure('#16141f')],
@@ -263,7 +295,7 @@ function updateCredits() {
   const start = '<!-- looks start -->';
   const end = '<!-- looks end -->';
   const rows = Object.entries(LOOKS).filter(([file]) => file !== 'creature/body.png').map(([file, items]) => {
-    const parts = [...new Set(items.map(([code]) => (code.startsWith('figure') ? 'the AIGA figure' : `\`${code}.svg\``)))].join(', ');
+    const parts = [...new Set(items.map(([code]) => (code.startsWith('figure') ? 'the AIGA figure' : EXTRA[code]?.credit ?? `\`${code}.svg\``)))].join(', ');
     return `| \`${file}\` | ${parts} |`;
   });
   const section = [
@@ -273,6 +305,8 @@ function updateCredits() {
     '`creature/body.png` is the Men sign figure from the AIGA Symbol Signs, designed in 1974 by Roger Cook and Don Shanosky for the US Department of Transportation. Public domain, from [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Aiga_toiletsq_men.svg). Changed from black to white, with a thin dark edge.',
     '',
     `The mutation, job, Stand, Quirk, technique, crafting and monster pictures below are Twemoji pictures (same credit and license as above), turned, mirrored, cropped (the helmets lose their chin straps) and placed on a transparent canvas by \`tools/build-looks.cjs\`. The Stands and the Dark Shadow also use the AIGA figure above, recolored. To swap one for your own drawing, save over the file and remove it from \`LOOKS\` in that tool and from this list.`,
+    '',
+    'The Lunarian\'s wings are the wing picture from Twemoji 15.1.0, the version of Twemoji its community keeps going at [jdecked/twemoji](https://github.com/jdecked/twemoji), under the same CC-BY 4.0 license. Recolored from grey to black.',
     '',
     'Stands, Quirks and cursed techniques borrow their names and powers from *JoJo\'s Bizarre Adventure*, *My Hero Academia* and *Jujutsu Kaisen*. None of the pictures come from those shows.',
     '',
@@ -297,9 +331,9 @@ app.whenReady().then(async () => {
     const codes = [...new Set(Object.values(todo).flat().map(([code]) => code))];
     const sources = {};
     for (const code of codes) {
-      sources[code] = code.startsWith('figure')
-        ? dataUrl(colorFigure(await fetchSource(FIGURE_URL, 'figure.svg'), code.split(':')[1]))
-        : dataUrl(await fetchSource(`${TWEMOJI}${code}.svg`, `${code}.svg`));
+      if (code.startsWith('figure')) sources[code] = dataUrl(colorFigure(await fetchSource(FIGURE_URL, 'figure.svg'), code.split(':')[1]));
+      else if (EXTRA[code]) sources[code] = dataUrl(recolor(await fetchSource(EXTRA[code].url, EXTRA[code].file), EXTRA[code].colors));
+      else sources[code] = dataUrl(await fetchSource(`${TWEMOJI}${code}.svg`, `${code}.svg`));
     }
     const win = new BrowserWindow({ show: false });
     await win.loadURL('about:blank');

@@ -2,12 +2,12 @@
 // (hits, KOs, fx) for the renderer. Also runs headless so balance can be tested.
 
 import { clamp, makeRng } from '../lib/util.js';
-import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, racePassive } from '../core/creature.js';
+import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, fightPassive } from '../core/creature.js';
 import { tuningOf } from '../core/sheet.js';
 import { ABILITIES } from '../data/paths.js';
 import {
   STANDS, SPEEDSTER, BLACK_FLASH, SHARINGAN_COPY, tuneMove, TRAITS, TITAN, SAIYAN, HAKI, SUN_BREATHING, NINE_TAILS, ONE_PUNCH,
-  ULTRA_DODGE, EIGHT_GATES, DOMAIN, OBSERVATION, GOURMET_HEAL, WILL_DAMAGE,
+  ULTRA_DODGE, EIGHT_GATES, DOMAIN, OBSERVATION, GOURMET_HEAL, WILL_DAMAGE, SLAYER_MARK, ACKERMAN, SCARLET_EYES,
 } from '../data/powers.js';
 import { WEAPONS } from '../data/forge.js';
 import { prepEffects } from '../core/craft.js';
@@ -81,16 +81,20 @@ export class Bout {
       .map((id) => (Object.hasOwn(ABILITIES, id) ? { id, def: tuneMove(id, ABILITIES[id], tuning), cd: 1.5 + this.rand() * 3 } : null))
       .filter(Boolean);
     const prep = prepEffects(c);
-    // What its races do in a fight, and its earned gifts that just change its numbers.
-    const race = racePassive(c);
+    // What its races and its Legendary mutation do in a fight, and its earned gifts that just change its numbers.
+    const passive = fightPassive(c);
     const sees = hasTrait(c, 'observation');
-    const maxHp = maxHpOf(c, s) * (1 + prep.hp) * (1 + race.hp);
+    const maxHp = maxHpOf(c, s) * (1 + prep.hp) * (1 + passive.hp);
     const dir = x < this.cx ? 1 : -1;
     const size = 26 * stage.scale * this.sizeMul * raceSize(c);
     const fast = c.powers.speedster;
     const standDef = c.powers.stand ? STANDS[c.powers.stand] : null;
     const base = combatNumbers(s);
     const weapon = c.weapon && Object.hasOwn(WEAPONS, c.weapon) ? WEAPONS[c.weapon] : null;
+    // Gifts awakened by breeding that just change its numbers.
+    const mark = hasTrait(c, 'slayermark');
+    const markHit = mark ? 1 + SLAYER_MARK.damage : 1;
+    const markSpeed = mark ? 1 + SLAYER_MARK.speed : 1;
     return {
       id: this.nextId++,
       team,
@@ -107,7 +111,7 @@ export class Bout {
       hp: maxHp,
       maxHp,
       ...base,
-      crit: base.crit + (weapon?.crit ?? 0) + race.crit + (sees ? OBSERVATION.crit : 0),
+      crit: base.crit + (weapon?.crit ?? 0) + passive.crit + (sees ? OBSERVATION.crit : 0),
       weapon,
       // Born-with gifts that change a fight. 'ready' turns to 'on' or 'used' once it happens.
       titan: hasTrait(c, 'titanshifter') ? 'ready' : null,
@@ -121,16 +125,17 @@ export class Bout {
       domainUntil: 0,
       gourmet: hasTrait(c, 'gourmet'),
       will: hasTrait(c, 'willofd') ? 'ready' : null,
-      reach: race.reach * this.sizeMul,
-      poisonproof: race.poisonproof,
-      feast: race.feast,
-      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1),
-      moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move) * (1 + race.speed),
-      attackEvery: (base.attackEvery * (fast ? SPEEDSTER.arenaAttack : 1)) / (1 + prep.attack),
+      ackerman: hasTrait(c, 'ackerman'),
+      reach: passive.reach * this.sizeMul,
+      poisonproof: passive.poisonproof,
+      feast: passive.feast,
+      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit,
+      moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move) * (1 + passive.speed) * markSpeed,
+      attackEvery: (base.attackEvery * (fast ? SPEEDSTER.arenaAttack : 1)) / (1 + prep.attack) / markSpeed,
       // Nothing dodges everything.
-      dodge: Math.min(0.75, base.dodge + (fast ? SPEEDSTER.arenaDodge : 0) + prep.dodge + race.dodge + (hasTrait(c, 'ultrainstinct') ? ULTRA_DODGE : 0) + (sees ? OBSERVATION.dodge : 0)),
-      cdMul: base.cdMul * (1 - prep.moves),
-      takenMul: (1 - prep.taken) * (1 - race.taken),
+      dodge: Math.min(0.75, base.dodge + (fast ? SPEEDSTER.arenaDodge : 0) + prep.dodge + passive.dodge + (hasTrait(c, 'ultrainstinct') ? ULTRA_DODGE : 0) + (sees ? OBSERVATION.dodge : 0)),
+      cdMul: base.cdMul * (1 - prep.moves) * (hasTrait(c, 'scarleteyes') ? 1 - SCARLET_EYES.moves : 1),
+      takenMul: (1 - prep.taken) * (1 - passive.taken),
       blackFlash: !!c.powers.technique,
       tuning,
       sharingan: hasTrait(c, 'sharingan'),
@@ -454,7 +459,16 @@ export class Bout {
       power *= BLACK_FLASH.power;
       this.events.push({ type: 'ability', x: f.x, y: f.y - 70 * f.scale, name: 'BLACK FLASH', color: '#ff5a4a', loud: true });
     }
-    const dealt = this.strike(f, target, power, { sure: serious });
+    this.landSwing(f, target, power, serious);
+    // Ackerman Blood: some swings land twice.
+    if (f.ackerman && target.alive && this.rand() < ACKERMAN.twice) {
+      this.events.push({ type: 'status', x: f.x, y: f.y - 76 * f.scale, text: 'again!', color: TRAITS.ackerman.color });
+      this.landSwing(f, target, power, serious);
+    }
+  }
+
+  landSwing(f, target, power, sure) {
+    const dealt = this.strike(f, target, power, { sure });
     if (dealt > 0 && f.gourmet) f.hp = Math.min(f.maxHp, f.hp + f.maxHp * GOURMET_HEAL);
     if (dealt > 0 && f.weapon) this.weaponHit(f, target, dealt);
   }
@@ -729,6 +743,21 @@ export class Bout {
       this.events.push({ type: 'status', x: o.x, y: o.y - 80 * o.scale, text: 'no moves!', color: d.color });
     }
     if (d.poison && !o.poisonproof) o.poison = { left: d.poisonFor, dps: f.atk * d.poison, from: f };
+    if (d.push && o.alive) this.pushAway(f, o, d.push * this.sizeMul);
+  }
+
+  // Throws o straight back from f, but never out of the ring.
+  pushAway(f, o, dist) {
+    const a = Math.atan2(o.y - f.y, o.x - f.x);
+    o.x += Math.cos(a) * dist;
+    o.y += Math.sin(a) * dist * 0.6;
+    const dx = o.x - this.cx;
+    const dy = (o.y - this.cy) * 1.35;
+    const out = Math.hypot(dx, dy) / (this.r * 0.96);
+    if (out > 1) {
+      o.x = this.cx + dx / out;
+      o.y = this.cy + dy / out / 1.35;
+    }
   }
 
   // What a move costs the one using it. Recoil can't knock out its own user.

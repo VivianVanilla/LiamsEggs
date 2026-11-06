@@ -10,7 +10,7 @@ import {
 } from './core/creature.js';
 import { FOODS } from './data/foods.js';
 import { MUTATIONS } from './data/mutations.js';
-import { STANDS, SPEEDSTER, POWER_MOVES, LEGENDARY } from './data/powers.js';
+import { STANDS, SPEEDSTER, POWER_MOVES } from './data/powers.js';
 import { FRUITS } from './data/fruits.js';
 import { VEIN_CHANCE, VEIN_SECONDS, VEIN_UNITS, VEIN_GEM_CHANCE, GEM_CHANCE, CROPS, SPOT_MINE } from './data/crafting.js';
 import { nextJob, doJob, eatFromStore, eatPlant } from './sim/farm.js';
@@ -285,13 +285,6 @@ export class Pet {
     G.fx.float(this.x, this.y - heightOf(this.c) - 14, res.seen ? `+${res.nutrition.toFixed(1)} (tasted that)` : `+${res.nutrition.toFixed(1)} growth`, '#fff', 13);
     saveCreature(this.c);
 
-    if (res.legendary) {
-      const { name, color } = LEGENDARY[res.legendary];
-      G.fx.shout(this.x, this.y - heightOf(this.c) - 30, `LEGENDARY MUTATION: ${name}`, color, 24, 4);
-      toast(`LEGENDARY MUTATION: ${name}!!!`, 'rare');
-      this.say('there are two of me in here now', 4.5, true);
-      yield* this.wait(1.6);
-    }
     if (res.mutation) {
       const name = MUTATIONS[res.mutation.id].name;
       G.fx.float(this.x, this.y - heightOf(this.c) - 22, `MUTATION: ${name}`, FOODS[ext].color, 18);
@@ -309,7 +302,7 @@ export class Pet {
       this.say(`i am a ${stageOf(this.c).name.toLowerCase()} now`, 3.5, true);
       yield* this.wait(1.2);
     }
-    if (stageBefore !== stageOf(this.c).name || res.mutation || res.legendary) G.onCreatureChanged?.();
+    if (stageBefore !== stageOf(this.c).name || res.mutation) G.onCreatureChanged?.();
     if (pathChoice(this.c)) G.onPathReady?.(this.c);
   }
 

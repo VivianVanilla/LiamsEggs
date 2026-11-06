@@ -195,10 +195,11 @@ G.lose = (c) => {
 };
 
 // Gone for good, because you chose so. Its file becomes a gravestone, the same as any death, and
-// what it put into the shared pool stays there.
-G.getRidOf = async (base, c) => {
+// what it put into the shared pool stays there. `how` says why, for its gravestone: let go by you,
+// sacrificed on the Bloodline Altar, or absorbed by another creature.
+G.getRidOf = async (base, c, how = { by: 'you' }) => {
   if (inBout(c)) return false;
-  c.dead = { at: Date.now(), by: 'you' };
+  c.dead = { at: Date.now(), ...how };
   G.lose(c);
   forgetFighter(c.id);
   await api.buryCreature(base, creatureText(c));

@@ -5,7 +5,7 @@ import { toast, rich } from './flair.js';
 import { G, api, saveCreature, saveHouse, memberOf, creatureText } from '../state.js';
 import { h, fill, button } from './notes.js';
 import { parseCreature, fullName, lastName, lineageOf, otherLineOf, creatureColors, addActivityXp, pathTitle, raceName, STAGES } from '../core/creature.js';
-import { breedProblem, breedCost, giftsOf, giftLimit, breed, nurseHelp, mixHeritage, mainRace } from '../core/family.js';
+import { breedProblem, breedCost, giftsOf, giftLimit, breed, nurseHelp, mixHeritage, mainRace, awakenChances } from '../core/family.js';
 import { awayBases } from '../core/village.js';
 import { itemCount, itemProblem, useItem } from '../core/items.js';
 import { PURE_BLOOD_CHANCE } from '../data/races.js';
@@ -168,9 +168,22 @@ function buildPicker(page, note) {
       return g && h('div', { class: 'small' }, h('b', null, `${g.name}: `), g.what);
     })),
     !help.mega && gifts.length > limit && h('div', { class: 'small', style: 'margin-top:3px' }, `More to pass on than fits. The Mega Breeder, at the top of this note, lets ${MEGA_BREEDER.gifts} more through.`),
+    awakenRows(a, b, choice),
     (st.message || problem) && h('div', { class: 'warning' }, st.message || problem),
     h('div', { class: 'row gap' }, input, button('Hatch the egg', () => hatch(note, input), 'big hot', !!problem)),
   );
+}
+
+// Gifts no egg hatches with, that this pair's baby could wake up with, and the chance of each.
+function awakenRows(a, b, choice) {
+  const passing = choice.gifts.filter((k) => k.startsWith('trait:')).map((k) => k.slice(6));
+  const could = awakenChances(a, b, passing);
+  if (!could.length) return null;
+  return [
+    h('div', { class: 'sect' }, 'Could awaken'),
+    could.map(({ id, oneIn }) => h('div', { class: 'small', style: 'margin-top:2px' },
+      h('b', { style: `color:${TRAITS[id].color}` }, `${TRAITS[id].name}, 1 in ${oneIn}: `), TRAITS[id].blurb)),
+  ];
 }
 
 function nurseLine(help) {
@@ -204,8 +217,9 @@ async function hatch(note, input) {
     await saveCreature(help.nurse);
   }
   const made = await createCreature(name, res.baby);
-  toast(`${res.baby.name.toUpperCase()} HATCHED!${res.baby.pureBlood ? ' A PURE-BLOOD!!!' : res.baby.traits.length ? ' BORN WITH A GIFT!!!' : ''}`, res.baby.pureBlood || res.baby.traits.length ? 'rare' : 'good');
-  st.result = made;
+  const woke = res.awakened.map((id) => TRAITS[id].name.toUpperCase()).join(' AND ');
+  toast(`${res.baby.name.toUpperCase()} HATCHED!${woke ? ` IT AWAKENED ${woke}!!!` : res.baby.pureBlood ? ' A PURE-BLOOD!!!' : res.baby.traits.length ? ' BORN WITH A GIFT!!!' : ''}`, woke || res.baby.pureBlood || res.baby.traits.length ? 'rare' : 'good');
+  st.result = { ...made, awakened: res.awakened };
   st.name = '';
   note.rebuild();
   for (const p of [a, b]) {
@@ -222,6 +236,7 @@ function buildResult(page, note) {
   const lines = [
     `Family: ${lastName(c)}, so ${TECHNIQUES[lineageOf(c)].name}. The other side: ${other.family}, so ${other.name}.`,
     c.traits.length && `Born with: ${c.traits.map((id) => TRAITS[id].name).join(', ')}.`,
+    st.result.awakened?.length && `Awakened in it, from its parents: ${st.result.awakened.map((id) => TRAITS[id].name).join(', ')}!`,
     c.mutations.length && `Mutations: ${c.mutations.length}.`,
     c.powers.quirks.length && `Quirk: ${c.powers.quirks.length}.`,
     c.growth > 0 && `It hatched with ${c.growth} growth, thanks to the nurse.`,

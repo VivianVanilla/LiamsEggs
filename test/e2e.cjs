@@ -1628,6 +1628,79 @@ async function run() {
   await sleep(150);
   ok('and every gift, born and earned', await js(`(() => { const t = document.querySelector('.cx-page').textContent; return t.includes('Titan Shifter') && t.includes('Ultra Instinct') && !t.includes('undefined'); })()`));
   await shot('42-codex-gifts');
+  ok('including the ones awakened by breeding', await js(`(() => { const t = document.querySelector('.cx-page').textContent; return t.includes('Awakened by breeding') && t.includes('Rinnegan') && t.includes('Scarlet Eyes'); })()`));
+  await js(`[...document.querySelectorAll('.cx-nav .chip')].find((b) => b.textContent === 'Monsters').click()`);
+  await sleep(150);
+  ok('and the ultimate monsters', await js(`(() => { const t = document.querySelector('.cx-page').textContent; return t.includes('Ultimate monsters') && t.includes('The Behemoth') && !t.includes('undefined'); })()`));
+
+  // --- the Bloodline Altar, and eggs of another race ---
+  // Like waitFor, for checks that wait on the save folder, whose answer comes back as a promise.
+  const waitForFiles = async (expr, ms = 8000) => {
+    const start = Date.now();
+    while (Date.now() - start < ms) {
+      if (await js(expr) === true) return true;
+      await sleep(50);
+    }
+    return false;
+  };
+  await js(`(async () => {
+    const { closeAllNotes } = await import('./ui/notes.js');
+    closeAllNotes();
+    window.__game.G.house.bank.gems = 500;
+    const { newCreature } = await import('./core/creature.js');
+    const { createCreature } = await import('./ui/panels.js');
+    const moon = newCreature('Moonling');
+    moon.race = 'lunarian';
+    await createCreature('Moonling', moon);
+    const { openNursery } = await import('./ui/nursery.js');
+    await openNursery('altar');
+    return true;
+  })()`);
+  await sleep(250);
+  ok('the Altar tab offers the Bloodline Altar', await js(`${rollNote}.textContent.includes('The Bloodline Altar')`));
+  ok('which is bought once, for gems', await clickText('.note', 'Buy:') === true && await waitFor('window.__game.G.house.altar === true') && await js(`${rollNote}.textContent.includes('Eggs can hatch as: Human')`));
+  await js(`(() => { const b = [...${rollNote}.querySelectorAll('.rosterrow')].find((r) => r.textContent.includes('Moonling')).querySelector('button'); b.click(); b.click(); return true; })()`);
+  ok('a Lunarian sacrificed on it lets eggs hatch as Lunarians', await waitFor(`window.__game.G.house.altarRaces.includes('lunarian')`)
+    && await waitForFiles(`window.api.listCreatures().then((list) => !list.some((f) => f.base.startsWith('Moonling')))`));
+  await shot('43-altar');
+  await clickText('.note', 'Eggs');
+  await sleep(150);
+  ok('the Eggs tab can pick the race', await js(`${rollNote}.textContent.includes('Hatches as')`));
+  await js(`[...${rollNote}.querySelectorAll('button.chip')].find((b) => b.textContent === 'Lunarian').click()`);
+  ok('and remembers it', await waitFor(`window.__game.G.house.eggRace === 'lunarian'`));
+  await js(`(() => { const i = ${rollNote}.querySelector('input'); i.value = 'Luna'; i.dispatchEvent(new Event('input')); return true; })()`);
+  await clickText('.note', 'Keep it');
+  ok('the egg hatches as a Lunarian, wings and all', await waitFor(`window.__game.G.team.some((m) => m.c.name === 'Luna' && m.c.race === 'lunarian')`));
+  await shot('44-lunarian');
+
+  // --- the ultimate monsters, and being reborn ---
+  const filesBefore = await js('window.api.listCreatures().then((list) => list.length)');
+  await js(`(async () => {
+    const { closeAllNotes } = await import('./ui/notes.js');
+    closeAllNotes();
+    const { DEADLY_IDS, ULTIMATE_IDS } = await import('./data/monsters.js');
+    const G = window.__game.G;
+    const m = G.team.find((x) => x.c.name === 'Luna');
+    G.lookAfter(m.c);
+    m.c.trophies = [...DEADLY_IDS, ...ULTIMATE_IDS];
+    const { openChallenges } = await import('./ui/challenges.js');
+    openChallenges();
+    return true;
+  })()`);
+  await sleep(250);
+  ok('with every deadly monster beaten, the ultimate ones come out', await js(`${chalNote}.textContent.includes('Abyss Crawler') && ${chalNote}.textContent.includes('Be reborn')`));
+  await shot('45-ultimate');
+  await clickText('.note.chalk', 'Be reborn');
+  const rebornNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent === 'Luna is reborn')`;
+  ok('being reborn opens a note of its own', await waitFor(`!!${rebornNote}`));
+  await js(`[...${rebornNote}.querySelectorAll('.rosterrow button')].find((b) => !b.disabled).click()`);
+  await sleep(150);
+  await js(`(() => { const chip = ${rebornNote}.querySelector('button.chip'); if (chip) chip.click(); return true; })()`);
+  await sleep(100);
+  await shot('46-reborn');
+  await js(`(() => { const b = [...${rebornNote}.querySelectorAll('button')].find((x) => x.textContent.startsWith('Absorb')); b.click(); b.click(); return true; })()`);
+  ok('it absorbs one and starts over as a Hatchling', await waitFor(`(() => { const c = window.__game.G.team.find((m) => m.c.name === 'Luna')?.c; return !!c && c.rebirths.length === 1 && c.growth === 0 && c.trophies.length === 0; })()`));
+  ok('and the one it absorbed is gone', await waitForFiles(`window.api.listCreatures().then((list) => list.length === ${filesBefore} - 1)`));
 
   ok('no console errors in the page', pageErrors.length === 0, pageErrors.slice(0, 5).join(' | '));
 }

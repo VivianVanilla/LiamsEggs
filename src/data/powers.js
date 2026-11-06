@@ -1,12 +1,13 @@
 // Powers a creature can earn on top of its job.
 //   It can be one of these three, for good, unless a Legendary mutation lets it have two
-//   (Twin Soul: any two. Malevolent Soul: a Stand, plus a speedster or a cursed technique):
+//   (see LEGENDARY below for which two each one allows):
 //     a Stand (JoJo's Bizarre Adventure), from Wits. Its soul decides which one it gets.
 //     a speedster, from Speed.
 //     a cursed technique (Jujutsu Kaisen), from Might. Its family name decides which one.
 //   Quirks (My Hero Academia) are separate, and are paid for with max HP, forever.
 // The names and powers come from the shows. The pictures do not: see art/CREDITS.md.
 //   Some are born with a gift (Six Eyes, Sharingan, Cursed Body), and parents can pass those on.
+//   A few gifts (Rinnegan and the rest) never hatch from an egg: only a bred baby can awaken one.
 //   One For All is a Quirk that grows: a holder can pass it on, which ends the holder for good.
 // Pictures: stands/<id>.png, techniques/<id>.png, quirks/<id>.png, powers/speedster.png, legendary/<id>.png.
 
@@ -151,7 +152,11 @@ export const TECHNIQUES = {
 
 export const TECHNIQUE_IDS = Object.keys(TECHNIQUES);
 
-// Rare. It doesn't take up one of its mutation places.
+// A creature holds one at a time, and it doesn't take up one of its mutation places. The only way to
+// get one is to beat the monster that gives it, in the Challenges note (`soul` in data/monsters.js).
+// How many powers a soul holds is `slots` (POWER_SLOTS_LEGENDARY if it doesn't say). `noStand`: no
+// Stand comes out of it. `besideFruit`: its second place is only for a pair with a Devil Fruit in it.
+// `passive` works in every fight, the same way a race's does (data/races.js).
 export const LEGENDARY = {
   twinsoul: {
     name: 'Twin Soul', color: '#ffe14a', stats: { might: 1, guard: 1, speed: 1, wits: 1, vigor: 1 },
@@ -161,6 +166,26 @@ export const LEGENDARY = {
     name: 'Malevolent Soul', color: '#c9302c', stats: { might: 3, vigor: 2 }, apart: true, fruit: true,
     blurb: 'Something cruel has moved in. It can hold a Stand, plus one more: speedster powers, a cursed technique or a Devil Fruit.',
   },
+  ironsoul: {
+    name: 'Iron Soul', color: '#9aa7b8', stats: { guard: 3, vigor: 2 }, slots: 1,
+    passive: { taken: 0.2, hp: 0.15, text: 'Takes 20% less damage, and has 15% more max HP.' },
+    blurb: 'A soul like a wall. It still holds only one power, but very little gets through to it.',
+  },
+  ghostsoul: {
+    name: 'Ghost Soul', color: '#b9c6ec', stats: { speed: 2, wits: 3 }, slots: 1,
+    passive: { dodge: 0.1, crit: 0.12, speed: 0.1, text: '10% more likely to dodge, 12% more critical hits, and moves 10% faster.' },
+    blurb: 'Half of it is always somewhere else. It still holds only one power, but it is hard to hit and hits where it hurts.',
+  },
+  tidesoul: {
+    name: 'Tide Soul', color: '#2f8fd8', stats: { vigor: 3, might: 2 }, fruit: true, besideFruit: true,
+    passive: { poisonproof: true, text: 'Poison can\'t touch it.' },
+    blurb: 'The sea gives back what a Devil Fruit takes. It can hold a Devil Fruit beside any one power: a Stand, speedster powers or a cursed technique. Without a fruit, it holds one.',
+  },
+  warsoul: {
+    name: 'War Soul', color: '#d4542a', stats: { might: 2, speed: 1 }, noStand: true,
+    passive: { crit: 0.08, reach: 20, text: '8% more critical hits, and swings from a little further away.' },
+    blurb: 'Nothing in it waits behind it. It can hold speedster powers and a cursed technique together, but a Stand will never come out of it.',
+  },
 };
 export const LEGENDARY_ID = 'twinsoul';
 export const MALEVOLENT_ID = 'malevolentsoul';
@@ -168,11 +193,6 @@ export const MALEVOLENT_ID = 'malevolentsoul';
 // What a soul with `apart` keeps separate: it can't hold two powers from one category. A soul with
 // `fruit` can hold a Devil Fruit beside its other power; without it, a fruit goes with nothing.
 export const POWER_CATEGORIES = { stand: 'stand', speedster: 'other', technique: 'other', fruit: 'other' };
-
-// One new mutation in this many comes with a Twin Soul, and The Last Dragon always gives one.
-// Any other win to the death has this chance of a Malevolent Soul. A creature only ever has one.
-export const LEGENDARY_ONE_IN = 25;
-export const LEGENDARY_FROM_TROPHY = 0.15;
 
 // `cost` is the percent of max HP given up for good. `behind` puts its picture behind the body.
 export const QUIRKS = {
@@ -304,9 +324,22 @@ export const POWER_MOVES = {
   blackwhip:  { name: 'Blackwhip',       cry: 'BLACKWHIP',         loud: true, kind: 'pull', cd: 10,   power: 0.8, stun: 0.8, range: 560, color: '#7a6aa8' },
   dangersense:{ name: 'Danger Sense',    cry: 'DANGER SENSE',      loud: true, kind: 'buff', cd: 12,   dur: 2.5, dodge: 0.6, color: '#9fe0ff' },
   usasmash:   { name: 'United States of Smash', cry: 'UNITED STATES OF SMASH', loud: true, kind: 'dash', cd: 20, power: 6, range: 700, recoil: 0.08, ofa: true, color: '#8ef06a' },
+
+  // From a gift awakened by breeding. `push` throws whatever it hits this far back.
+  almightypush: { name: 'Almighty Push', cry: 'ALMIGHTY PUSH', loud: true, kind: 'nova', cd: 10, power: 1.1, range: 210, stun: 0.8, push: 90, color: '#a98bff' },
 };
 
 // ---------- born with ----------
+
+// What the gifts awakened by breeding do in a fight (the last four in TRAITS below). They come first
+// so the blurbs can say the numbers. See sim/arena.js.
+// Demon Slayer Mark: more damage, and faster, all fight long.
+export const SLAYER_MARK = { damage: 0.15, speed: 0.15 };
+// Ackerman Blood: this share of its swings land twice.
+export const ACKERMAN = { twice: 0.35 };
+// Scarlet Eyes: its moves come back this much sooner.
+export const SCARLET_EYES = { moves: 0.35 };
+const pctOf = (v) => `${Math.round(v * 100)}%`;
 
 // Rare gifts it hatched with, or got from a parent. Nobody can buy or train one. The creature has
 // no face, so none of these has a picture.
@@ -348,6 +381,25 @@ export const TRAITS = {
     blurb: 'Every 10th swing is a Serious Punch, for five times the damage.',
   },
 
+  // Awakened by breeding: no egg ever hatches with one. A bred baby can awaken one when its parents
+  // have what it takes (BRED_RULES below). Once it has one, it passes on like any born-with gift.
+  rinnegan: {
+    name: 'Rinnegan', color: '#a98bff', bred: true, move: 'almightypush',
+    blurb: 'Almighty Push: every so often it throws back everything close to it, and stuns it for a moment.',
+  },
+  slayermark: {
+    name: 'Demon Slayer Mark', color: '#ff5a3c', bred: true,
+    blurb: `The Mark burns from the first second of every fight: ${pctOf(SLAYER_MARK.damage)} more damage, and ${pctOf(SLAYER_MARK.speed)} faster.`,
+  },
+  ackerman: {
+    name: 'Ackerman Blood', color: '#8fa0b0', bred: true,
+    blurb: `A body made for war: ${pctOf(ACKERMAN.twice)} of its swings land twice.`,
+  },
+  scarleteyes: {
+    name: 'Scarlet Eyes', color: '#e0203a', bred: true,
+    blurb: `Emperor Time: its moves come back ${pctOf(SCARLET_EYES.moves)} sooner, all fight long.`,
+  },
+
   // Earned, not born: a creature gets these by what it does (EARN_RULES below), and keeps them for
   // good. They never pass on to a baby.
   ultrainstinct: {
@@ -376,8 +428,21 @@ export const TRAITS = {
   },
 };
 export const TRAIT_IDS = Object.keys(TRAITS);
-export const BORN_TRAIT_IDS = TRAIT_IDS.filter((id) => !TRAITS[id].earned);
+// What an egg can hatch with. The bred ones never come from an egg, and the earned ones never pass on.
+export const BORN_TRAIT_IDS = TRAIT_IDS.filter((id) => !TRAITS[id].earned && !TRAITS[id].bred);
+export const BRED_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].bred);
 export const EARNED_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].earned);
+
+// What a bred baby's parents need for it to have a chance at each bred gift, and that chance: one
+// baby in `oneIn` awakens it. both: both parents have this gift. either: at least one does.
+// trophies: both parents have won this many fights to the death. sameFamily: both parents have the
+// same last name. Whether or not the parents pass the gift on makes no difference.
+export const BRED_RULES = {
+  rinnegan: { both: 'sharingan', oneIn: 3 },
+  slayermark: { either: 'sunbreathing', oneIn: 4 },
+  ackerman: { trophies: 1, oneIn: 4 },
+  scarleteyes: { sameFamily: true, oneIn: 4 },
+};
 
 // How each earned gift is earned. record: a count in its record; training: how many stats are
 // trained to the limit; trophies: wins to the death, with technique: holding a cursed technique.

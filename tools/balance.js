@@ -4,7 +4,7 @@
 import { wildCreature, newCreature, computeStats, pathTitle, parseCreature, serializeCreature, powerOf, STAGES } from '../src/core/creature.js';
 import { startChallenge, wonChallenge } from '../src/sim/challenges.js';
 import { finishBout } from '../src/sim/arena.js';
-import { DEADLY_IDS, DEADLY_MONSTERS, TRAINING_IDS, TRAINING_MONSTERS } from '../src/data/monsters.js';
+import { DEADLY_IDS, ULTIMATE_IDS, DEADLY_MONSTERS, TRAINING_IDS, TRAINING_MONSTERS } from '../src/data/monsters.js';
 import { runBout } from '../src/sim/arena.js';
 import { PATHS, TIER_XP } from '../src/data/paths.js';
 import { STANDS, STAND_IDS, QUIRKS, QUIRK_IDS, TECHNIQUES, TECHNIQUE_IDS, OFA_LEVEL_AT, TRAITS } from '../src/data/powers.js';
@@ -128,7 +128,7 @@ row('Limitless with Six Eyes', powerRate((c) => { c.powers.technique = 'limitles
 row('Shrine', powerRate((c) => { c.powers.technique = 'shrine'; }));
 row('Cursed Body: Shrine and Ten Shadows', powerRate((c) => { c.powers.technique = 'shrine'; c.powers.technique2 = 'tenshadows'; c.traits = ['cursedbody']; }));
 row('Cursed Body: Limitless and Shrine, Six Eyes', powerRate((c) => { c.powers.technique = 'limitless'; c.powers.technique2 = 'shrine'; c.traits = ['cursedbody', 'sixeyes']; }));
-['titanshifter', 'saiyan', 'haki', 'sunbreathing', 'ninetails', 'onepunch'].forEach((id) => row(TRAITS[id].name, powerRate((c) => { c.traits = [id]; })));
+['titanshifter', 'saiyan', 'haki', 'sunbreathing', 'ninetails', 'onepunch', 'rinnegan', 'slayermark', 'ackerman', 'scarleteyes'].forEach((id) => row(TRAITS[id].name, powerRate((c) => { c.traits = [id]; })));
 console.log('Weapons:');
 WEAPON_IDS.forEach((id) => row(WEAPONS[id].name, powerRate((c) => { c.weapon = id; })));
 adventure();
@@ -196,6 +196,16 @@ const LADDER = [
     c.trophies.push('rat', 'scorpion', 'spider', 'serpent', 'eagle', 'tortoise', 'squid', 'mammoth');
     return c;
   }],
+  // Every deadly monster beaten, ready for the ultimate ones.
+  ['endgame', (seed) => {
+    const c = builtCreature(seed, 3, 'maxed');
+    c.powers.stand = 'starplatinum';
+    c.powers.quirks.push('oneforall');
+    c.ofa = { stockpile: 280, holders: [] };
+    c.weapon = 'dragonslayer';
+    c.trophies.push(...DEADLY_IDS);
+    return c;
+  }],
 ];
 console.log('\nChallenges, how often it wins:');
 console.log(`  ${''.padEnd(18)} ${LADDER.map(([name]) => name.padStart(8)).join('')}`);
@@ -208,4 +218,4 @@ const challengeRate = (make, id, rounds = 40) => {
   return `${Math.round((100 * wins) / rounds)}%`.padStart(8);
 };
 TRAINING_IDS.forEach((id) => console.log(`  ${TRAINING_MONSTERS[id].name.padEnd(18)} ${LADDER.map(([, make]) => challengeRate(make, id)).join('')}`));
-DEADLY_IDS.forEach((id) => console.log(`  ${DEADLY_MONSTERS[id].name.padEnd(18)} ${LADDER.map(([, make]) => challengeRate(make, id)).join('')}`));
+[...DEADLY_IDS, ...ULTIMATE_IDS].forEach((id) => console.log(`  ${DEADLY_MONSTERS[id].name.padEnd(18)} ${LADDER.map(([, make]) => challengeRate(make, id)).join('')}`));

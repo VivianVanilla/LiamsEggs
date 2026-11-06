@@ -31,7 +31,8 @@ export const TRAINING_MONSTERS = {
 export const TRAINING_IDS = Object.keys(TRAINING_MONSTERS);
 TRAINING_IDS.forEach((id) => { TRAINING_MONSTERS[id].id = id; });
 
-// Weakest first. `trophy` is the stat it gives if beaten.
+// Weakest first. `trophy` is the stat it gives if beaten. `soul` is the Legendary mutation it gives
+// too (data/powers.js): beating that monster is the only way to get it.
 export const DEADLY_MONSTERS = {
   rat: {
     name: 'Pit Rat', trophy: 'speed', size: 70, moves: [],
@@ -74,19 +75,89 @@ export const DEADLY_MONSTERS = {
     blurb: 'You will get tired long before it does.',
   },
   rex: {
-    name: 'Old Rex', trophy: 'might', size: 170, moves: ['reckoning', 'quake', 'stoop'],
+    name: 'Old Rex', trophy: 'might', soul: 'malevolentsoul', size: 170, moves: ['reckoning', 'quake', 'stoop'],
     stats: { might: 58, guard: 30, speed: 22, wits: 12, vigor: 34 },
     blurb: 'One bite is most of a fight.',
   },
   dragon: {
-    name: 'The Last Dragon', trophy: 'might', size: 190, moves: ['prominence', 'flame', 'warcry', 'stoop'], legendary: true,
+    name: 'The Last Dragon', trophy: 'might', size: 190, moves: ['prominence', 'flame', 'warcry', 'stoop'], soul: 'twinsoul',
     stats: { might: 50, guard: 36, speed: 28, wits: 28, vigor: 38 },
     blurb: 'There is a reason it is the last one.',
   },
 };
 
-export const DEADLY_IDS = Object.keys(DEADLY_MONSTERS);
-DEADLY_IDS.forEach((id) => { DEADLY_MONSTERS[id].id = id; });
+// The Legendary road. Fights to the death like the ones above, but a win gives no trophy and nothing
+// else: only the Legendary mutation in `soul`. Weakest first.
+const LEGEND_ROAD = {
+  rhino: {
+    name: 'The Iron Rhino', soul: 'ironsoul', size: 150, moves: ['bonewall', 'quake', 'stoop'], stance: 'hold',
+    stats: { might: 40, guard: 56, speed: 16, wits: 14, vigor: 52 },
+    blurb: 'Nothing has ever made it take a step back.',
+  },
+  leopard: {
+    name: 'The Ghost Leopard', soul: 'ghostsoul', size: 140, moves: ['stoop', 'snare', 'hex'], stance: 'bounce',
+    stats: { might: 42, guard: 24, speed: 54, wits: 44, vigor: 32 },
+    blurb: 'You only ever see where it was.',
+  },
+  shark: {
+    name: 'The Sea King', soul: 'tidesoul', size: 170, moves: ['stoop', 'regrow', 'quake'],
+    stats: { might: 52, guard: 32, speed: 38, wits: 24, vigor: 60 },
+    blurb: 'The sea belongs to it, and so does anything that falls in.',
+  },
+  gorilla: {
+    name: 'The Silverback', soul: 'warsoul', size: 160, moves: ['reckoning', 'warcry', 'quake'],
+    stats: { might: 62, guard: 36, speed: 30, wits: 20, vigor: 56 },
+    blurb: 'It beats its chest once. That is the only warning.',
+  },
+};
+Object.values(LEGEND_ROAD).forEach((m) => { m.road = 'legend'; });
+Object.assign(DEADLY_MONSTERS, LEGEND_ROAD);
+
+// Any this many wins on the Legendary road bring out the ultimate monsters.
+export const LEGEND_WINS_FOR_ULTIMATE = 2;
+
+// The ultimate monsters. Fights to the death like the ones above, and each gives a trophy the same
+// way, but they only come out for a creature with LEGEND_WINS_FOR_ULTIMATE wins on the Legendary
+// road. Beating all of them lets it be reborn (core/reborn.js). Weakest first.
+const ULTIMATES = {
+  lobster: {
+    name: 'Abyss Crawler', trophy: 'guard', size: 160, moves: ['bonewall', 'quake', 'snare'], stance: 'hold',
+    stats: { might: 60, guard: 80, speed: 24, wits: 32, vigor: 66 },
+    blurb: 'It came up from the bottom of the sea, and nothing down there could crack it.',
+  },
+  tiger: {
+    name: 'Thunder Tiger', trophy: 'speed', size: 150, moves: ['stoop', 'zap', 'warcry'], stance: 'bounce',
+    stats: { might: 64, guard: 40, speed: 66, wits: 38, vigor: 54 },
+    blurb: 'You see the lightning. The tiger was already there.',
+  },
+  kraken: {
+    name: 'The Kraken', trophy: 'wits', size: 190, moves: ['inkcloud', 'mindswap', 'webshot', 'hex'], stance: 'mid',
+    stats: { might: 62, guard: 48, speed: 38, wits: 54, vigor: 74 },
+    blurb: 'Eight arms, and it always knows which one you are watching.',
+  },
+  leviathan: {
+    name: 'The Leviathan', trophy: 'vigor', size: 210, moves: ['regrow', 'quake', 'inkcloud', 'warcry'],
+    stats: { might: 68, guard: 52, speed: 30, wits: 36, vigor: 105 },
+    blurb: 'The sea itself, angry. Every wound closes before the next one lands.',
+  },
+  behemoth: {
+    name: 'The Behemoth', trophy: 'might', size: 220, moves: ['reckoning', 'quake', 'stoop', 'warcry'],
+    stats: { might: 104, guard: 58, speed: 36, wits: 32, vigor: 86 },
+    blurb: 'The first and the last of the great beasts. The ground gives up before it does.',
+  },
+};
+Object.values(ULTIMATES).forEach((m) => { m.ultimate = true; });
+Object.assign(DEADLY_MONSTERS, ULTIMATES);
+Object.keys(DEADLY_MONSTERS).forEach((id) => { DEADLY_MONSTERS[id].id = id; });
+
+// The deadly monsters that give trophies, the Legendary road, and the ultimate ones, each weakest first.
+export const DEADLY_IDS = Object.keys(DEADLY_MONSTERS).filter((id) => !DEADLY_MONSTERS[id].ultimate && !DEADLY_MONSTERS[id].road);
+export const LEGEND_IDS = Object.keys(DEADLY_MONSTERS).filter((id) => DEADLY_MONSTERS[id].road === 'legend');
+export const ULTIMATE_IDS = Object.keys(DEADLY_MONSTERS).filter((id) => DEADLY_MONSTERS[id].ultimate);
+
+// Being reborn: it absorbs another creature, takes this many of its gifts, and goes back to being a
+// Hatchling with nothing else but its name, family, race, look and gifts.
+export const REBORN = { takes: 2 };
 
 // Moves only monsters use, added to ABILITIES in data/paths.js.
 export const MONSTER_MOVES = {

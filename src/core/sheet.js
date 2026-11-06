@@ -75,6 +75,7 @@ export function describeMove(d) {
     default: bits.push(d.name);
   }
   if (d.kind === 'heal' && d.atk) bits.push(`and hits ${pct(d.atk)} harder for ${d.dur} seconds`);
+  if (d.push) bits.push('Throws them back');
   if (d.stun) bits.push(`Stuns for ${d.stun} seconds`);
   if (d.confuse) bits.push(`Confuses for ${d.confuse} seconds`);
   if (d.silence) bits.push(`Stops all their moves for ${d.silence} seconds`);
@@ -222,7 +223,7 @@ export function buildSheet(c) {
   }
   if (c.legendary) {
     const l = LEGENDARY[c.legendary];
-    sections.unshift({ title: 'Legendary mutation', rows: [row(c, l.name, l.stats, l.blurb)] });
+    sections.unshift({ title: 'Legendary mutation', rows: [row(c, l.name, l.stats, `${l.blurb}${l.passive ? ` In a fight: ${l.passive.text}` : ''}`)] });
   }
   if (powerRows.length) {
     const given = hpGivenUp(c);
