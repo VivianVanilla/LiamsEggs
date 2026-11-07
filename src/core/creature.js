@@ -496,7 +496,7 @@ export function standFor(c) {
   return options[hashStr(c.id) % options.length];
 }
 
-// Everyone is born into a family, and nobody picks it. Its last name decides its cursed technique.
+// Everyone is born into a family. Only gems change it (changeFamily in core/family.js). Its last name decides its cursed technique.
 // A bred creature takes the last name its breeder chose; any other gets one from its egg.
 export function lineageFromId(id) {
   return TECHNIQUE_IDS[hashStr(`${id}:lineage`) % TECHNIQUE_IDS.length];

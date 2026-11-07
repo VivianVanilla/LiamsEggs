@@ -62,7 +62,7 @@ Open Powers, Powers. Each needs its stat in its top three, and all of them are f
 
 - **A Stand** (*JoJo's Bizarre Adventure*) at 20 Wits. There are 14, and what it leans on decides which.
 - **Speedster** at 20 Speed: much faster on your screen and in a fight, and much hungrier.
-- **A cursed technique** (*Jujutsu Kaisen*) at 20 Might. Its last name decides which one runs in its family.
+- **A cursed technique** (*Jujutsu Kaisen*) at 20 Might. Its last name decides which one runs in its family. In the Creatures list, **Last name** buys a new one for 10,000 gems: the new family's technique comes with it (an awakened one switches too), and its babies take the new name.
 - **A Devil Fruit** (*One Piece*) at 20 Vigor, from the fruits your farms and expeditions find.
 
 Each of those fills a slot. A creature has one **basic slot**, which takes any of them, and each **Legendary mutation** adds a **Legendary slot** of its own: that is how powers go together. The only way to get one is to beat the monster that gives it in Challenges. A creature holds one, and each **Legendary Expander** (from Bizarre expeditions) makes room for one more, up to 3, so it can hold all four powers at once. Their slots, stats and fight bonuses all add up. With no room left, a new one is yours to swap in or turn down.
@@ -208,7 +208,7 @@ Beat God, and **God Mode** is yours for good, through any reset: a button in the
 
 ## The forge
 
-Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blade, Crimson Katana, Thunder Hammer, Venom Fang, Soul Reaper Scythe, Dragonslayer and **Soul Split Katana** (50 Legendary ore and 500,000 gems; ignores dodge 25% of the time). A weapon goes into the armory everyone shares, and each creature carries one.
+Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blade, Crimson Katana, Thunder Hammer, Venom Fang, Soul Reaper Scythe, Dragonslayer and **Soul Split Katana** (50 Legendary ore and 500,000 gems; ignores dodge half the time and cuts through a quarter of Guard). A weapon goes into the armory everyone shares, and each creature carries one.
 
 ## Fighting
 

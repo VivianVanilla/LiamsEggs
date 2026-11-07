@@ -10,7 +10,7 @@ import {
 } from '../src/core/creature.js';
 import {
   breed, breedProblem, breedCost, giftsOf, giftLimit, choiceProblem, nurseHelp, isNurse, heirProblem, passOn, stockpileAfter, ownPower,
-  megaBreederProblem, buyMegaBreeder,
+  megaBreederProblem, buyMegaBreeder, familyChangeProblem, changeFamily,
 } from '../src/core/family.js';
 import { describeMove, moveList, buildSheet, ofaText, tuningOf, perkText } from '../src/core/sheet.js';
 import {
@@ -19,7 +19,7 @@ import {
 } from '../src/data/powers.js';
 import { ABILITIES, PATHS, ROOT_PATHS, TIER_XP } from '../src/data/paths.js';
 import {
-  TEAM_MAX, BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER,
+  TEAM_MAX, BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER, FAMILY_CHANGE_COST,
 } from '../src/data/family.js';
 import { Bout, runBout, finishBout } from '../src/sim/arena.js';
 import { emptyHouse } from '../src/core/house.js';
@@ -405,6 +405,44 @@ test('Pure-bloodedness can be selected as a breeding gift from a pure-blood pare
   const { baby } = breed(a, b, { gifts: [gift.key] }, 'Pure Mix', NOW, null, () => 0.99);
   assert.equal(baby.pureBlood, true, 'the passed gift overrides the ordinary 1-in-100 roll');
   assert.ok(Object.keys(baby.heritage).length > 1);
+});
+
+test('a new last name costs gems, and brings the new family\'s technique with it, through a save', () => {
+  const house = emptyHouse();
+  const c = adult('Renamed');
+  const first = lineageOf(c);
+  const other = otherLineOf(c);
+  const third = TECHNIQUE_IDS.find((id) => id !== first && id !== other);
+  c.traits.push('cursedbody');
+  c.powers.technique = first;
+  c.powers.technique2 = other;
+  // It costs gems from the shared bank, and has to be a different family.
+  assert.match(familyChangeProblem(house, c, third), /10,000 gems/);
+  house.bank.gems = FAMILY_CHANGE_COST * 2;
+  assert.match(familyChangeProblem(house, c, first), /already/);
+  assert.ok(familyChangeProblem(house, c, 'nonsense'));
+  assert.equal(familyChangeProblem(house, c, third), null);
+  assert.equal(changeFamily(house, c, third), true);
+  assert.equal(house.bank.gems, FAMILY_CHANGE_COST);
+  assert.equal(lastName(c), TECHNIQUES[third].family);
+  assert.deepEqual([c.lineage, c.otherLine, c.powers.technique, c.powers.technique2], [third, other, third, other]);
+  // Its babies take the new name.
+  const { baby } = breed(c, adult('Mate'), { family: 'a', gifts: [] }, 'Kid', NOW);
+  assert.equal(lineageOf(baby), third);
+  // Taking the other side's name swaps the two sides, and both techniques with them.
+  assert.equal(changeFamily(house, c, other), true);
+  assert.equal(house.bank.gems, 0);
+  assert.deepEqual([c.lineage, c.otherLine, c.powers.technique, c.powers.technique2], [other, third, other, third]);
+  const back = parseCreature(serializeCreature(c));
+  assert.deepEqual([back.lineage, back.otherLine, back.powers.technique, back.powers.technique2], [other, third, other, third]);
+  assert.match(familyChangeProblem(house, c, first), /10,000 gems/, 'and the bank is empty now');
+  // One without a technique yet just gets a new family to awaken.
+  const plain = adult('Plain');
+  house.bank.gems = FAMILY_CHANGE_COST;
+  const to = TECHNIQUE_IDS.find((id) => id !== lineageOf(plain));
+  assert.equal(changeFamily(house, plain, to), true);
+  assert.equal(plain.powers.technique, null);
+  assert.equal(lineageOf(plain), to);
 });
 
 test('two parents from one family still give a different other side', () => {

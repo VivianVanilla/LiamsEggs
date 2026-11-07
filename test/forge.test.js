@@ -141,23 +141,35 @@ test('in a fight, each weapon does what it says', () => {
   assert.ok(Math.abs(dealt - plainHit * (1 + WEAPONS.dragonslayer.monster)) < 1e-6, `${dealt} against ${plainHit}`);
 });
 
-test('the Soul Split Katana bypasses dodge on exactly one quarter of eligible strikes', () => {
+test('the Soul Split Katana gets past dodge half the time, and cuts through a quarter of Guard', () => {
   const c = wildCreature(21, 2);
   c.weapon = 'soulsplitkatana';
   c.traits = [];
-  const bout = new Bout([c, wildCreature(22, 2)], { seed: 8 });
+  const rival = wildCreature(22, 2);
+  rival.traits = [];
+  const bout = new Bout([c, rival], { seed: 8 });
   const [me, them] = bout.fighters;
   me.crit = 0;
   them.dodge = 1;
+  them.hp = them.maxHp = 1e9;
   const hit = (rolls) => {
     let i = 0;
     const before = them.hp;
     bout.rand = () => rolls[i++] ?? 0.5;
     bout.strike(me, them, 1);
-    return them.hp < before;
+    return before - them.hp;
   };
-  assert.equal(hit([0.24, 0.5, 0.5]), true, 'a 24% bypass roll ignores dodge');
-  assert.equal(hit([0.25, 0.5]), false, 'the 25% boundary does not bypass dodge');
+  assert.ok(hit([0.49, 0.5, 0.5]) > 0, 'a roll under half ignores dodge');
+  assert.equal(hit([0.5, 0.5]), 0, 'half or more does not');
+  // It hits as if the target had three quarters of its Guard, and a plain blade does not.
+  them.dodge = 0;
+  them.def = 60;
+  const swing = me.atk * (0.85 + 0.5 * 0.3) * (them.takenMul ?? 1);
+  const dealt = hit([0.99, 0.99, 0.5, 0.5]);
+  assert.ok(Math.abs(dealt - swing * (30 / (30 + 60 * 0.75))) < 1e-6, `${dealt}`);
+  me.weapon = null;
+  const plain = hit([0.99, 0.5, 0.5]);
+  assert.ok(Math.abs(plain - swing * (30 / (30 + 60))) < 1e-6, `${plain}`);
 });
 
 test('a weapon helps win fights, and the best ones help most', () => {

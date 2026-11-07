@@ -7,7 +7,7 @@ import { statText } from './sheet.js';
 import { MUTATIONS, MAX_MUTATIONS } from '../data/mutations.js';
 import { QUIRKS, TRAITS, MAX_HP_GIVEN, OFA_ID, ofaLevelFor, TECHNIQUES, BRED_TRAIT_IDS, BRED_RULES } from '../data/powers.js';
 import { PATHS } from '../data/paths.js';
-import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER, ALTAR } from '../data/family.js';
+import { BREED_STAGE, BREED_FULLNESS, BREED_COST, BREED_GIFTS, MAX_CARE_SAVE, MEGA_BREEDER, ALTAR, FAMILY_CHANGE_COST } from '../data/family.js';
 import { RACES, PURE_BLOOD_CHANCE, MIN_SHARE, DEFAULT_RACE } from '../data/races.js';
 import { heritageOf, raceParts, hasTrait, negativeShare } from './creature.js';
 import { DELUXE_BREEDER } from '../data/universe.js';
@@ -266,3 +266,29 @@ export function passOn(giver, heir, now = Date.now()) {
 
 // For the Cursed Body line in the breed note: which technique each side would bring.
 export const familyLine = (c) => ({ name: TECHNIQUES[lineageOf(c)].family, technique: TECHNIQUES[lineageOf(c)].name });
+
+// ---------- a new last name ----------
+
+// Why it can't take this family's name right now, or null if it can.
+export function familyChangeProblem(house, c, lineage) {
+  if (!c || c.dead) return 'It has to be alive';
+  if (typeof lineage !== 'string' || !Object.hasOwn(TECHNIQUES, lineage)) return 'There is no such family';
+  if (lineage === lineageOf(c)) return `${c.name} is already a ${TECHNIQUES[lineage].family}`;
+  if (house.bank.gems < FAMILY_CHANGE_COST) return `It costs ${FAMILY_CHANGE_COST.toLocaleString('en-US')} gems`;
+  return null;
+}
+
+// Its last name is its family, so it joins a new one: its babies take the new name, and a cursed
+// technique it has already awakened becomes the new family's. If it took the other side of its
+// family's name, the two sides swap, and so does a Cursed Body's second technique.
+export function changeFamily(house, c, lineage) {
+  if (familyChangeProblem(house, c, lineage)) return false;
+  const old = lineageOf(c);
+  const other = otherLineOf(c);
+  house.bank.gems -= FAMILY_CHANGE_COST;
+  c.lineage = lineage;
+  c.otherLine = other === lineage ? old : other;
+  if (c.powers.technique) c.powers.technique = c.lineage;
+  if (c.powers.technique2) c.powers.technique2 = c.otherLine;
+  return true;
+}

@@ -60,7 +60,7 @@ export function breedingGuide() {
     {
       title: 'Its family',
       rows: [
-        { name: 'Its last name', detail: 'Decides which cursed technique it can awaken. Nobody picks a technique, but breeding lets you choose which family line carries on.' },
+        { name: 'Its last name', detail: 'Decides which cursed technique it can awaken. Nobody picks a technique, but breeding lets you choose which family line carries on, and 10,000 gems in the Creatures list buys a new last name, technique and all.' },
         { name: 'The other side', detail: `The other parent's family. It only matters with ${cursedbody.name}, which can awaken that side's technique as well. If both parents share a family, the other side comes from one of their own other sides.` },
       ],
     },

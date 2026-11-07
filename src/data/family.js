@@ -29,6 +29,10 @@ export const ALTAR = { cost: 200, share: 0.5, eggChance: 0.3, eggShares: [[1, 0.
 export const ROLL_COST = 1;
 export const HYPER_BUDGETS = [10, 25, 50, 100];
 
+// A new last name, from the shared bank. Its last name is its family, so its family's cursed
+// technique and what its babies take change with it (core/family.js changeFamily).
+export const FAMILY_CHANGE_COST = 10000;
+
 // A nurse snacks any teammate under this fullness, and checks on them this often, in seconds.
 export const CARE_HUNGRY = 40;
 export const CARE_ROUND = 60;

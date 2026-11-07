@@ -2,14 +2,15 @@
 // the Legendary Mine and who is away on an expedition. Bring them out, rename them, or let them go.
 
 import { toast } from './flair.js';
-import { G, api, creatureText, memberOf, inBout, rememberTeam } from '../state.js';
+import { G, api, creatureText, memberOf, inBout, rememberTeam, saveCreature, saveHouse } from '../state.js';
 import { h, fill, button, sureButton, openNote, getNote } from './notes.js';
-import { parseCreature, fullName, stageOf, stageIndex, pathTitle, powerOf, raceName, cleanName } from '../core/creature.js';
+import { parseCreature, fullName, lastName, lineageOf, otherLineOf, stageOf, stageIndex, pathTitle, powerOf, raceName, cleanName } from '../core/creature.js';
 import { awayBases } from '../core/village.js';
-import { breedProblem } from '../core/family.js';
-import { TRAITS, TRAIT_IDS, LEGENDARY } from '../data/powers.js';
+import { breedProblem, familyChangeProblem, changeFamily } from '../core/family.js';
+import { TRAITS, TRAIT_IDS, LEGENDARY, TECHNIQUES, TECHNIQUE_IDS } from '../data/powers.js';
 import { WEAPONS } from '../data/forge.js';
-import { TEAM_MAX } from '../data/family.js';
+import { TEAM_MAX, FAMILY_CHANGE_COST } from '../data/family.js';
+import { dropRig } from '../draw/art.js';
 import { EXPEDITIONS } from '../data/village.js';
 import { drawPortrait } from '../draw/art.js';
 import { loadVillage, expeditionClock, tickClocks } from './village.js';
@@ -62,6 +63,28 @@ export async function renameCreature(base, c, raw) {
   return { base: now, before };
 }
 
+// Gives it a new last name, which is a new family, for gems from the shared bank. Not while it is
+// away on an expedition or fighting, the same as renaming.
+async function newLastName(base, c, lineage) {
+  if (awayBases(G.house).has(base)) return { problem: `${c.name} is away on an expedition. Change it when it is back.` };
+  if (inBout(c)) return { problem: 'Not in the middle of a fight' };
+  const before = lastName(c);
+  if (!changeFamily(G.house, c, lineage)) return { problem: familyChangeProblem(G.house, c, lineage) };
+  dropRig(c);
+  const m = memberOf(c);
+  if (m) {
+    await saveCreature(c);
+    m.pet.say(`call me ${fullName(c)}`, 3, true);
+  } else {
+    await saveHouse();
+    await api.saveCreature(base, creatureText(c));
+  }
+  getNote('menu', c.id)?.setTitle(fullName(c));
+  G.onCreatureChanged?.();
+  await loadVillage();
+  return { before };
+}
+
 export async function openCreatures() {
   await loadVillage();
   const graves = [];
@@ -80,6 +103,9 @@ export async function openCreatures() {
     sort: old?.sort ?? 'power',
     search: old?.search ?? '',
     renaming: null,
+    // Whose last name is being changed, and to which family.
+    newFamily: null,
+    familyPick: null,
     message: '',
     graves,
     showGraves: false,
@@ -181,6 +207,42 @@ function buildRoster(body, note) {
   );
 }
 
+// Picking a new last name. Its last name is its family, so the family's cursed technique comes too.
+function familyBox(note, row) {
+  const { spec } = note;
+  const { base, c } = row;
+  const others = TECHNIQUE_IDS.filter((id) => id !== lineageOf(c));
+  if (!others.includes(spec.familyPick)) spec.familyPick = others[0];
+  const pick = spec.familyPick;
+  const t = TECHNIQUES[pick];
+  const problem = familyChangeProblem(G.house, c, pick);
+  const swaps = otherLineOf(c) === pick;
+  const close = () => {
+    spec.newFamily = null;
+    spec.familyPick = null;
+    note.rebuild();
+  };
+  const go = async () => {
+    const res = await newLastName(base, c, pick);
+    spec.newFamily = null;
+    spec.familyPick = null;
+    spec.message = res.problem ?? '';
+    if (!res.problem) toast(`${c.name.toUpperCase()} ${res.before.toUpperCase()} IS NOW ${fullName(c).toUpperCase()}! ${TECHNIQUES[pick].name.toUpperCase()} RUNS IN ITS FAMILY NOW!`, 'rare');
+    note.rebuild();
+  };
+  const select = h('select', { onchange: (e) => { spec.familyPick = e.target.value; note.rebuild(); } },
+    others.map((id) => h('option', { value: id, selected: id === pick }, `${TECHNIQUES[id].family} (${TECHNIQUES[id].name})`)));
+  return h('div', null,
+    h('div', { class: 'renamebox' }, select, button(`Become a ${t.family}: ${FAMILY_CHANGE_COST.toLocaleString('en-US')} gems`, go, 'mini hot', !!problem), button('x', close, 'mini')),
+    h('div', { class: 'line' }, [
+      `Its last name is its family. As ${c.name} ${t.family}, its babies are ${t.family}s`,
+      c.powers.technique ? `, and its ${TECHNIQUES[c.powers.technique].name} becomes ${t.name}` : `, and ${t.name} is the technique it can awaken`,
+      swaps ? `. ${t.family} was the other side of its family, so ${lastName(c)} becomes the other side instead` : '',
+      '.',
+    ].join('')),
+    problem && h('div', { class: 'line warning' }, problem));
+}
+
 // How it went, for its gravestone.
 function graveLine(dead) {
   if (dead.by === 'absorbed') return `Absorbed by ${dead.to}, who was reborn.`;
@@ -223,6 +285,14 @@ function card(note, row) {
   if (place !== 'away') {
     acts.push(button('Rename', () => {
       spec.renaming = base;
+      spec.newFamily = null;
+      spec.message = '';
+      note.rebuild();
+    }, 'mini', fighting));
+    acts.push(button('Last name', () => {
+      spec.newFamily = base;
+      spec.familyPick = null;
+      spec.renaming = null;
       spec.message = '';
       note.rebuild();
     }, 'mini', fighting));
@@ -265,6 +335,7 @@ function card(note, row) {
       if (spec.renameText == null) input.select();
     }, 30);
   }
+  if (spec.newFamily === base) renameBox = familyBox(note, row);
   const exp = place === 'away' ? G.house.expeditions.find((e) => e.party.some((p) => p.base === base)) : null;
   const gifts = c.traits.map((id) => h('span', { class: 'chip', style: `--c:${TRAITS[id].color}` }, TRAITS[id].name));
   const weapon = c.weapon && WEAPONS[c.weapon] && h('span', { class: 'chip', style: `--c:${WEAPONS[c.weapon].color}` }, WEAPONS[c.weapon].name);

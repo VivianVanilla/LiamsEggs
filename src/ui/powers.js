@@ -224,7 +224,7 @@ function techniqueFold(c, note) {
       const t = TECHNIQUES[lineageOf(c)];
       return [
         needs(computeStats(c).might, TECHNIQUE_MIGHT, 'Might'),
-        h('div', { class: 'small' }, `You don't pick this. It runs in the family, and every ${lastName(c)} has ${t.name}.`),
+        h('div', { class: 'small' }, `It runs in the family, and every ${lastName(c)} has ${t.name}. A new last name, from the Creatures list, is a new family.`),
         powerBlock(t.name, t.color, t.blurb, t.stats, t.moves, flash),
         noRoomLine(c, 'technique'),
         h('div', { class: 'row gap' }, sureButton('Awaken its technique', () => {

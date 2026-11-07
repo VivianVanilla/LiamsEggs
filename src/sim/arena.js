@@ -1025,7 +1025,7 @@ export class Bout {
     if (f.execute && target.hp < target.maxHp * 0.5) dmg *= 1 + f.execute;
     if (f.frenzy) dmg *= 1 + Math.min(FRENZY_CAP, f.frenzyHits * f.frenzy);
     if (domain) dmg *= 1 + DOMAIN.damage;
-    const dealt = this.hurt(target, dmg, f, { crit });
+    const dealt = this.hurt(target, dmg, f, { crit, pierce: f.weapon?.pierce ?? 0 });
     if (dealt > 0) {
       const heal = (f.absorb ?? 0) + drain;
       if (heal > 0 && f.alive) f.hp = Math.min(f.maxHp, f.hp + dealt * heal);
@@ -1040,12 +1040,13 @@ export class Bout {
 
   // `still` is for damage over time, which shouldn't shove the target on every tick. Returns the
   // damage it took.
-  // `pure` damage skips its guard: it is what a mirror throws back.
-  hurt(target, raw, from, { crit = false, silent = false, still = false, pure = false } = {}) {
+  // `pure` damage skips its guard: it is what a mirror throws back. `pierce` cuts through that share
+  // of its Guard.
+  hurt(target, raw, from, { crit = false, silent = false, still = false, pure = false, pierce = 0 } = {}) {
     if (!target.alive) return 0;
     const shield = 1 - clamp(this.buffValue(target, 'guard') + (target.holding ? HOLD_GUARD : 0), 0, 0.8);
     const bare = target.plan?.hurt === 'berserk' && lowHealth(target) ? BERSERK_TAKEN : 1;
-    let dmg = pure ? raw : raw * (30 / (30 + target.def)) * shield * bare * (target.takenMul ?? 1);
+    let dmg = pure ? raw : raw * (30 / (30 + target.def * (1 - pierce))) * shield * bare * (target.takenMul ?? 1);
     // Just after a Ko, it is wide open.
     if (target.koOpen > this.t) dmg *= KO.openTaken;
     if (target.voidGuard && from) dmg *= voidFactor(from, target.voidGuard);

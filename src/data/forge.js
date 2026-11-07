@@ -11,6 +11,8 @@
 //   poison      a swing that lands poisons: this share of its attack every second, for `poisonFor`
 //   lifesteal   it heals this share of the damage its swings deal
 //   monster     this much more damage again against monsters
+//   ignoreDodge each strike has this chance to give the target no chance to dodge it
+//   pierce      its strikes treat the target's Guard as this much less than it is
 
 export const WEAPONS = {
   starblade: {
@@ -45,8 +47,8 @@ export const WEAPONS = {
   },
   soulsplitkatana: {
     name: 'Soul Split Katana', ore: 50, gems: 500000, color: '#e6d7ff',
-    ignoreDodge: 0.25,
-    text: 'ignores the target\'s dodge chance 25% of the time',
+    ignoreDodge: 0.5, pierce: 0.25,
+    text: 'ignores the target\'s dodge chance half the time, and cuts through a quarter of its Guard',
   },
 };
 export const WEAPON_IDS = Object.keys(WEAPONS);
