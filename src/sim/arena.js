@@ -17,7 +17,7 @@ import { CHOSEN, CHOSEN_COLOR } from '../data/chosen.js';
 import { chosenAttune } from '../core/chosen.js';
 import { prepEffects } from '../core/craft.js';
 import {
-  WINDUP, WINDUP_SLACK, LOW_HEALTH, BERSERK_HIT, BERSERK_TAKEN, BACKING_SPEED, MID_GAP, OFF_BALANCE, BOUNCE_BACK, BOUNCE_WAIT_GAP, HOLD_GUARD, HOLD_HIT, HOLD_PATIENCE, THROW,
+  WINDUP, WINDUP_SLACK, LOW_HEALTH, BERSERK_HIT, BERSERK_TAKEN, BACKING_SPEED, MID_GAP, OFF_BALANCE, BOUNCE_BACK, BOUNCE_WAIT_GAP, HOLD_GUARD, HOLD_HIT, HOLD_PATIENCE, THROW, FOE_REFLECT,
 } from '../data/battle.js';
 
 const MINIONS = {
@@ -307,6 +307,8 @@ export class Bout {
       feast: passive.feast,
       reach: passive.reach * this.sizeMul,
       ...passiveFields(passive),
+      // A monster is always something you fight, so its mirror is weaker (FOE_REFLECT).
+      reflectMul: FOE_REFLECT,
       ringMul: 1,
       plan: { stance: def.stance ?? 'close', hurt: 'fight', target: 'near' },
       backOff: 0,
@@ -1115,8 +1117,8 @@ export class Bout {
       target.y += Math.sin(a) * 3;
     }
     if (!silent) this.events.push({ type: 'hit', x: target.x, y: target.y - 44 * target.scale, amt: dmg, crit, color: from?.c ? null : '#fff' });
-    // A mirror throws some of it straight back.
-    if (target.reflect && from && from !== target && from.alive && !still && !pure && dmg > 0) this.hurt(from, dmg * target.reflect, target, { still: true, pure: true });
+    // A mirror throws some of it straight back: a tenth as much from whatever you fight (FOE_REFLECT).
+    if (target.reflect && from && from !== target && from.alive && !still && !pure && dmg > 0) this.hurt(from, dmg * target.reflect * (target.reflectMul ?? 1), target, { still: true, pure: true });
     if (target.hp <= 0 && target.fox === 'ready') this.foxWakes(target);
     if (target.hp <= 0 && target.lives > 0) this.getBackUp(target);
     if (target.titan === 'ready' && target.hp > 0 && target.hp < target.maxHp * TITAN.below) this.titanShift(target);

@@ -217,6 +217,7 @@ Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blad
 - **Legendary road:** four more monsters to the death. No trophies: each gives one Legendary mutation and nothing else.
 - **Ultimate road:** five more, just as deadly, once it has won any 2 on the Legendary road. They open in a note of their own, beside Challenges. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time. But every rebirth makes the ultimate monsters 1.5 times as strong for it again, in health and in hits: 1.5 times after one, 2.25 after two, 3.4 after three.
 - **Arena:** a free-for-all with any `.creature` files.
+- **Mirrors:** anything that throws hits back does it in full for your creatures, but whatever they fight (monsters, and every enemy in Adventure, Chapter ???, the God Chapter and the Negative) throws back only a tenth of what its mirror says. Your creatures hit far harder and have far less health than what they fight. In the free-for-all Arena, everyone's mirror is full.
 - **The fight sidebar:** while any fight is on, a panel down the right of your screen shows everyone's health, yours and theirs. Max health lost to necrotic hits shows dark at the end of a bar.
 
 ## Your Chosen

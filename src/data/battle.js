@@ -67,5 +67,11 @@ export const HOLD_GUARD = 0.15;
 export const HOLD_HIT = 0.88;
 export const HOLD_PATIENCE = 3.5;
 
+// Whatever you fight (monsters, and everything on the other side in Adventure, Chapter ???, the
+// God Chapter and the Negative) throws back only this share of what its reflection says. Your
+// creatures hit far harder and have far less health than what they fight, so a full mirror on that
+// side would mostly kill them with their own hits.
+export const FOE_REFLECT = 0.1;
+
 // The plain thrown shot a mid range fighter uses between its moves.
 export const THROW = { name: 'Throw', power: THROW_POWER, speed: 560, color: '#ffffff', dodgeable: true };

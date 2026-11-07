@@ -13,6 +13,7 @@ import { deadlyMonsterStats } from '../sim/challenges.js';
 import { DEADLY_MONSTERS } from '../data/monsters.js';
 import { LEGENDARY, BORN_TRAIT_IDS, NEG_TRAIT_IDS } from '../data/powers.js';
 import { GOD_GUARD } from '../data/ascension.js';
+import { FOE_REFLECT } from '../data/battle.js';
 import { NEGATIVE_RACE_IDS } from '../data/races.js';
 import { STAT_KEYS, TRAINING_LIMIT } from './creature.js';
 import { clamp } from '../lib/util.js';
@@ -112,6 +113,8 @@ function setUpRing(party, fighters, boss, tough, { seed = 1, cx, cy, r, sizeMul 
     f.maxHp *= tough;
     f.hp = f.maxHp;
     f.atk *= tough;
+    // Its mirrors throw back only a tenth of what they say.
+    f.reflectMul = FOE_REFLECT;
   });
   bout.lineUp();
   return bout;

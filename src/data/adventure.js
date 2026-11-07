@@ -118,7 +118,7 @@ export const ADVENTURE_BOSSES = {
   },
   58: {
     monster: 'tiger', name: 'Thunder Tiger', power: 0.6, twin: 2, moves: ['stoop', 'zap', 'warcry', 'oblivion'],
-    passive: { reflect: 0.25, dodge: 0.15, frenzy: 0.03, text: 'There are two of them. Each throws a quarter of every hit back, dodges more, and gets stronger with every hit it lands.' },
+    passive: { reflect: 0.25, dodge: 0.15, frenzy: 0.03, text: 'There are two of them. Each throws 2.5% of every hit back, dodges more, and gets stronger with every hit it lands.' },
   },
   60: {
     monster: 'behemoth', name: 'The End of All Things', power: 0.62, moves: ['endtime', 'worldbreak', 'lastlight', 'tendrils', 'oblivion'],
@@ -258,7 +258,7 @@ export const ABYSS_BOSSES = {
   5: { monster: 'mammoth', name: 'The Grey Shepherd', power: 1.1, moves: ['quake', 'regrow', 'tendrils', 'worldbreak'], passive: { regen: 0.01, lives: 1, text: 'Heals 1% every second, gets back up once, and keeps calling living shadows.' } },
   10: { monster: 'squid', name: 'The Eye That Opens Inward', power: 1.2, moves: ['mindswap', 'oblivion', 'inkcloud', 'hex'], passive: { unstoppable: true, nullField: true, text: 'Nothing stops it, and every 6 seconds nothing near it can use a move.' } },
   15: { monster: 'spider', name: 'Mother of Moths', power: 1.4, twin: 2, moves: ['webshot', 'tendrils', 'sting', 'devourstar'], passive: { absorb: 0.2, frenzy: 0.03, text: 'There are two of her. Each heals from what she deals and grows stronger with every hit.' } },
-  20: { monster: 'dragon', name: 'The Inverted Dragon', power: 1, moves: ['prominence', 'devourstar', 'lastlight', 'endtime'], passive: { enrage: 1, reflect: 0.2, unstoppable: true, text: 'Nothing stops it, it throws a fifth of every hit back, and below half its health it hits twice as hard.' } },
+  20: { monster: 'dragon', name: 'The Inverted Dragon', power: 1, moves: ['prominence', 'devourstar', 'lastlight', 'endtime'], passive: { enrage: 1, reflect: 0.2, unstoppable: true, text: 'Nothing stops it, it throws 2% of every hit back, and below half its health it hits twice as hard.' } },
   25: {
     monster: 'behemoth', name: 'The Question', power: 0.9, moves: ['endtime', 'worldbreak', 'lastlight', 'oblivion', 'tendrils'],
     passive: { unstoppable: true, lives: 3, enrage: 1, aura: 0.25, auraRange: 240, nullField: true, reflect: 0.2, regen: 0.008, text: 'Every answer at once, and three more lives to give them with.' },
@@ -302,10 +302,10 @@ export const GOD = {
 export const GOD_BOSSES = {
   5: {
     monster: 'behemoth', name: 'The Herald', power: 1.4, moves: ['endtime', 'lastlight', 'worldbreak', 'returntozero'],
-    passive: { unstoppable: true, lives: 2, reflect: 0.25, regen: 0.008, horizon: true, text: 'Nothing stops it, even moves that never miss can miss it, it throws a quarter of every hit back, slowly mends, and gets back up twice.' },
+    passive: { unstoppable: true, lives: 2, reflect: 0.25, regen: 0.008, horizon: true, text: 'Nothing stops it, even moves that never miss can miss it, it throws 2.5% of every hit back, slowly mends, and gets back up twice.' },
   },
   10: {
     monster: 'dragon', name: 'God', power: 2.2, moves: ['endtime', 'lastlight', 'worldbreak', 'returntozero', 'maximumtechnique', 'awakening', 'infinitemass'],
-    passive: { unstoppable: true, lives: 4, enrage: 1, aura: 0.3, auraRange: 260, nullField: true, reflect: 0.25, regen: 0.01, horizon: true, absorb: 0.15, text: 'Every awakened power at once. Nothing stops it, nothing near it can use a move for long, everything near it withers, it throws a quarter of every hit back, heals from what it deals, hits twice as hard below half its health, and gets back up four times.' },
+    passive: { unstoppable: true, lives: 4, enrage: 1, aura: 0.3, auraRange: 260, nullField: true, reflect: 0.25, regen: 0.01, horizon: true, absorb: 0.15, text: 'Every awakened power at once. Nothing stops it, nothing near it can use a move for long, everything near it withers, it throws 2.5% of every hit back, heals from what it deals, hits twice as hard below half its health, and gets back up four times.' },
   },
 };

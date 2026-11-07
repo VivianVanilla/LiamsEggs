@@ -10,6 +10,7 @@ import { emptyHouse, sanitizeHouse } from '../src/core/house.js';
 import { breed } from '../src/core/family.js';
 import { startChallenge } from '../src/sim/challenges.js';
 import { Bout, finishBout, voidFactor } from '../src/sim/arena.js';
+import { FOE_REFLECT } from '../src/data/battle.js';
 import {
   LEVEL_COUNT, levelEnemies, startLevel, bossOf, levelToughness, ABYSS_COUNT, abyssProblem, startAbyss, abyssToughness, abyssReward, winAbyss, winLevel,
 } from '../src/core/adventure.js';
@@ -312,6 +313,29 @@ test('a Null Field in the blood silences for 4 seconds, twice a boss\'s', () => 
   assert.equal(them.silence, 4);
   const end = startLevel(60, [grown('A', 1), grown('B', 2), grown('C', 3)], { seed: 2 }).fighters.find((f) => f.monster);
   assert.equal(end.nullSilence, 2, 'a boss\'s Null Field is as it always was');
+});
+
+test('what you fight throws back only a tenth of what its mirror says, and your mirrors throw back all of it', () => {
+  const bout = startLevel(60, [grown('A', 1), grown('B', 2), grown('C', 3)], { seed: 2 });
+  const me = bout.fighters.find((f) => f.team === 0);
+  const boss = bout.fighters.find((f) => f.monster);
+  const foe = bout.fighters.find((f) => f.team === 1 && !f.monster);
+  assert.deepEqual([me.reflectMul, boss.reflectMul, foe.reflectMul], [undefined, FOE_REFLECT, FOE_REFLECT]);
+  Object.assign(me, { hp: 1e7, maxHp: 1e7, reflect: 0.5 });
+  Object.assign(boss, { hp: 1e7, maxHp: 1e7, reflect: 0.5, lives: 0 });
+  let before = me.hp;
+  const dealt = bout.hurt(boss, 1000, me);
+  assert.ok(Math.abs(before - me.hp - dealt * 0.5 * FOE_REFLECT) < 1e-6, 'the boss throws back a tenth');
+  before = boss.hp;
+  const taken = bout.hurt(me, 1000, boss);
+  assert.ok(Math.abs(before - boss.hp - taken * 0.5) < 1e-6, 'yours throw back all of it');
+  // The Negative's rings, and every monster in Challenges, the same way.
+  const neg = startNegLevel(1, [wildNegCreature(4, 10)], { seed: 1 });
+  assert.ok(neg.fighters.filter((f) => f.team !== 0).every((f) => f.reflectMul === FOE_REFLECT));
+  assert.equal(neg.fighters.find((f) => f.team === 0).reflectMul, undefined);
+  assert.equal(startChallenge(grown('D', 4), 'crab', { seed: 1 }).fighters.find((f) => f.monster).reflectMul, FOE_REFLECT);
+  // In a free-for-all, nobody is the monster.
+  assert.ok(new Bout([grown('E', 5), grown('F', 6)], { seed: 1 }).fighters.every((f) => f.reflectMul === undefined));
 });
 
 test('a fight in the Negative runs on numbers ten times as big', () => {

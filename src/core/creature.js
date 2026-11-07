@@ -387,7 +387,8 @@ const fullRaces = (c) => raceParts(c).filter(([, share]) => c.pureBlood || share
 // Nen and bosses all use these, and sim/arena.js makes each one work.
 //   taken, hp, dodge, crit, speed, reach, feast   as they always were
 //   absorb      heals this share of all the damage it deals
-//   reflect     this share of every hit it takes goes back to whoever landed it
+//   reflect     this share of every hit it takes goes back to whoever landed it (a tenth of that
+//               from whatever your creatures fight: FOE_REFLECT in data/battle.js)
 //   regen       heals this share of its max HP every second
 //   echo        each move it uses has this chance to go off twice
 //   execute     this much more damage against anything below half its health

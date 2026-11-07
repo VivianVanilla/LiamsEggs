@@ -9,6 +9,7 @@ import { DEADLY_MONSTERS } from '../data/monsters.js';
 import { sanitizeNeg, wildNegCreature, addNegXp, loseLevel } from './negative.js';
 import { NEG_TRAIT_IDS } from '../data/powers.js';
 import { MAX_STONES } from '../data/ascension.js';
+import { FOE_REFLECT } from '../data/battle.js';
 import {
   NEG_LEVELS, NEG_LEVEL_COUNT, NEG_PARTY, NEG_ENEMIES, NEG_TOUGHER, NEG_BOSSES, NEG_BOSS_STATS, NEG_REWARD, NEG_SCALE, enemyLevel,
   ELITE_LEVELS, ELITE_COUNT, ELITE, ELITE_BOSSES, ELITE_REWARD,
@@ -68,6 +69,8 @@ function negRing(party, fighters, bossDef, bossMul, tough, { seed = 1, cx, cy, r
     f.maxHp *= tough;
     f.hp = f.maxHp;
     f.atk *= tough;
+    // Its mirrors throw back only a tenth of what they say.
+    f.reflectMul = FOE_REFLECT;
   });
   bout.lineUp();
   return bout;

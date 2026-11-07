@@ -335,7 +335,7 @@ export const NEG_ENEMIES = { max: 4, moreEvery: 7 };
 // Everything on the other side hits and lasts this much harder for every level after the first.
 export const NEG_TOUGHER = 0.02;
 export const NEG_BOSSES = {
-  10: { monster: 'tortoise', name: 'The Inverted Shell', power: 1.2, passive: { reflect: 0.3, unstoppable: true, text: 'Its shell faces inward: it throws 30% of every hit back, and nothing can stop it.' } },
+  10: { monster: 'tortoise', name: 'The Inverted Shell', power: 1.2, passive: { reflect: 0.3, unstoppable: true, text: 'Its shell faces inward: it throws 3% of every hit back, and nothing can stop it.' } },
   20: { monster: 'rex', name: 'The Inverted Rex', power: 1.1, moves: ['reckoning', 'quake', 'stoop', 'oblivion'], passive: { absorb: 0.2, enrage: 0.6, text: 'Heals from every bite, and below half its health it bites 60% harder.' } },
   30: { monster: 'dragon', name: 'The Negative King', power: 0.9, moves: ['prominence', 'devourstar', 'worldbreak', 'endtime'], passive: { lives: 1, unstoppable: true, nullField: true, text: 'Nothing stops it, every 6 seconds it silences everything near it, and it gets back up once.' } },
 };
@@ -369,8 +369,8 @@ export const ELITE_LEVELS = [
 export const ELITE_COUNT = ELITE_LEVELS.length;
 export const ELITE = { level: 60, tough: 1, grow: 1.08, enemies: 2, moreEvery: 8, gifts: 1, bossStats: 1.6 };
 export const ELITE_BOSSES = {
-  5: { monster: 'leviathan', name: 'The Stone Warden', power: 1.5, moves: ['quake', 'bonewall', 'worldbreak', 'tendrils'], passive: { taken: 0.3, reflect: 0.25, unstoppable: true, regen: 0.006, text: 'Made of the stones it guards: it takes 30% less damage, throws a quarter of every hit back, nothing stops it, and it slowly mends.' } },
-  10: { monster: 'dragon', name: 'The Ascended King', power: 1.6, moves: ['prominence', 'devourstar', 'lastlight', 'endtime', 'worldbreak'], passive: { lives: 2, unstoppable: true, nullField: true, reflect: 0.2, absorb: 0.15, text: 'Nothing stops it, every 6 seconds it silences everything near it, it throws a fifth of every hit back and heals from what it deals, and it gets back up twice.' } },
+  5: { monster: 'leviathan', name: 'The Stone Warden', power: 1.5, moves: ['quake', 'bonewall', 'worldbreak', 'tendrils'], passive: { taken: 0.3, reflect: 0.25, unstoppable: true, regen: 0.006, text: 'Made of the stones it guards: it takes 30% less damage, throws 2.5% of every hit back, nothing stops it, and it slowly mends.' } },
+  10: { monster: 'dragon', name: 'The Ascended King', power: 1.6, moves: ['prominence', 'devourstar', 'lastlight', 'endtime', 'worldbreak'], passive: { lives: 2, unstoppable: true, nullField: true, reflect: 0.2, absorb: 0.15, text: 'Nothing stops it, every 6 seconds it silences everything near it, it throws 2% of every hit back and heals from what it deals, and it gets back up twice.' } },
 };
 // What an Elite win pays. Ascension Stones: `stones` for a first win, `bossStones` for the first win
 // of a boss level, and `replayBossStones` every time a boss level is beaten again.
