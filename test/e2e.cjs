@@ -840,6 +840,47 @@ async function run() {
   await sleep(100);
   ok('the ring clears', await js(`window.__game.G.bout === null && window.__game.G.challenge === null`));
 
+  // --- your Chosen: picked in the Creatures list, gold in the ring, its bomb from the fight sidebar ---
+  await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); const { openCreatures } = await import('./ui/creatures.js'); await openCreatures(); })()`);
+  await sleep(200);
+  const myCard = `[...document.querySelectorAll('.note .card')].find((k) => k.querySelector('.name').textContent.startsWith(window.__game.G.creature.name + ' '))`;
+  await js(`[...${myCard}.querySelectorAll('button')].find((b) => b.textContent === 'Chosen').click()`);
+  await sleep(100);
+  ok('the Chosen box offers the three attunements', await js(`['War', 'Benevolence', 'Speed'].every((t) => [...${myCard}.querySelectorAll('.choosebox button')].some((b) => b.textContent === t))`));
+  await shot('16n-chosen-pick');
+  await js(`[...${myCard}.querySelectorAll('.choosebox button')].find((b) => b.textContent === 'Benevolence').click()`);
+  ok('it becomes your Chosen, and the household keeps it', await waitFor(`(() => { const { G } = window.__game; return G.house.chosen?.id === G.creature.id && G.house.chosen.attune === 'benevolence'; })()`));
+  ok('its card glows gold', await waitFor(`${myCard}.classList.contains('chosen') && ${myCard}.textContent.includes('Chosen: Benevolence')`));
+  await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); window.__game.G.creature.fullness = 90; const { openChallenges } = await import('./ui/challenges.js'); openChallenges(); })()`);
+  await sleep(200);
+  // Its monsters are behind the Training fold.
+  await js(`(() => { const head = [...${chalNote}.querySelectorAll('.foldhead')].find((b) => b.textContent.includes('Training')); if (head && !head.parentElement.classList.contains('open')) head.click(); return true; })()`);
+  await sleep(100);
+  await js(`${spawnButton('Shell Crab')}.click()`);
+  ok('a fight with your Chosen in it', await waitFor('window.__game.G.bout && window.__game.G.bout.fighters[0].chosen === "benevolence"'));
+  await js(keepFighting);
+  await fastForward(1);
+  const bar = `document.querySelector('#fightbar')`;
+  ok('the fight sidebar shows both sides', await waitFor(`!${bar}.hidden && ${bar}.querySelectorAll('.fb-row').length === 2 && ${bar}.textContent.includes('Yours') && ${bar}.textContent.includes('Against you') && !!${bar}.querySelector('.fb-row.chosen')`));
+  ok('and the bomb is on the enemy only', await js(`[...${bar}.querySelectorAll('.fb-bomb')].filter((b) => !b.hidden).length === 1`));
+  await shot('16o-fight-sidebar');
+  ok('dropping the bomb takes half of what the crab has left', await js(`(() => {
+    const { G } = window.__game;
+    const crab = G.bout.fighters[1];
+    const before = crab.hp;
+    [...${bar}.querySelectorAll('.fb-bomb')].find((b) => !b.hidden).click();
+    return Math.abs(crab.hp - before / 2) < 1e-6 && G.bout.fighters[0].bomb === 'used';
+  })()`));
+  ok('and the button is gone', await js(`[...${bar}.querySelectorAll('.fb-bomb')].every((b) => b.hidden)`));
+  await js(`(() => { const { G } = window.__game; G.bout.hurt(G.bout.fighters[1], 1e9, G.bout.fighters[0], { silent: true }); return true; })()`);
+  await fastForward(1);
+  await waitFor(`${chalNote}.textContent.includes('Won!')`);
+  await clickText('.note.chalk', 'All challenges');
+  await fastForward(1);
+  ok('the sidebar goes when the fight does', await js(`${bar}.hidden`));
+  // The rest of the run expects ordinary damage.
+  await js(`(() => { window.__game.G.house.chosen = null; return true; })()`);
+
   // --- a deadly fight, won on purpose: two presses, odds first ---
   await js(`${spawnButton('Pit Rat')}.click()`);
   await sleep(200);

@@ -10,11 +10,14 @@ import { breedProblem, familyChangeProblem, changeFamily } from '../core/family.
 import { TRAITS, TRAIT_IDS, LEGENDARY, TECHNIQUES, TECHNIQUE_IDS } from '../data/powers.js';
 import { WEAPONS } from '../data/forge.js';
 import { TEAM_MAX, FAMILY_CHANGE_COST } from '../data/family.js';
+import { chosenAttune, choose, unchoose } from '../core/chosen.js';
+import { CHOSEN, ATTUNEMENTS, ATTUNE_IDS } from '../data/chosen.js';
 import { dropRig } from '../draw/art.js';
 import { EXPEDITIONS } from '../data/village.js';
 import { drawPortrait } from '../draw/art.js';
 import { loadVillage, expeditionClock, tickClocks } from './village.js';
 import { openMenu } from './panels.js';
+import { refreshDock } from './dock.js';
 
 const PLACES = { out: 'On screen', home: 'Village', mine: 'Mine', away: 'Away' };
 const FILTERS = [['all', 'All'], ['out', 'On screen'], ['home', 'Village'], ['away', 'Away'], ['breed', 'Can breed']];
@@ -106,6 +109,8 @@ export async function openCreatures() {
     // Whose last name is being changed, and to which family.
     newFamily: null,
     familyPick: null,
+    // Whose card is picking it as your Chosen.
+    choosing: null,
     message: '',
     graves,
     showGraves: false,
@@ -243,6 +248,43 @@ function familyBox(note, row) {
     problem && h('div', { class: 'line warning' }, problem));
 }
 
+// Making it your Chosen, and how it is attuned. There is only ever one: picking another replaces it.
+function chosenBox(note, row) {
+  const { spec } = note;
+  const { c } = row;
+  const now = chosenAttune(G.house, c);
+  const other = !now && G.house.chosen ? G.everyone.find((r) => r.c.id === G.house.chosen.id && !r.c.dead)?.c : null;
+  const done = async (message, kind) => {
+    spec.choosing = null;
+    spec.message = '';
+    await saveHouse();
+    G.onCreatureChanged?.();
+    refreshDock();
+    toast(message, kind);
+    note.rebuild();
+  };
+  const pick = (attune) => {
+    if (!choose(G.house, c, attune)) return;
+    memberOf(c)?.pet.say('a god is in me', 3, true);
+    done(`${c.name.toUpperCase()} IS YOUR CHOSEN OF ${ATTUNEMENTS[attune].name.toUpperCase()}!!!`, 'rare');
+  };
+  return h('div', { class: 'choosebox' },
+    h('div', { class: 'line' }, `Your Chosen is your avatar: your godly power runs through it. It glows gold, and everything it does hits ${CHOSEN.damage} times as hard. Pick what it channels:`),
+    ATTUNE_IDS.map((id) => h('div', { class: 'attune', style: `--c:${ATTUNEMENTS[id].color}` },
+      button(now === id ? `${ATTUNEMENTS[id].name} (now)` : ATTUNEMENTS[id].name, () => pick(id), now === id ? 'mini hot' : 'mini', now === id),
+      h('span', { class: 'line' }, ATTUNEMENTS[id].text))),
+    other && h('div', { class: 'line warning' }, `${other.name} is your Chosen now, and won't be after this.`),
+    h('div', { class: 'acts' },
+      now && button('Stop being Chosen', () => {
+        unchoose(G.house);
+        done(`${c.name.toUpperCase()} IS NO LONGER YOUR CHOSEN.`, 'info');
+      }, 'mini'),
+      button('Close', () => {
+        spec.choosing = null;
+        note.rebuild();
+      }, 'mini')));
+}
+
 // How it went, for its gravestone.
 function graveLine(dead) {
   if (dead.by === 'absorbed') return `Absorbed by ${dead.to}, who was reborn.`;
@@ -286,6 +328,7 @@ function card(note, row) {
     acts.push(button('Rename', () => {
       spec.renaming = base;
       spec.newFamily = null;
+      spec.choosing = null;
       spec.message = '';
       note.rebuild();
     }, 'mini', fighting));
@@ -293,9 +336,17 @@ function card(note, row) {
       spec.newFamily = base;
       spec.familyPick = null;
       spec.renaming = null;
+      spec.choosing = null;
       spec.message = '';
       note.rebuild();
     }, 'mini', fighting));
+    acts.push(button('Chosen', () => {
+      spec.choosing = base;
+      spec.renaming = null;
+      spec.newFamily = null;
+      spec.message = '';
+      note.rebuild();
+    }, chosenAttune(G.house, c) ? 'mini hot' : 'mini', fighting));
     acts.push(sureButton('Let go', async () => {
       if (await G.getRidOf(base, c)) {
         spec.message = `${c.name} is gone for good. Its gravestone is in the graveyard below.`;
@@ -336,17 +387,20 @@ function card(note, row) {
     }, 30);
   }
   if (spec.newFamily === base) renameBox = familyBox(note, row);
+  if (spec.choosing === base) renameBox = chosenBox(note, row);
   const exp = place === 'away' ? G.house.expeditions.find((e) => e.party.some((p) => p.base === base)) : null;
   const gifts = c.traits.map((id) => h('span', { class: 'chip', style: `--c:${TRAITS[id].color}` }, TRAITS[id].name));
   const weapon = c.weapon && WEAPONS[c.weapon] && h('span', { class: 'chip', style: `--c:${WEAPONS[c.weapon].color}` }, WEAPONS[c.weapon].name);
   const canBreed = !breedProblem(c);
-  return h('div', { class: `card${me ? ' me' : ''}` },
+  const attune = chosenAttune(G.house, c);
+  return h('div', { class: `card${me ? ' me' : ''}${attune ? ' chosen' : ''}` },
     h('div', { class: 'top' },
       canvas,
       h('div', { class: 'grow' },
         h('div', { class: 'name' }, fullName(c)),
         h('div', { class: 'row', style: 'gap:3px' },
           h('span', { class: `badge ${place}` }, PLACES[place]),
+          attune && h('span', { class: 'badge chosen' }, `Chosen: ${ATTUNEMENTS[attune].name}`),
           canBreed && place !== 'away' && h('span', { class: 'badge', style: 'background:#d6338c' }, 'can breed')),
         h('div', { class: 'line' }, `Power ${powerOf(c)}`))),
     h('div', { class: 'line' }, `${raceName(c)}, ${stageOf(c).name}${stageIndex(c) >= 1 ? `, ${pathTitle(c)}` : ''}`),

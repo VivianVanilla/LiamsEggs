@@ -18,7 +18,8 @@ import { isNurse } from './core/family.js';
 import { gainGems } from './core/universe.js';
 import { CARE_HUNGRY, CARE_ROUND, CARE_XP } from './data/family.js';
 import { dropRig, drawCreature, drawStand, standSpot, drawAfterimages, AFTERIMAGE_GAP, heightOf } from './draw/art.js';
-import { drawBubble } from './draw/scene.js';
+import { drawBubble, CHOSEN_GLOW } from './draw/scene.js';
+import { chosenAttune } from './core/chosen.js';
 
 const IDLE_LINES = ['hm', 'nice screen', 'what does that button do', 'i live here now', 'is that a spreadsheet', 'you are doing great', 'hello', 'i could eat'];
 const HUNGRY_LINES = ['hungry', 'got any snacks', 'feed me', 'i could eat a whole melon'];
@@ -501,7 +502,11 @@ export class Pet {
       const spot = standSpot(c, x, y, dir);
       drawStand(ctx, c, spot.x, spot.y, dir);
     }
+    // Your Chosen glows gold.
+    const gold = !!chosenAttune(G.house, c);
+    if (gold) ctx.filter = CHOSEN_GLOW;
     drawCreature(ctx, c, x, y, { dir });
+    if (gold) ctx.filter = 'none';
   }
 
   drawOverlay(ctx) {

@@ -217,6 +217,15 @@ Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blad
 - **Legendary road:** four more monsters to the death. No trophies: each gives one Legendary mutation and nothing else.
 - **Ultimate road:** five more, just as deadly, once it has won any 2 on the Legendary road. They open in a note of their own, beside Challenges. Beat them all and it can **be reborn**: it absorbs one of your other creatures (gone forever), takes up to 2 of its gifts, and goes back to being a Hatchling with nothing but its name, family, race, look, farm and gifts. Then it can climb back and do it again, with more in it each time. But every rebirth makes the ultimate monsters 1.5 times as strong for it again, in health and in hits: 1.5 times after one, 2.25 after two, 3.4 after three.
 - **Arena:** a free-for-all with any `.creature` files.
+- **The fight sidebar:** while any fight is on, a panel down the right of your screen shows everyone's health, yours and theirs. Max health lost to necrotic hits shows dark at the end of a bar.
+
+## Your Chosen
+
+In the Creatures list, **Chosen** makes one creature your avatar: your godly power runs through it. There is only ever one, and the household remembers who. It glows gold, out on your screen, in the dock and in every fight, and everything it does hits **twice as hard**. Pick what it channels, and change it whenever you like:
+
+- **War:** three times as hard, instead of twice.
+- **Benevolence:** once a fight, you drop a bomb from above on any enemy, with the Bomb button in the fight sidebar. It takes half the health that enemy has left, whatever guards it. A quick fight drops it by itself on the enemy with the most health.
+- **Speed:** 1 in 100 of its hits are necrotic. The damage also comes off the target's max HP for the rest of the fight, so no healing brings it back, until the target is down to 30% of the max HP it started with.
 
 ## The art
 

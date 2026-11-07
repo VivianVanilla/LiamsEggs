@@ -17,6 +17,7 @@ import { ITEM_IDS, MAX_ITEMS } from '../data/items.js';
 import { ADVENTURE_LEVELS, ADVENTURE_PARTY, ABYSS_LEVELS, GOD_LEVELS } from '../data/adventure.js';
 import { BOOSTS } from '../data/universe.js';
 import { emptyBank } from './craft.js';
+import { sanitizeChosen } from './chosen.js';
 
 export const MAX_STORE = 9999;
 
@@ -58,6 +59,9 @@ export const emptyHouse = () => ({
   // How many times the universe was reset, and how far Chapter ??? and the God Chapter got. A reset
   // keeps these, so God Mode, once won, stays open for good.
   universe: { resets: 0, abyssBest: 0, godBest: 0, lastReset: 0 },
+  // Your Chosen (core/chosen.js): { id, attune } for the one creature your godly power runs
+  // through, or null.
+  chosen: null,
 });
 
 const HOUR = 3600 * 1000;
@@ -122,6 +126,7 @@ export function sanitizeHouse(raw) {
   // What only a reset opens can't be in a household that never had one.
   house.deluxeBreeder = house.universe.resets > 0 && raw?.deluxeBreeder === true;
   house.boosts = house.universe.resets > 0 ? sanitizeBoosts(raw?.boosts) : [];
+  house.chosen = sanitizeChosen(raw?.chosen);
   return house;
 }
 

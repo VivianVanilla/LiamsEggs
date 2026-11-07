@@ -8,6 +8,7 @@ import { G, api, inBout } from '../state.js';
 import { h } from './notes.js';
 import { fullName, stageOf, powerOf, pathTitle, raceName } from '../core/creature.js';
 import { awayBases } from '../core/village.js';
+import { chosenAttune } from '../core/chosen.js';
 import { TEAM_MAX } from '../data/family.js';
 import { drawPortrait } from '../draw/art.js';
 
@@ -93,7 +94,7 @@ function tile(row, place, slot = null) {
     away: 'Away on an expedition.',
   }[place];
   const t = h('div', {
-    class: `dock-tile ${place}${me ? ' me' : ''}${slot !== null ? ' dock-slot' : ''}`,
+    class: `dock-tile ${place}${me ? ' me' : ''}${slot !== null ? ' dock-slot' : ''}${chosenAttune(G.house, c) ? ' chosen' : ''}`,
     'data-slot': slot ?? undefined,
     title: `${fullName(c)}: ${raceName(c)}, ${stageOf(c).name}, ${pathTitle(c)}. Power ${powerOf(c)}.\n${where}`,
   },

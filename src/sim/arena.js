@@ -13,6 +13,8 @@ import {
   ULTRA_DODGE, EIGHT_GATES, DOMAIN, OBSERVATION, GOURMET_HEAL, WILL_DAMAGE, SLAYER_MARK, ACKERMAN, SCARLET_EYES, VOID_AURA, PHILOSOPHER_HEART,
 } from '../data/powers.js';
 import { WEAPONS } from '../data/forge.js';
+import { CHOSEN, CHOSEN_COLOR } from '../data/chosen.js';
+import { chosenAttune } from '../core/chosen.js';
 import { prepEffects } from '../core/craft.js';
 import {
   WINDUP, WINDUP_SLACK, LOW_HEALTH, BERSERK_HIT, BERSERK_TAKEN, BACKING_SPEED, MID_GAP, OFF_BALANCE, BOUNCE_BACK, BOUNCE_WAIT_GAP, HOLD_GUARD, HOLD_HIT, HOLD_PATIENCE, THROW,
@@ -28,6 +30,13 @@ const MINIONS = {
 
 const SUDDEN_DEATH_AT = 60;
 const MAX_TIME = 150;
+
+// The household whose Chosen (core/chosen.js) every fight looks for. game.js points this at yours
+// once, so every fight anywhere finds it; tests can point it at any household.
+let chosenHouse = () => null;
+export const setChosenHouse = (fn) => {
+  chosenHouse = typeof fn === 'function' ? fn : () => null;
+};
 
 // What the passives of data/races.js and the rest do, where they need numbers of their own.
 const FRENZY_CAP = 0.6;
@@ -167,6 +176,9 @@ export class Bout {
     const mark = hasTrait(c, 'slayermark');
     const markHit = mark ? 1 + SLAYER_MARK.damage : 1;
     const markSpeed = mark ? 1 + SLAYER_MARK.speed : 1;
+    // Your Chosen hits twice as hard, three times attuned to War. Only the light world has one.
+    const chosen = neg ? null : chosenAttune(chosenHouse(), c);
+    const chosenHit = chosen ? (chosen === 'war' ? CHOSEN.warDamage : CHOSEN.damage) : 1;
     return {
       id: this.nextId++,
       team,
@@ -185,6 +197,10 @@ export class Bout {
       ...base,
       crit: base.crit + (weapon?.crit ?? 0) + passive.crit + (sees ? OBSERVATION.crit : 0),
       weapon,
+      // Your Chosen's attunement. Benevolence has one bomb a fight; Speed's hits can be necrotic.
+      chosen,
+      bomb: chosen === 'benevolence' ? 'ready' : null,
+      necro: chosen === 'speed' ? CHOSEN.necro : 0,
       // Born-with gifts that change a fight. 'ready' turns to 'on' or 'used' once it happens.
       titan: hasTrait(c, 'titanshifter') ? 'ready' : null,
       saiyan: hasTrait(c, 'saiyan') ? 'ready' : null,
@@ -209,7 +225,7 @@ export class Bout {
       reach: passive.reach * this.sizeMul,
       poisonproof: passive.poisonproof,
       feast: passive.feast,
-      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit * (hasTrait(c, 'voidaura') ? 1 + VOID_AURA : 1) * (1 + passive.damage),
+      atk: base.atk * (1 + prep.damage + (weapon?.damage ?? 0)) * (hasTrait(c, 'willofd') ? 1 + WILL_DAMAGE : 1) * markHit * (hasTrait(c, 'voidaura') ? 1 + VOID_AURA : 1) * (1 + passive.damage) * chosenHit,
       moveSpeed: base.moveSpeed * (fast ? SPEEDSTER.arenaMove : 1) * (1 + prep.move) * (1 + passive.speed) * markSpeed,
       attackEvery: (base.attackEvery * (fast ? SPEEDSTER.arenaAttack : 1)) / (1 + prep.attack) / markSpeed,
       // Nothing dodges everything.
@@ -1035,8 +1051,47 @@ export class Bout {
       if (f.decay && target.alive && !target.poisonproof && !(target.poison?.dps > f.atk * f.decay)) {
         target.poison = { left: DECAY_FOR, dps: f.atk * f.decay, from: f };
       }
+      // A Chosen of Speed: now and then the hit is necrotic.
+      if (f.necro && target.alive && this.rand() < f.necro) this.necrotize(target, dealt);
     }
     return dealt;
+  }
+
+  // Necrotic damage comes off its max HP for the rest of the fight, so no healing brings it back,
+  // until it has lost CHOSEN.necroCap of the max HP it started with.
+  necrotize(target, amt) {
+    target.fullHp ??= target.maxHp;
+    const floor = target.fullHp * (1 - CHOSEN.necroCap);
+    const lost = Math.min(amt, target.maxHp - floor);
+    if (lost <= 0) return 0;
+    target.maxHp -= lost;
+    target.hp = Math.min(target.hp, target.maxHp);
+    this.events.push({ type: 'status', x: target.x, y: target.y - 92 * target.scale, text: 'necrotic!', color: '#8fbf5a' });
+    return lost;
+  }
+
+  // A Chosen of Benevolence: once a fight, you drop a bomb from above on one enemy, and it takes
+  // half the health it has left. It is your power, not the Chosen's hit, so nothing guards
+  // against it, but the Chosen has to be standing to carry it.
+  canBomb(f, target) {
+    return f?.bomb === 'ready' && f.alive && !!target?.alive && target.team !== f.team && !this.done;
+  }
+
+  dropBomb(f, target) {
+    if (!this.canBomb(f, target)) return false;
+    f.bomb = 'used';
+    this.events.push({ type: 'ability', x: target.x, y: target.y - 70 * target.scale, name: 'DIVINE BOMB', color: CHOSEN_COLOR, loud: true });
+    f.damageDone += this.hurt(target, target.hp * CHOSEN.bomb, null, { pure: true, still: true });
+    return true;
+  }
+
+  // With nobody to click it, a quick fight drops it as it starts, on whoever has the most health.
+  autoBombs() {
+    for (const f of this.fighters) {
+      if (f.bomb !== 'ready') continue;
+      const target = this.enemies(f).filter((o) => !o.minion).sort((a, b) => b.hp - a.hp)[0];
+      if (target) this.dropBomb(f, target);
+    }
   }
 
   // `still` is for damage over time, which shouldn't shove the target on every tick. Returns the
@@ -1159,6 +1214,7 @@ export class Bout {
 
 // Plays a set-up bout through to the end with no drawing.
 export function finishBout(bout) {
+  bout.autoBombs();
   let guard = 0;
   while (!bout.done && guard++ < 20000) {
     bout.tick(1 / 30);

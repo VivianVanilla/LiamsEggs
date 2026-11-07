@@ -5,6 +5,10 @@
 import { clamp } from '../lib/util.js';
 import { TILE, growMs, tilePos } from '../sim/farm.js';
 import { drawArt, drawTinted, drawCreature, drawStand, drawAfterimages, drawAnimal, drawMonster, monsterHeight, heightOf, hasArt } from './art.js';
+import { CHOSEN_COLOR } from '../data/chosen.js';
+
+// Your Chosen glows gold, out on your screen and in every fight.
+export const CHOSEN_GLOW = `drop-shadow(0 0 3px ${CHOSEN_COLOR}) drop-shadow(0 0 7px ${CHOSEN_COLOR})`;
 
 const TEXT_EDGE = 'rgba(10,12,20,0.72)';
 const FONT = '"Segoe UI", system-ui, sans-serif';
@@ -230,8 +234,9 @@ export function drawVeins(ctx, veins) {
 }
 
 export function drawFighter(ctx, f, bout) {
-  // Stopped time drains the color out of everyone caught in it.
-  if (f.alive && bout?.frozen(f)) ctx.filter = 'grayscale(1)';
+  // Stopped time drains the color out of everyone caught in it. Your Chosen glows through it.
+  const filters = [f.alive && bout?.frozen(f) && 'grayscale(1)', f.alive && f.chosen && CHOSEN_GLOW].filter(Boolean);
+  if (filters.length) ctx.filter = filters.join(' ');
   if (f.minion) {
     ctx.globalAlpha = f.alive ? 1 : clamp(1 - f.deadT / 0.6, 0, 1);
     drawAnimal(ctx, MINION_ART[f.minion], f.x, f.y, { dir: f.dir });
@@ -264,7 +269,7 @@ export function drawHealthBar(ctx, f, bout) {
   const k = clamp(f.hp / f.maxHp, 0, 1);
   ctx.fillStyle = k > 0.5 ? '#7ee05a' : k > 0.25 ? '#ffd66b' : '#ff6b5e';
   ctx.fillRect(x, y, Math.max(2, w * k), 3.6);
-  label(ctx, f.name, f.x, y - 4, 11);
+  label(ctx, f.name, f.x, y - 4, 11, f.chosen ? CHOSEN_COLOR : '#fff');
   const tag = statusTag(f, bout);
   if (tag) label(ctx, tag[0], f.x, y - 17, 11, tag[1]);
 }

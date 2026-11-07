@@ -524,7 +524,8 @@ test('the Mega Breeder is bought once, with gems, and lets every egg carry more'
   b.traits = ['onepunch', 'saiyan', 'ninetails'];
   const gifts = ['trait:sharingan', 'trait:titanshifter', 'trait:haki', 'trait:onepunch', 'trait:saiyan', 'trait:ninetails'];
   assert.match(choiceProblem(a, b, { gifts }), /Only 3/);
-  const { baby } = breed(a, b, { family: 'a', look: 'a', style: 'a', gifts }, 'Loaded', NOW, help);
+  // A roll that wakes nothing new, such as Scarlet Eyes when the two happen to share a family.
+  const { baby } = breed(a, b, { family: 'a', look: 'a', style: 'a', gifts }, 'Loaded', NOW, help, () => 0.99);
   assert.deepEqual(baby.traits.slice().sort(), gifts.map((g) => g.slice(6)).sort());
 });
 

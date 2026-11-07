@@ -21,6 +21,8 @@ import { onLevelEnded } from './ui/adventure.js';
 import { onNegLevelEnded } from './ui/negative.js';
 import { onGodRingEnded } from './ui/god.js';
 import { initDock, refreshDock, dockRects, overDock, tickDock, setDockDrop } from './ui/dock.js';
+import { initFightBar, tickFightBar, fightBarRects } from './ui/fightbar.js';
+import { setChosenHouse } from './sim/arena.js';
 import { takeEgg } from './ui/roll.js';
 import { hoursDue, runVillage, finishExpeditions, tidyMine } from './core/village.js';
 import { FRUITS } from './data/fruits.js';
@@ -28,6 +30,9 @@ import { RACES } from './data/races.js';
 import { ITEMS } from './data/items.js';
 import { TRAITS } from './data/powers.js';
 import { earnTraits } from './core/earned.js';
+
+// Every fight, wherever it starts, finds your Chosen in whatever the household is right then.
+setChosenHouse(() => G.house);
 
 const canvas = document.getElementById('world');
 const ctx = canvas.getContext('2d');
@@ -417,6 +422,7 @@ function update(dt) {
     noteClock = 0;
     tickNotes();
     tickDock();
+    tickFightBar();
   }
 
   villageClock += dt;
@@ -498,7 +504,7 @@ async function buryLost() {
 const onScreen = () => G.team.filter((m) => !inBout(m.c));
 
 function sendRects() {
-  const rects = [...noteRects(), ...dockRects()];
+  const rects = [...noteRects(), ...dockRects(), ...fightBarRects()];
   if (!G.picking) onScreen().forEach((m) => rects.push(m.pet.hitRect()));
   // Like the creature, a vein needs the mouse to rest on it, so quick clicks still reach your apps.
   G.veins.forEach((v) => rects.push({ x: v.x - 3, y: v.y - 3, w: v.size + 6, h: v.size + 6 }));
@@ -787,6 +793,7 @@ async function start() {
   out.forEach((r) => addMember(r.c, r.base));
   await loadVillage();
   initDock();
+  initFightBar();
   tickVillage();
   if (G.team.length) {
     lookAfter(G.team.find((m) => m.base === info.settings.active) ?? G.team[0]);
