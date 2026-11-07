@@ -99,7 +99,7 @@ test('seasoned wild rivals are sometimes another race, the same for a seed', () 
 
 // ---------- Devil Fruits ----------
 
-test('a Devil Fruit needs Vigor and no other power, and then nothing else fits', () => {
+test('a Devil Fruit needs Vigor and a free slot, and then nothing else fits without a Legendary slot', () => {
   const c = grown('Eater');
   assert.match(fruitProblem(c), new RegExp(`${FRUIT_VIGOR} Vigor`));
   c.training.vigor = 40;
@@ -108,19 +108,21 @@ test('a Devil Fruit needs Vigor and no other power, and then nothing else fits',
   assert.ok(eatFruit(c, 'mera'));
   assert.equal(powersHeld(c), 1);
   FRUITS.mera.moves.forEach((id) => assert.ok(abilitiesOf(c).includes(id)));
-  // Even maxed out, it can't add a Stand, speed or technique, Legendary mutation or not.
+  // Even maxed out, it can't add a Stand, speed or technique: the fruit fills its one slot.
   c.training.wits = 40;
   c.training.speed = 40;
   c.training.might = 40;
-  c.souls = ['twinsoul'];
   assert.ok(!canAwakenStand(c) && !canBecomeSpeedster(c) && !canLearnTechnique(c));
+  // A Twin Soul's Legendary slot takes one more, of any kind.
+  c.souls = ['twinsoul'];
+  assert.ok(canAwakenStand(c) || canBecomeSpeedster(c) || canLearnTechnique(c));
   assert.equal(eatFruit(c, 'gomu'), false, 'one fruit only');
-  // And something with a power already can't eat one.
+  // And something with a power in its one slot already can't eat one.
   const stand = grown('Stander');
   stand.training.vigor = 40;
   stand.essence.sap = 120;
   stand.powers.stand = 'theworld';
-  assert.match(fruitProblem(stand), /already has a power/);
+  assert.match(fruitProblem(stand), /one slot already holds a power/);
   // Saved files hold it, and a file can't claim a fruit on top of another power.
   assert.equal(parseCreature(serializeCreature(c)).powers.fruit, 'mera');
   const raw = JSON.parse(serializeCreature(stand));

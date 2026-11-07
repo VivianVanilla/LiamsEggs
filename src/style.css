@@ -347,6 +347,7 @@ select option { color: #26231c; background: #fff; }
 .pc-count { flex: none; font-size: 11px; font-weight: 700; opacity: 0.7; }
 .pchip { padding: 1px 8px; font-size: 11px; font-weight: 600; border-radius: 9px; background: var(--shade); border-left: 5px solid var(--c, #888); }
 .pchip.empty { font-weight: 400; opacity: 0.55; border: 1px dashed currentColor; background: transparent; }
+.pchip.empty.soul { border-left: 5px solid var(--c, #888); opacity: 0.75; }
 .powerblock { margin-top: 4px; padding: 5px 8px; border-left: 4px solid var(--c, #888); border-radius: 6px; background: var(--card); }
 .powerblock .pb-name { font: 700 14px/1.2 'Segoe Print', cursive; }
 .pb-gives { margin-top: 2px; font-size: 11.5px; font-weight: 600; }
@@ -648,8 +649,8 @@ button.chip:disabled { opacity: 0.4; cursor: not-allowed; }
 .note.hub::before { left: auto; right: 4px; width: 46px; margin-left: 0; transform: rotate(8deg); }
 
 /* The menu: two things to do now, and four places for the rest. */
-.actions.quick { grid-template-columns: repeat(3, 1fr); margin-top: 8px; }
-.actions.quick .btn { padding: 7px 2px; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
+.actions.quick { grid-template-columns: repeat(4, 1fr); margin-top: 8px; }
+.actions.quick .btn { padding: 7px 2px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 .hubs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 7px; }
 .hubbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 7px 10px; text-align: left; border-width: 2.5px; }
 .hubbtn b { font: 700 16px/1.1 "Segoe Print", "Ink Free", cursive; }

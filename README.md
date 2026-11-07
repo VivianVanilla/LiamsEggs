@@ -65,19 +65,19 @@ Open Powers, Powers. Each needs its stat in its top three, and all of them are f
 - **A cursed technique** (*Jujutsu Kaisen*) at 20 Might. Its last name decides which one runs in its family.
 - **A Devil Fruit** (*One Piece*) at 20 Vigor, from the fruits your farms and expeditions find.
 
-It can hold one of those. **A Legendary mutation** changes that. The only way to get one is to beat the monster that gives it in Challenges. A creature holds one, and each **Legendary Expander** (from Bizarre expeditions) makes room for one more, up to 3: their stats and fight bonuses add up, and its powers fit if any one of them could hold them all. With no room left, a new one is yours to swap in or turn down.
-Every soul brings a move of its own and a passive worth about a second power. Iron and Ghost still hold one power, so theirs are the strongest.
+Each of those fills a slot. A creature has one **basic slot**, which takes any of them, and each **Legendary mutation** adds a **Legendary slot** of its own: that is how powers go together. The only way to get one is to beat the monster that gives it in Challenges. A creature holds one, and each **Legendary Expander** (from Bizarre expeditions) makes room for one more, up to 3, so it can hold all four powers at once. Their slots, stats and fight bonuses all add up. With no room left, a new one is yours to swap in or turn down.
+Every soul also brings a move of its own and a passive. The narrower its slot, the stronger its passive.
 
-| Soul | From | Holds | In every fight | Its move |
+| Soul | From | Its slot takes | In every fight | Its move |
 | --- | --- | --- | --- | --- |
-| **Twin Soul** | The Last Dragon | any two of a Stand, speedster powers and a technique | each move has a 30% chance to go off twice; moves back 15% sooner | Twin Burst |
-| **Malevolent Soul** | Old Rex | a Stand plus one more, which can be a **Devil Fruit** | 50% harder hits on anything below half health; heals 15% when a foe falls | Cruel Edge |
-| **Iron Soul** | The Iron Rhino | one power | 35% less damage, 40% more max HP, throws 30% of every hit back, can't be stunned, confused or silenced | Iron Fortress |
-| **Ghost Soul** | The Ghost Leopard | one power | 20% more dodging (even sure hits), 20% more crits at 2.5x, 25% faster, phases out every 5 seconds | Phase Out |
-| **Tide Soul** | The Sea King | a Devil Fruit beside any one power | poison-proof, 15% more max HP, heals 2% a second | Tidal Wave |
-| **War Soul** | The Silverback | speedster powers and a technique, never a Stand | 15% more crits, more reach, each hit lands 3% harder for the rest of the fight (up to 60%) | Warpath |
+| **Twin Soul** | The Last Dragon | any power | each move has a 30% chance to go off twice; moves back 15% sooner | Twin Burst |
+| **Malevolent Soul** | Old Rex | a Stand | 50% harder hits on anything below half health; heals 15% when a foe falls | Cruel Edge |
+| **Iron Soul** | The Iron Rhino | a cursed technique | 35% less damage, 40% more max HP, throws 30% of every hit back, can't be stunned, confused or silenced | Iron Fortress |
+| **Ghost Soul** | The Ghost Leopard | speedster powers | 20% more dodging (even sure hits), 20% more crits at 2.5x, 25% faster, phases out every 5 seconds | Phase Out |
+| **Tide Soul** | The Sea King | a Devil Fruit | poison-proof, 15% more max HP, heals 2% a second | Tidal Wave |
+| **War Soul** | The Silverback | speedster powers or a cursed technique | 15% more crits, more reach, each hit lands 3% harder for the rest of the fight (up to 60%) | Warpath |
 
-Without one, a fruit goes with nothing else.
+So a Stand and a Devil Fruit together need a Malevolent, Tide or Twin Soul.
 
 **Quirks** (*My Hero Academia*) are paid for with max HP instead, up to 60%. **One For All** grows as it is passed on.
 

@@ -198,7 +198,7 @@ test('in a fight: the gates open low, the domain opens on time, and the Will of 
 
 // ---------- Malevolent Soul with a Devil Fruit ----------
 
-test('a Malevolent Soul can hold a Stand and a Devil Fruit, but a fruit still goes with nothing else', () => {
+test('a Malevolent Soul\'s slot takes a Stand, so a Stand and a Devil Fruit go together', () => {
   const evil = grown('Evil', { souls: ['malevolentsoul'] });
   evil.training.vigor = 40;
   evil.essence.sap = 200;
@@ -217,21 +217,28 @@ test('a Malevolent Soul can hold a Stand and a Devil Fruit, but a fruit still go
   assert.ok(canAwakenStand(later), 'a Stand can still come after the fruit');
   later.training.might = 40;
   later.essence.ember = 200;
-  assert.equal(canLearnTechnique(later), false, 'but not a technique: that is the fruit\'s place');
-  // A technique and a fruit together is still too much, and so is a fruit for a Twin Soul.
+  assert.equal(canLearnTechnique(later), false, 'but not a technique: the fruit fills the basic slot, and the Legendary one only takes a Stand');
+  // A technique and a fruit need a slot that takes one of them: the Malevolent Soul's doesn't.
   const both = grown('Both', { souls: ['malevolentsoul'] });
   both.training.vigor = 40;
   both.essence.sap = 200;
   both.powers.technique = both.lineage;
-  assert.match(fruitProblem(both), /only makes room for a Devil Fruit beside a Stand/);
+  assert.match(fruitProblem(both), /free slot only takes a Stand/);
+  // A Twin Soul's slot takes anything, a fruit beside a Stand too.
   const twin = grown('Twin', { souls: ['twinsoul'] });
   twin.training.vigor = 40;
   twin.essence.sap = 200;
   twin.powers.stand = 'theworld';
-  assert.match(fruitProblem(twin), /can't go with any other/);
+  assert.equal(fruitProblem(twin), null);
   const raw = JSON.parse(serializeCreature(twin));
   raw.powers.fruit = 'mera';
-  assert.equal(parseCreature(JSON.stringify(raw)).powers.fruit, null, 'a Twin Soul file can\'t claim one beside its Stand');
+  assert.equal(parseCreature(JSON.stringify(raw)).powers.fruit, 'mera', 'a Twin Soul file keeps a fruit beside its Stand');
+  // With no Legendary mutation, its one slot is all it has.
+  const none = grown('None', { souls: [] });
+  none.training.vigor = 40;
+  none.essence.sap = 200;
+  none.powers.stand = 'theworld';
+  assert.match(fruitProblem(none), /one slot already holds a power/);
 });
 
 // ---------- hurrying an expedition home ----------

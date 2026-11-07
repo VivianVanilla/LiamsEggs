@@ -210,7 +210,7 @@ export function openMenu() {
       fill(body,
         h('div', { class: 'gap', style: 'display:grid;gap:3px;margin-top:6px' }, STAT_KEYS.map((k) => statRow(k, stats[k], limits[k]))),
         h('div', { class: 'small', style: 'margin-top:3px' }, `Only one stat can reach ${best}, one ${second}, one ${third}, one ${fourth}, one ${worst}.`),
-        // Three things it does all the time, and everything else in four places.
+        // Four things it does all the time, and everything else in four places.
         h('div', { class: 'actions quick' },
           act('Farm', leaveMenu(openFarm), 'Its fields and animals: farmed food is the only thing that grows mutations'),
           mining
@@ -219,7 +219,14 @@ export function openMenu() {
               note.close();
             }, 'Stop digging and come back', 'hot'))
             : act('Mine colors', leaveMenu(beginMine), `Click a spot on your screen, and it digs the colors out of it for ${Math.round(SPOT_MINE.seconds / 60)} minutes`),
-          act('Duel', leaveMenu(openDuel), 'A puzzle duel')),
+          act('Duel', leaveMenu(openDuel), 'A puzzle duel'),
+          // Empties its stomach on the spot, so it goes and eats again (farmed food grows mutations).
+          act('Hungry', () => {
+            c.fullness = 0;
+            saveCreature();
+            G.pet?.say('so... hungry...', 2.5, true);
+            note.spec.tick(note);
+          }, 'Empties its stomach: its fullness drops to 0, so it goes and eats again')),
         h('div', { class: 'hubs' },
           hubButton('care', 'Snacks, farmed food, dye, charms and weapons'),
           hubButton('powers', 'Stands, techniques, Quirks and the rest, how it fights, and everything it has'),

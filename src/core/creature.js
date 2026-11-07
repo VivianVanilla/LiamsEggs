@@ -10,7 +10,7 @@ import { WEAPONS } from '../data/forge.js';
 import { EXPANDER_SLOTS, MAX_EXPANDERS, MAX_SOUL_EXPANDERS } from '../data/items.js';
 import {
   STANDS, STAND_IDS, STAND_WITS, QUIRKS, QUIRK_IDS, SPEEDSTER, SPEEDSTER_SPEED, MAX_HP_GIVEN,
-  TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, POWER_SLOTS, POWER_SLOTS_LEGENDARY, POWER_CATEGORIES, LEGENDARY,
+  TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT, POWER_SLOTS, POWER_KINDS, POWER_KIND_NAMES, LEGENDARY,
   TRAITS, BORN_TRAIT_IDS, TRAIT_ODDS, SIX_EYES_FAMILY, OFA_ID, ofaLevelFor, ofaStats, ofaLimitBonus, OFA_MOVES,
 } from '../data/powers.js';
 import { DEADLY_MONSTERS, LEGEND_IDS, TROPHY_POINTS } from '../data/monsters.js';
@@ -492,45 +492,80 @@ export const lastName = (c) => TECHNIQUES[lineageOf(c)].family;
 export const fullName = (c) => `${c.name} ${lastName(c)}`;
 export const hasTrait = (c, id) => (c.traits ?? []).includes(id);
 
-// A Stand, speedster powers and a cursed technique share these places. A Devil Fruit takes them all.
-const POWER_KINDS = ['stand', 'speedster', 'technique', 'fruit'];
+// A Stand, speedster powers, a cursed technique and a Devil Fruit each take a slot. It has
+// POWER_SLOTS basic slots, which take any of them, and each Legendary mutation adds one more, which
+// takes only what its soul says (`slot` in data/powers.js).
 export const powersHeld = (c) => [c.powers.stand, c.powers.speedster, c.powers.technique, c.powers.fruit].filter(Boolean).length;
-const soulSlots = (soul) => (soul ? LEGENDARY[soul].slots ?? POWER_SLOTS_LEGENDARY : POWER_SLOTS);
 
 // How many Legendary mutations it can hold: one, and one more for each Legendary Expander.
 export const soulCap = (c) => 1 + Math.min(MAX_SOUL_EXPANDERS, c.soulExpanders ?? 0);
 
-// Whether one soul (or none) can hold this set of powers.
-function setFits(kinds, soulId) {
-  const soul = soulId ? LEGENDARY[soulId] : null;
-  if (kinds.length > soulSlots(soulId)) return false;
-  if (soul?.noStand && kinds.includes('stand')) return false;
-  // A Devil Fruit goes with nothing else, unless the soul makes room for one (`fruit`).
-  const fruit = kinds.includes('fruit');
-  if (fruit && kinds.length > 1 && !soul?.fruit) return false;
-  if (soul?.besideFruit && kinds.length > 1 && !fruit) return false;
-  if (soul?.apart && new Set(kinds.map((k) => POWER_CATEGORIES[k])).size < kinds.length) return false;
-  return true;
-}
+// Its slots, in order: the basic ones, then one for each Legendary mutation.
+const slotsOf = (souls) => [
+  ...Array.from({ length: POWER_SLOTS }, () => ({ soul: null, takes: POWER_KINDS })),
+  ...souls.map((id) => ({ soul: id, takes: LEGENDARY[id]?.slot ?? POWER_KINDS })),
+];
 
-// With more than one Legendary mutation, its powers fit if any one of them could hold them all.
-// Their stats and what they do in a fight all add up; only the room for powers doesn't.
-const fitsAny = (kinds, souls) => (souls.length ? souls : [null]).some((s) => setFits(kinds, s));
+// Which slot each of these powers sits in (an index into slotsOf), or null if they can't all have
+// one. There are only ever a few, so it just tries every way. The narrowest slots are tried first,
+// so whatever is left free takes the most.
+function placeIn(kinds, slots) {
+  if (kinds.length > slots.length) return null;
+  const order = slots.map((_, i) => i).sort((a, b) => slots[a].takes.length - slots[b].takes.length);
+  const at = [];
+  const used = new Set();
+  const place = (i) => {
+    if (i === kinds.length) return true;
+    for (const s of order) {
+      if (used.has(s) || !slots[s].takes.includes(kinds[i])) continue;
+      used.add(s);
+      at[i] = s;
+      if (place(i + 1)) return true;
+      used.delete(s);
+    }
+    return false;
+  };
+  return place(0) ? at : null;
+}
+const fits = (kinds, souls) => placeIn(kinds, slotsOf(souls)) !== null;
 const heldKinds = (powers) => POWER_KINDS.filter((k) => powers[k]);
 
-export const powerSlots = (c) => Math.max(...(c.souls.length ? c.souls : [null]).map(soulSlots));
+export const powerSlots = (c) => slotsOf(c.souls).length;
 export const hasPowerRoom = (c) => powersHeld(c) < powerSlots(c);
+
+// Every slot it has: where it comes from (a soul's id, or null for a basic one), what it takes, and
+// which power sits in it (null while it is free).
+export function slotPlan(c) {
+  const slots = slotsOf(c.souls);
+  const kinds = heldKinds(c.powers);
+  const at = placeIn(kinds, slots) ?? [];
+  return slots.map((slot, s) => ({ ...slot, holds: kinds[at.indexOf(s)] ?? null }));
+}
 
 // Whether a set of powers has room for this one, under the souls it has.
 function roomFor(powers, souls, kind) {
   const held = heldKinds(powers);
-  return !held.includes(kind) && fitsAny([...held, kind], souls);
+  return !held.includes(kind) && fits([...held, kind], souls);
 }
 
 export const hasRoomFor = (c, kind) => roomFor(c.powers, c.souls, kind);
 
 // Whether everything it holds now would still fit under these Legendary mutations.
-export const fitsSouls = (c, souls) => fitsAny(heldKinds(c.powers), souls);
+export const fitsSouls = (c, souls) => fits(heldKinds(c.powers), souls);
+
+// What a slot takes, in words: "any power", or "a Stand", or "speedster powers or a cursed technique".
+export const slotTakes = (takes) => (takes.length === POWER_KINDS.length ? 'any power' : takes.map((k) => POWER_KIND_NAMES[k]).join(' or '));
+
+// Why it has no room for this kind of power, or null if it has.
+export function roomProblem(c, kind) {
+  if (heldKinds(c.powers).includes(kind)) return 'It already has it';
+  if (hasRoomFor(c, kind)) return null;
+  if (powersHeld(c) >= powerSlots(c)) {
+    return c.souls.length ? `All ${powerSlots(c)} of its slots are full` : 'Its one slot already holds a power. Each Legendary mutation adds a slot';
+  }
+  const free = slotPlan(c).filter((s) => !s.holds);
+  return `Its free slot${free.length > 1 ? 's only take' : ' only takes'} ${slotTakes([...new Set(free.flatMap((s) => s.takes))])}`;
+}
 
 export const canAwakenStand = (c) => hasRoomFor(c, 'stand') && computeStats(c).wits >= STAND_WITS;
 export const canBecomeSpeedster = (c) => hasRoomFor(c, 'speedster') && computeStats(c).speed >= SPEEDSTER_SPEED;
@@ -565,16 +600,11 @@ export function learnSecondTechnique(c) {
   return true;
 }
 
-// A Devil Fruit needs its Vigor, and a creature with no other power at all. It is for good.
+// A Devil Fruit needs its Vigor and a free slot that takes one, like any other power. It is for good.
 export const fruitProblem = (c) => {
   if (c.powers.fruit) return 'It has already eaten one';
-  if (c.powers.stand || c.powers.speedster || c.powers.technique) {
-    if (!c.souls.some((id) => LEGENDARY[id].fruit)) return 'It already has a power, and a Devil Fruit can\'t go with any other';
-    if (!roomFor(c.powers, c.souls, 'fruit')) {
-      const only = c.souls.length === 1 ? LEGENDARY[c.souls[0]] : null;
-      return only?.apart ? `${only.name} only makes room for a Devil Fruit beside a Stand` : 'None of its Legendary mutations has room for a Devil Fruit beside what it holds';
-    }
-  }
+  const room = roomProblem(c, 'fruit');
+  if (room) return room;
   if (computeStats(c).vigor < FRUIT_VIGOR) return `It needs ${FRUIT_VIGOR} Vigor`;
   return null;
 };
@@ -851,14 +881,14 @@ function bankFromHistory(c) {
 function sanitizePowers(raw, c) {
   const { souls, lineage } = c;
   const powers = { stand: null, speedster: false, technique: null, technique2: null, fruit: null, quirks: [] };
-  // A file can't hold more of these than its soul allows.
+  // A file can't hold more of these than its slots take.
   if (typeof raw?.stand === 'string' && Object.hasOwn(STANDS, raw.stand) && roomFor(powers, souls, 'stand')) powers.stand = raw.stand;
   if (raw?.speedster === true && roomFor(powers, souls, 'speedster')) powers.speedster = true;
   // Whatever a file claims, the only technique it can have is the one its family has.
   if (typeof raw?.technique === 'string' && Object.hasOwn(TECHNIQUES, raw.technique) && roomFor(powers, souls, 'technique')) powers.technique = lineage;
   // Only a Cursed Body holds a second, and only the one from the other side of its family.
   if (powers.technique && raw?.technique2 && hasTrait(c, 'cursedbody') && c.otherLine !== lineage) powers.technique2 = c.otherLine;
-  // A Devil Fruit only if it has none of the others, or its soul makes room for one.
+  // A Devil Fruit only if a slot is still free for it.
   if (typeof raw?.fruit === 'string' && Object.hasOwn(FRUITS, raw.fruit) && roomFor(powers, souls, 'fruit')) powers.fruit = raw.fruit;
   if (Array.isArray(raw?.quirks)) {
     let given = 0;

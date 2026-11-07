@@ -1,6 +1,6 @@
-// The Powers note. A Stand, a speedster or a cursed technique, one at a time, unless a Legendary
-// mutation makes room for two. A Devil Fruit takes the place of all of them. Quirks are separate,
-// and are paid for with max HP.
+// The Powers note. A Stand, speedster powers, a cursed technique and a Devil Fruit each take a slot:
+// one basic slot that takes any of them, and one more for each Legendary mutation, which takes what
+// its soul says. Quirks are separate, and are paid for with max HP.
 // At the top, a card with everything it holds at a glance. Under it, one fold for each kind of power,
 // one open at a time, each title saying whether it has it, is ready for it, or what it still needs.
 
@@ -8,7 +8,7 @@ import { toast } from './flair.js';
 import { G, saveCreature, saveHouse } from '../state.js';
 import { h, fill, button, sureButton, openNote, folds } from './notes.js';
 import {
-  computeStats, STAT_LABELS, maxHpOf, hpGivenUp, soulLean, standCard, powersHeld, powerSlots, hasRoomFor, lineageOf, lastName, fullName,
+  computeStats, STAT_LABELS, maxHpOf, hpGivenUp, soulLean, standCard, powersHeld, powerSlots, slotPlan, slotTakes, roomProblem, hasRoomFor, lineageOf, lastName, fullName,
   canAwakenStand, awakenStand, canBecomeSpeedster, becomeSpeedster, canLearnTechnique, learnTechnique, canGainQuirk, gainQuirk,
   hasTrait, otherLineOf, canLearnSecondTechnique, learnSecondTechnique, ofaLevel, fruitProblem, eatFruit, raceName, raceParts, raceStats, soulCap,
 } from '../core/creature.js';
@@ -28,8 +28,6 @@ import { DEADLY_MONSTERS } from '../data/monsters.js';
 
 // Which monster gives each Legendary mutation: the only way to get one.
 const SOUL_FROM = Object.fromEntries(Object.values(DEADLY_MONSTERS).filter((m) => m.soul).map((m) => [m.soul, m.name]));
-// The souls that let a Devil Fruit sit beside another power.
-const FRUIT_SOULS = Object.values(LEGENDARY).filter((l) => l.fruit).map((l) => l.name).join(' or ');
 const SPEEDSTER_COLOR = '#ffe14a';
 
 const moveNames = (ids) => ids.map((id) => ABILITIES[id].name).join(', ');
@@ -69,28 +67,38 @@ const chip = (label, color, title = '') => h('span', { class: 'pchip', style: `-
 
 // ---------- the card at the top ----------
 
-// Each power it holds fills a place; the places still free show as empty.
-function heldPowers(c) {
-  const { stand, speedster, technique, technique2, fruit } = c.powers;
-  return [
-    stand && chip(`「${STANDS[stand].name}」`, STANDS[stand].color, 'Stand'),
-    speedster && chip('Speedster', SPEEDSTER_COLOR),
-    technique && chip(technique2 ? `${TECHNIQUES[technique].name} + ${TECHNIQUES[technique2].name}` : TECHNIQUES[technique].name, TECHNIQUES[technique].color, 'Cursed technique'),
-    fruit && chip(FRUITS[fruit].name, FRUITS[fruit].color, 'Devil Fruit'),
-  ].filter(Boolean);
+// One chip for each slot: the power in it, or what it takes while it is free.
+function heldPower(c, kind, where) {
+  const { stand, technique, technique2, fruit } = c.powers;
+  if (kind === 'stand') return chip(`「${STANDS[stand].name}」`, STANDS[stand].color, `Stand, in ${where}`);
+  if (kind === 'speedster') return chip('Speedster', SPEEDSTER_COLOR, `Speedster powers, in ${where}`);
+  if (kind === 'technique') return chip(technique2 ? `${TECHNIQUES[technique].name} + ${TECHNIQUES[technique2].name}` : TECHNIQUES[technique].name, TECHNIQUES[technique].color, `Cursed technique, in ${where}`);
+  return chip(FRUITS[fruit].name, FRUITS[fruit].color, `Devil Fruit, in ${where}`);
+}
+
+// What a free Legendary slot says it takes, short enough for a chip.
+const SHORT_KIND = { stand: 'Stand', speedster: 'Speedster', technique: 'Technique', fruit: 'Devil Fruit' };
+
+function slotChips(c) {
+  return slotPlan(c).map((slot) => {
+    const where = slot.soul ? `its ${LEGENDARY[slot.soul].name}'s slot` : 'its basic slot';
+    if (slot.holds) return heldPower(c, slot.holds, where);
+    const takes = slotTakes(slot.takes);
+    if (!slot.soul) return h('span', { class: 'pchip empty', title: `Free: ${where} takes ${takes}` }, 'free');
+    return h('span', { class: 'pchip empty soul', style: `--c:${LEGENDARY[slot.soul].color}`, title: `Free: ${where} takes ${takes}` },
+      `free: ${takes === 'any power' ? 'any' : slot.takes.map((k) => SHORT_KIND[k]).join('/')}`);
+  });
 }
 
 function summaryCard(c) {
-  const held = heldPowers(c);
   const slots = powerSlots(c);
-  const free = Math.max(0, slots - held.length);
   const given = hpGivenUp(c);
   const line = (label, kids, count) => h('div', { class: 'pc-row' },
     h('span', { class: 'pc-label' }, label),
     h('div', { class: 'pc-items' }, kids),
     count && h('span', { class: 'pc-count' }, count));
   return h('div', { class: 'powercard' },
-    line('Powers', [held, Array.from({ length: free }, () => h('span', { class: 'pchip empty' }, 'free'))], `${powersHeld(c)} of ${slots}`),
+    line('Powers', slotChips(c), `${powersHeld(c)} of ${slots} slots`),
     line('Legendary', c.souls.length ? c.souls.map((id) => chip(LEGENDARY[id].name, LEGENDARY[id].color, LEGENDARY[id].blurb)) : h('span', { class: 'small' }, 'none yet'), `${c.souls.length} of ${soulCap(c)}`),
     line('Quirks', c.powers.quirks.length ? c.powers.quirks.map((id) => chip(id === OFA_ID ? `One For All ${ofaLevel(c)}` : QUIRKS[id].name, QUIRKS[id].color, statText(QUIRKS[id].stats))) : h('span', { class: 'small' }, 'none'), given ? `${given}% HP given` : ''),
     line('Born', [chip(raceName(c), RACES[c.race]?.color, 'Race'), c.traits.map((id) => chip(TRAITS[id].name, TRAITS[id].color, TRAITS[id].blurb))]),
@@ -100,15 +108,8 @@ function summaryCard(c) {
 // ---------- why a power is locked ----------
 
 function noRoomLine(c, kind) {
-  if (hasRoomFor(c, kind)) return false;
-  const soul = c.souls.length === 1 ? LEGENDARY[c.souls[0]] : null;
-  const anyFruit = c.souls.some((id) => LEGENDARY[id].fruit);
-  let text = 'It already has its one.';
-  if (c.powers.fruit && !anyFruit) text = `It ate the ${FRUITS[c.powers.fruit].name}, and nothing else goes with a Devil Fruit, unless a ${FRUIT_SOULS} makes room.`;
-  else if (kind === 'stand' && soul?.noStand) text = `A Stand never comes out of a ${soul.name}.`;
-  else if (powersHeld(c) >= powerSlots(c)) text = powerSlots(c) > 1 ? 'It already holds two.' : 'It already has its one. A Legendary mutation can make room for a second.';
-  else if (c.souls.length) text = 'None of its Legendary mutations can hold this alongside what it already has.';
-  return h('div', { class: 'small warning' }, text);
+  const problem = roomProblem(c, kind);
+  return !!problem && h('div', { class: 'small warning' }, `${problem}.`);
 }
 
 // The summary beside a fold's title: has it, ready for it, no room, or how close it is.
@@ -129,12 +130,12 @@ function soulsFold(c) {
     tag: `${c.souls.length} of ${cap}`,
     tagCls: c.souls.length ? 'has' : '',
     build: () => [
-      h('div', { class: 'small' }, `Only from beating the monster that gives each one, in Challenges. It holds ${cap}${cap < 1 + MAX_SOUL_EXPANDERS ? `; each Legendary Expander makes room for one more, up to ${1 + MAX_SOUL_EXPANDERS}` : ''}.${c.souls.length > 1 ? ' Their stats and fight bonuses add up, and its powers fit if any one of them could hold them all.' : ''}`),
+      h('div', { class: 'small' }, `Each one adds a Legendary slot, so more powers go together: its basic slot takes any power, and each Legendary slot takes what its soul says. Only from beating the monster that gives each one, in Challenges. It holds ${cap}${cap < 1 + MAX_SOUL_EXPANDERS ? `; each Legendary Expander makes room for one more, up to ${1 + MAX_SOUL_EXPANDERS}` : ''}.${c.souls.length > 1 ? ' Their slots, stats and fight bonuses all add up.' : ''}`),
       c.souls.map((id) => {
         const l = LEGENDARY[id];
         return powerBlock(l.name, l.color, l.blurb, l.stats, null, l.passive && h('div', { class: 'small' }, `In a fight: ${l.passive.text}`));
       }),
-      h('div', { class: 'small', style: 'margin-top:5px' }, `Where to win them: ${Object.entries(SOUL_FROM).map(([id, m]) => `${LEGENDARY[id].name} from ${m}`).join(', ')}.`),
+      h('div', { class: 'small', style: 'margin-top:5px' }, `Where to win them, and what their slot takes: ${Object.entries(SOUL_FROM).map(([id, m]) => `${LEGENDARY[id].name} from ${m} (${slotTakes(LEGENDARY[id].slot)})`).join(', ')}.`),
     ],
   };
 }
@@ -257,11 +258,11 @@ function fruitFold(c, note) {
     build: () => {
       if (has) {
         return powerBlock(has.name, has.color, `A ${has.type}. ${has.blurb}`, has.stats, has.moves,
-          h('div', { class: 'small' }, 'It can never have a Stand, speedster powers or a cursed technique now, unless a Legendary mutation makes room, and it can\'t swim.'));
+          h('div', { class: 'small' }, 'It fills one of its slots for good, and it can\'t swim.'));
       }
       return [
         needs(vigor, FRUIT_VIGOR, 'Vigor'),
-        h('div', { class: 'small' }, `Very strong, and alone: one that eats a fruit can't also have a Stand, speedster powers or a cursed technique, unless a ${FRUIT_SOULS} makes room. Quirks are still fine. They turn up in ${FRUIT_FROM_HARVEST * 100}% of farm harvests and ${Math.round(FRUIT_FROM_EXPEDITION * 100)}% of expeditions, and wait in the shared pool.`),
+        h('div', { class: 'small' }, `Very strong. A fruit fills a slot like any other power, so beside a Stand, speedster powers or a cursed technique it needs a Legendary slot that takes one of them (or a fruit). Quirks are still fine. They turn up in ${FRUIT_FROM_HARVEST * 100}% of farm harvests and ${Math.round(FRUIT_FROM_EXPEDITION * 100)}% of expeditions, and wait in the shared pool.`),
         pool.length === 0
           ? h('div', { class: 'small', style: 'font-weight:600' }, 'No fruit in the pool yet.')
           : h('div', { class: 'quirks' }, pool.map((id) => {

@@ -4,7 +4,7 @@
 
 import { h, fill } from './notes.js';
 import { statText, perkText, describeMove } from '../core/sheet.js';
-import { STAT_LABELS, STAT_LIMITS, TRAINING_LIMIT } from '../core/creature.js';
+import { STAT_LABELS, STAT_LIMITS, TRAINING_LIMIT, slotTakes } from '../core/creature.js';
 import { RACES, RACE_IDS, PURE_BLOOD_CHANCE, raceMovesOf } from '../data/races.js';
 import {
   CLASSES, CLASS_IDS, SPELL_LEVELS, NEN_TYPES, NEN_HEXAGON, NEN_TECHNIQUES, NEN_TECHNIQUE_IDS, NEN_POINTS, KO, HATSU_FORMS, VOWS, VOW_IDS, MAX_VOWS,
@@ -153,9 +153,9 @@ function mutations(page) {
         h('div', { class: 'cx-grid' }, list.map((id) => h('div', { class: 'cx-mini' }, h('b', null, MUTATIONS[id].name), h('span', null, statText(MUTATIONS[id].stats))))));
     }),
     head('Legendary mutations'),
-    intro('The only way to get one is to beat the monster that gives it, in the Challenges note. A creature holds one, and each Legendary Expander makes room for one more, up to 3. Their stats and fight bonuses add up, and its powers fit if any one of them could hold them all.'),
+    intro('The only way to get one is to beat the monster that gives it, in the Challenges note. A creature holds one, and each Legendary Expander makes room for one more, up to 3. Every creature has one basic slot for a power, which takes any of them; each Legendary mutation adds a Legendary slot, which takes what its soul says. Their slots, stats and fight bonuses all add up.'),
     Object.entries(LEGENDARY).map(([id, l]) => card(l.name, l.color, 'legendary', h('div', { class: 'cx-blurb' }, l.blurb),
-      said('Stats', statText(l.stats)), l.passive && said('In a fight', l.passive.text), l.move && said('Its move', moveLine(l.move)), said('From', SOUL_FROM[id] ?? 'nothing yet'))),
+      said('Its slot takes', slotTakes(l.slot)), said('Stats', statText(l.stats)), l.passive && said('In a fight', l.passive.text), l.move && said('Its move', moveLine(l.move)), said('From', SOUL_FROM[id] ?? 'nothing yet'))),
   );
 }
 
@@ -163,7 +163,7 @@ function mutations(page) {
 
 function powers(page) {
   fill(page,
-    intro(`A creature can hold one of a Stand, speedster powers, a cursed technique or a Devil Fruit, or two with a Legendary mutation. Quirks are bought with max HP instead, up to ${MAX_HP_GIVEN}%, and go with anything.`),
+    intro(`A Stand, speedster powers, a cursed technique and a Devil Fruit each fill a slot. A creature has one basic slot, which takes any of them, and each Legendary mutation adds a slot of its own, so with three it can hold all four. Quirks are bought with max HP instead, up to ${MAX_HP_GIVEN}%, and go with anything.`),
     head(`Stands, at ${STAND_WITS} Wits`),
     STAND_IDS.map((id) => card(STANDS[id].name, STANDS[id].color, STAT_LABELS[STANDS[id].lean] ?? null,
       h('div', { class: 'cx-blurb' }, STANDS[id].blurb), said('Stats', statText(STANDS[id].stats)), said('Moves', STANDS[id].moves.map(moveName).join(', ')))),

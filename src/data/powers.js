@@ -1,6 +1,6 @@
 // Powers a creature can earn on top of its job.
-//   It can be one of these three, for good, unless a Legendary mutation lets it have two
-//   (see LEGENDARY below for which two each one allows):
+//   Each takes a slot, for good. It has one basic slot, which takes any of them, and each Legendary
+//   mutation adds a slot of its own (see LEGENDARY below for what each one's slot takes):
 //     a Stand (JoJo's Bizarre Adventure), from Wits. Its soul decides which one it gets.
 //     a speedster, from Speed.
 //     a cursed technique (Jujutsu Kaisen), from Might. Its family name decides which one.
@@ -15,9 +15,13 @@ export const STAND_WITS = 20;
 export const SPEEDSTER_SPEED = 20;
 export const TECHNIQUE_MIGHT = 20;
 
-// How many of those three a creature can hold.
+// The basic slots every creature has: each takes any power (a Stand, speedster powers, a cursed
+// technique or a Devil Fruit).
 export const POWER_SLOTS = 1;
-export const POWER_SLOTS_LEGENDARY = 2;
+
+// What each kind of power is called when a slot says what it takes.
+export const POWER_KIND_NAMES = { stand: 'a Stand', speedster: 'speedster powers', technique: 'a cursed technique', fruit: 'a Devil Fruit' };
+export const POWER_KINDS = Object.keys(POWER_KIND_NAMES);
 
 // The most max HP a creature can give up, in percent. Quirk costs are whole percents too.
 export const MAX_HP_GIVEN = 60;
@@ -152,58 +156,55 @@ export const TECHNIQUES = {
 
 export const TECHNIQUE_IDS = Object.keys(TECHNIQUES);
 
-// A creature holds one at a time, and it doesn't take up one of its mutation places. The only way to
-// get one is to beat the monster that gives it, in the Challenges note (`soul` in data/monsters.js).
-// How many powers a soul holds is `slots` (POWER_SLOTS_LEGENDARY if it doesn't say). `noStand`: no
-// Stand comes out of it. `besideFruit`: its second place is only for a pair with a Devil Fruit in it.
+// A creature holds one, or up to three with Legendary Expanders (data/items.js), and they don't take
+// up its mutation places. The only way to get one is to beat the monster that gives it, in the
+// Challenges note (`soul` in data/monsters.js).
+// Each one adds a Legendary slot for one more power, and `slot` is what that slot takes: the Twin
+// Soul's takes any power, the others one kind (or two). That is how powers go together: a Stand and
+// a Devil Fruit need the basic slot and a Malevolent or Tide Soul's, or a Twin Soul's.
 // `passive` works in every fight, the same way a race's does (data/races.js). `move` is the soul's
-// own move, which it brings to every fight on top of everything else. Every soul is worth about as
-// much as a second power: the two that still hold only one power (Iron and Ghost) make up for it
-// with the strongest passives of all.
+// own move, which it brings to every fight on top of everything else. The narrower a soul's slot,
+// the stronger its passive: Iron and Ghost have the strongest of all.
 export const LEGENDARY = {
   twinsoul: {
-    name: 'Twin Soul', color: '#ffe14a', stats: { might: 3, guard: 3, speed: 3, wits: 3, vigor: 3 }, move: 'twinburst',
+    name: 'Twin Soul', color: '#ffe14a', stats: { might: 3, guard: 3, speed: 3, wits: 3, vigor: 3 }, slot: POWER_KINDS, move: 'twinburst',
     passive: { echo: 0.3, cooldown: 0.15, text: 'Every move it uses has a 30% chance to go off twice, and its moves come back 15% sooner.' },
-    blurb: 'A second soul growing beside the first, and both of them fight. It can hold any two of a Stand, speedster powers and a cursed technique, instead of one.',
+    blurb: 'A second soul growing beside the first, and both of them fight. Its Legendary slot takes any power you pick: a Stand, speedster powers, a cursed technique or a Devil Fruit.',
   },
   malevolentsoul: {
-    name: 'Malevolent Soul', color: '#c9302c', stats: { might: 6, vigor: 3 }, apart: true, fruit: true, move: 'cruelty',
+    name: 'Malevolent Soul', color: '#c9302c', stats: { might: 6, vigor: 3 }, slot: ['stand'], move: 'cruelty',
     passive: { execute: 0.5, feast: 0.15, text: 'Hits 50% harder against anything below half its health, and heals 15% of its max HP whenever something on the other side goes down.' },
-    blurb: 'Something cruel has moved in, and it can smell weakness. It can hold a Stand, plus one more: speedster powers, a cursed technique or a Devil Fruit.',
+    blurb: 'Something cruel has moved in, and it can smell weakness. Its Legendary slot takes a Stand, so a Stand can go beside any other power, a Devil Fruit too.',
   },
   ironsoul: {
-    name: 'Iron Soul', color: '#9aa7b8', stats: { guard: 8, vigor: 6, might: 2 }, slots: 1, move: 'ironfortress',
+    name: 'Iron Soul', color: '#9aa7b8', stats: { guard: 8, vigor: 6, might: 2 }, slot: ['technique'], move: 'ironfortress',
     passive: {
       taken: 0.35, hp: 0.4, reflect: 0.3, unstoppable: true,
       text: 'Takes 35% less damage, has 40% more max HP, throws 30% of every hit it takes back at whoever landed it, and nothing can stun, confuse or silence it.',
     },
-    blurb: 'A soul like a wall. It still holds only one power, but the wall is worth a second: very little gets through, and whatever does goes straight back.',
+    blurb: 'A soul like a wall: very little gets through, and whatever does goes straight back. Its Legendary slot takes a cursed technique.',
   },
   ghostsoul: {
-    name: 'Ghost Soul', color: '#b9c6ec', stats: { speed: 6, wits: 6, might: 2 }, slots: 1, move: 'phaseout',
+    name: 'Ghost Soul', color: '#b9c6ec', stats: { speed: 6, wits: 6, might: 2 }, slot: ['speedster'], move: 'phaseout',
     passive: {
       dodge: 0.2, crit: 0.2, critMul: 0.5, speed: 0.25, horizon: true,
       text: '20% more likely to dodge, even moves that never miss; 20% more critical hits, which land two and a half times as hard instead of twice; moves 25% faster. Every 5 seconds it phases out, and nothing can touch it for a second.',
     },
-    blurb: 'Half of it is always somewhere else. It still holds only one power, but it is nearly impossible to hit and hits exactly where it hurts.',
+    blurb: 'Half of it is always somewhere else: it is nearly impossible to hit, and hits exactly where it hurts. Its Legendary slot takes speedster powers.',
   },
   tidesoul: {
-    name: 'Tide Soul', color: '#2f8fd8', stats: { vigor: 6, might: 4 }, fruit: true, besideFruit: true, move: 'tidalwave',
+    name: 'Tide Soul', color: '#2f8fd8', stats: { vigor: 6, might: 4 }, slot: ['fruit'], move: 'tidalwave',
     passive: { poisonproof: true, regen: 0.02, hp: 0.15, text: 'Poison can\'t touch it, it has 15% more max HP, and it heals 2% of its max HP every second.' },
-    blurb: 'The sea gives back what a Devil Fruit takes. It can hold a Devil Fruit beside any one power: a Stand, speedster powers or a cursed technique. Without a fruit, it holds one.',
+    blurb: 'The sea gives back what a Devil Fruit takes. Its Legendary slot takes a Devil Fruit, so a fruit can go beside any other power.',
   },
   warsoul: {
-    name: 'War Soul', color: '#d4542a', stats: { might: 5, speed: 3, guard: 2 }, noStand: true, move: 'warpath',
+    name: 'War Soul', color: '#d4542a', stats: { might: 5, speed: 3, guard: 2 }, slot: ['speedster', 'technique'], move: 'warpath',
     passive: { crit: 0.15, reach: 30, frenzy: 0.03, text: '15% more critical hits, swings from further away, and every hit it lands makes it 3% stronger for the rest of the fight, up to 60%.' },
-    blurb: 'Nothing in it waits behind it, and it only gets angrier. It can hold speedster powers and a cursed technique together, but a Stand will never come out of it.',
+    blurb: 'Nothing in it waits behind it, and it only gets angrier. Its Legendary slot takes speedster powers or a cursed technique.',
   },
 };
 export const LEGENDARY_ID = 'twinsoul';
 export const MALEVOLENT_ID = 'malevolentsoul';
-
-// What a soul with `apart` keeps separate: it can't hold two powers from one category. A soul with
-// `fruit` can hold a Devil Fruit beside its other power; without it, a fruit goes with nothing.
-export const POWER_CATEGORIES = { stand: 'stand', speedster: 'other', technique: 'other', fruit: 'other' };
 
 // `cost` is the percent of max HP given up for good. `behind` puts its picture behind the body.
 export const QUIRKS = {

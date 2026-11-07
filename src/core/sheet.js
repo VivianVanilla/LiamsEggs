@@ -230,7 +230,7 @@ export function buildSheet(c) {
   if (c.souls.length) {
     sections.unshift({
       title: `Legendary mutations (${c.souls.length} of ${soulCap(c)})`,
-      note: c.souls.length > 1 ? 'Their stats and fight bonuses add up. Its powers fit if any one of them could hold them all.' : '',
+      note: `Each adds a Legendary slot for one more power.${c.souls.length > 1 ? ' Their slots, stats and fight bonuses all add up.' : ''}`,
       rows: c.souls.map((id) => {
         const l = LEGENDARY[id];
         return row(c, l.name, l.stats, `${l.blurb}${l.passive ? ` In a fight: ${l.passive.text}` : ''}${l.move ? ` Its move, ${ABILITIES[l.move].name}: ${describeMove(ABILITIES[l.move])}` : ''}`);

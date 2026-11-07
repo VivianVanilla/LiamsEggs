@@ -26,7 +26,7 @@ import { STANCES, STANCE_IDS, HURT_PLANS, TARGET_PLANS, HOLD_GUARD, HOLD_PATIENC
 import { ART_FILES } from '../src/data/art-list.js';
 import { Bout, finishBout } from '../src/sim/arena.js';
 import { practiceStances } from '../src/sim/practice.js';
-import { settleChallenge, takeSoulOffer, keepSoul } from '../src/sim/challenges.js';
+import { settleChallenge, takeSoulOffer, keepSoul, swapsFor } from '../src/sim/challenges.js';
 import { DEADLY_MONSTERS, TRAINING_IDS } from '../src/data/monsters.js';
 import { addField, doJob, nextJob, tickFarm, growMs, setFieldCrop, waterFields, waterReadyIn, eatPlant, TILE } from '../src/sim/farm.js';
 
@@ -279,13 +279,14 @@ test('a Legendary mutation makes room for exactly one more', () => {
   assert.equal(back.powers.speedster, true);
 });
 
-test('a Malevolent Soul holds a Stand and one other, but never the other two together', () => {
+test('a Malevolent Soul\'s slot takes a Stand, so a Stand goes beside any one other power', () => {
   const maker = () => {
     const c = readyForAll();
     c.souls = [MALEVOLENT_ID];
     return c;
   };
-  assert.ok(LEGENDARY[MALEVOLENT_ID].apart && !LEGENDARY[LEGENDARY_ID].apart);
+  assert.deepEqual(LEGENDARY[MALEVOLENT_ID].slot, ['stand']);
+  assert.equal(LEGENDARY[LEGENDARY_ID].slot.length, 4, 'a Twin Soul\'s takes any power');
   assert.ok(fs.existsSync(`art/legendary/${MALEVOLENT_ID}.png`));
 
   // A Stand and a speedster.
@@ -299,7 +300,7 @@ test('a Malevolent Soul holds a Stand and one other, but never the other two tog
   const b = maker();
   assert.ok(learnTechnique(b));
   assert.equal(canAwakenStand(b), true);
-  assert.equal(canBecomeSpeedster(b), false, 'a technique and a speedster are the same category');
+  assert.equal(canBecomeSpeedster(b), false, 'the technique fills the basic slot, and the Legendary one only takes a Stand');
   assert.equal(becomeSpeedster(b), false);
   assert.ok(awakenStand(b));
   assert.equal(powersHeld(b), 2);
@@ -325,7 +326,7 @@ test('a Malevolent Soul holds a Stand and one other, but never the other two tog
   assert.deepEqual([!!back.powers.stand, back.powers.speedster], [true, true]);
   const evil = sanitizeCreature({ format: 'creature/1', legendary: MALEVOLENT_ID, powers: { speedster: true, technique: 'shrine' } });
   assert.equal(evil.powers.speedster, true);
-  assert.equal(evil.powers.technique, null, 'a file can\'t hold both of the same category');
+  assert.equal(evil.powers.technique, null, 'a file can\'t put a technique in a Stand\'s slot');
   const fine = sanitizeCreature({ format: 'creature/1', legendary: MALEVOLENT_ID, powers: { stand: 'theworld', technique: 'shrine' } });
   assert.equal(powersHeld(fine), 2);
 
@@ -480,17 +481,20 @@ test('only beating the monster that gives it grows a Legendary mutation, and a s
   slayer.soulOffer = MALEVOLENT_ID;
   assert.equal(parseCreature(serializeCreature(slayer)).soulOffer, null);
 
-  // A new soul can't cost it a power: a Stand with a Devil Fruit beside it doesn't fit a Twin Soul.
+  // A new soul can't cost it a power: a Stand with a Devil Fruit beside it doesn't fit a Ghost Soul,
+  // whose slot only takes speedster powers.
   const fruity = plainCreature('Fruity');
   fruity.souls = [MALEVOLENT_ID];
   fruity.powers.stand = 'theworld';
   fruity.powers.fruit = Object.keys(FRUITS)[0];
-  const kept = settleChallenge(fruity, 'dragon', true, 0.99);
-  assert.equal(kept.noFit, LEGENDARY_ID);
+  const kept = settleChallenge(fruity, 'leopard', true, 0.99);
+  assert.equal(kept.noFit, 'ghostsoul');
   assert.equal(kept.offer, undefined);
   assert.equal(fruity.soulOffer, null);
   assert.deepEqual(fruity.souls, [MALEVOLENT_ID]);
   assert.equal(parseCreature(serializeCreature(fruity)).powers.fruit, fruity.powers.fruit, 'and it keeps its fruit');
+  // A Twin Soul's slot takes anything, so it could swap the Malevolent Soul for one.
+  assert.deepEqual(swapsFor(fruity, LEGENDARY_ID), [MALEVOLENT_ID]);
 });
 
 test('wild rivals follow the same rule', () => {

@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   newCreature, wildCreature, parseCreature, serializeCreature, sanitizeCreature, computeStats, hasRoomFor, fitsSouls, powerSlots, fruitProblem, fightPassive, soulCap,
+  slotPlan, roomProblem,
   raceStats, abilitiesOf, racePictures, raceBackPictures, creatureColors,
 } from '../src/core/creature.js';
 import { ultimatesOpen, beReborn } from '../src/core/reborn.js';
@@ -111,15 +112,25 @@ test('the Legendary road sits between Old Rex and the ultimate monsters', () => 
 
 // ---------- what each new Legendary mutation holds and does ----------
 
-test('each new Legendary mutation holds its own mix of powers', () => {
-  // Iron and Ghost Souls: still one power.
-  for (const id of ['ironsoul', 'ghostsoul']) {
+test('each Legendary mutation adds a slot that takes its own kind of power', () => {
+  // Every one adds exactly one slot, beside the basic one that takes anything.
+  Object.keys(LEGENDARY).forEach((id) => {
     const c = plain(id);
     c.souls = [id];
-    assert.equal(powerSlots(c), 1);
-    c.powers.stand = 'theworld';
-    assert.ok(!hasRoomFor(c, 'speedster') && !hasRoomFor(c, 'technique'));
-  }
+    assert.equal(powerSlots(c), 2, id);
+    assert.ok(LEGENDARY[id].slot.length >= 1, `${id} says what its slot takes`);
+  });
+  assert.equal(powerSlots(plain('None')), 1);
+  // Iron Soul: a cursed technique beside anything.
+  const iron = plain('Iron');
+  iron.souls = ['ironsoul'];
+  iron.powers.stand = 'theworld';
+  assert.ok(hasRoomFor(iron, 'technique') && !hasRoomFor(iron, 'speedster') && !hasRoomFor(iron, 'fruit'));
+  // Ghost Soul: speedster powers beside anything.
+  const ghost = plain('Ghost');
+  ghost.souls = ['ghostsoul'];
+  ghost.powers.stand = 'theworld';
+  assert.ok(hasRoomFor(ghost, 'speedster') && !hasRoomFor(ghost, 'technique'));
   // Tide Soul: a Devil Fruit beside any one power, and no other pair.
   const tide = plain('Tide');
   tide.souls = ['tidesoul'];
@@ -130,21 +141,37 @@ test('each new Legendary mutation holds its own mix of powers', () => {
   tide.growth = 400;
   assert.equal(fruitProblem(tide), null);
   tide.powers.fruit = fruit;
-  assert.ok(fitsSouls(tide, ['tidesoul']) && !fitsSouls(tide, ['malevolentsoul']) && !fitsSouls(tide, ['twinsoul']));
-  // War Soul: speedster and technique together, and never a Stand.
+  assert.ok(fitsSouls(tide, ['tidesoul']) && fitsSouls(tide, ['twinsoul']) && !fitsSouls(tide, ['malevolentsoul']));
+  // War Soul: speedster powers or a technique, so all three of those fit with a Stand in the basic slot.
   const war = plain('War');
   war.souls = ['warsoul'];
-  assert.ok(!hasRoomFor(war, 'stand'), 'not even as its only power');
+  war.powers.stand = 'theworld';
+  assert.ok(hasRoomFor(war, 'speedster') && hasRoomFor(war, 'technique') && !hasRoomFor(war, 'fruit'));
+  war.powers.stand = null;
   war.powers.speedster = true;
-  assert.ok(hasRoomFor(war, 'technique'));
   war.powers.technique = 'shrine';
-  assert.ok(fitsSouls(war, ['warsoul']) && fitsSouls(war, ['twinsoul']) && !fitsSouls(war, ['malevolentsoul']) && !fitsSouls(war, ['ironsoul']));
-  // A file can't claim more than its soul holds.
-  const evil = sanitizeCreature({ format: 'creature/1', souls: ['warsoul'], powers: { stand: 'theworld', speedster: true } });
-  assert.equal(evil.powers.stand, null);
-  assert.equal(evil.powers.speedster, true);
-  const greedy = sanitizeCreature({ format: 'creature/1', souls: ['ironsoul'], powers: { stand: 'theworld', speedster: true } });
-  assert.equal([greedy.powers.stand, greedy.powers.speedster].filter(Boolean).length, 1);
+  assert.ok(fitsSouls(war, ['warsoul']) && fitsSouls(war, ['twinsoul']) && fitsSouls(war, ['ironsoul']) && !fitsSouls(war, ['malevolentsoul']));
+  // The slots add up: with three, all four powers go together, each in a slot that takes it.
+  const all = plain('All');
+  all.souls = ['malevolentsoul', 'tidesoul', 'warsoul'];
+  Object.assign(all.powers, { stand: 'theworld', speedster: true, technique: 'shrine', fruit });
+  assert.ok(fitsSouls(all, all.souls));
+  assert.deepEqual(slotPlan(all).map((s) => s.holds).sort(), ['fruit', 'speedster', 'stand', 'technique']);
+  assert.ok(fitsSouls(all, ['malevolentsoul', 'tidesoul', 'ironsoul']), 'speedster powers go in the basic slot');
+  assert.ok(!fitsSouls(all, ['ghostsoul', 'ironsoul', 'warsoul']), 'only the basic slot takes a Stand or a fruit there, and it can\'t take both');
+  assert.ok(!fitsSouls(all, ['twinsoul', 'twinsoul']), 'three slots are not enough for four');
+  // Whatever is left free shows what it takes.
+  const half = plain('Half');
+  half.souls = ['malevolentsoul'];
+  half.powers.speedster = true;
+  assert.deepEqual(slotPlan(half).map((s) => [s.soul, s.holds]), [[null, 'speedster'], ['malevolentsoul', null]]);
+  assert.match(roomProblem(half, 'technique'), /free slot only takes a Stand/);
+  // A file can't claim more than its slots take.
+  const evil = sanitizeCreature({ format: 'creature/1', souls: ['ghostsoul'], powers: { stand: 'theworld', technique: 'shrine' } });
+  assert.equal(evil.powers.stand, 'theworld');
+  assert.equal(evil.powers.technique, null, 'the Ghost Soul\'s slot only takes speedster powers');
+  const greedy = sanitizeCreature({ format: 'creature/1', souls: ['ironsoul'], powers: { stand: 'theworld', speedster: true, technique: 'shrine' } });
+  assert.deepEqual([!!greedy.powers.stand, greedy.powers.speedster, !!greedy.powers.technique], [true, false, true]);
 });
 
 test('the new Legendary mutations work in every fight', () => {
@@ -191,15 +218,19 @@ test('Legendary Expanders make room for up to 3 Legendary mutations', () => {
   without.souls = [];
   const sum = (k) => c.souls.reduce((n, id) => n + (LEGENDARY[id].stats[k] ?? 0), 0);
   assert.ok(computeStats(c).vigor >= computeStats(without).vigor + Math.min(sum('vigor'), 1));
-  // Powers fit if any one of them could hold them: Tide Soul lets a fruit sit beside a power.
+  // Their slots add up too: with the basic one that makes four, and every power fits.
+  assert.equal(powerSlots(c), 4);
   c.powers.speedster = true;
   c.training.vigor = 60;
   assert.equal(fruitProblem(c), null);
   c.powers.fruit = fruit;
+  c.powers.stand = 'theworld';
+  c.powers.technique = 'shrine';
+  assert.ok(fitsSouls(c, c.souls), 'a Stand in the basic slot, and one power in each Legendary slot');
   // A fourth can only come in place of one whose loss wouldn't cost it a power.
   const fourth = settleChallenge(c, 'gorilla', true, 0);
   assert.equal(fourth.offer, 'warsoul');
-  assert.deepEqual(swapsFor(c, 'warsoul'), ['ironsoul', 'ghostsoul'], 'giving up the Tide Soul would cost it the fruit');
+  assert.deepEqual(swapsFor(c, 'warsoul'), ['ironsoul', 'ghostsoul'], 'giving up the Tide Soul would leave the fruit or the Stand no slot');
   assert.equal(takeSoulOffer(c, 'tidesoul'), false);
   assert.equal(takeSoulOffer(c, 'ironsoul'), true);
   assert.deepEqual(c.souls, ['warsoul', 'ghostsoul', 'tidesoul']);

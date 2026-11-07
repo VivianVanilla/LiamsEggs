@@ -356,7 +356,7 @@ async function run() {
   ok('it dug cells and banked color', minedMid > 2 && await js(`window.__game.G.creature.palette.total > 0`), `${minedMid} cells`);
   await js(`(async () => { const { openMenu } = await import('./ui/panels.js'); openMenu(); })()`);
   await sleep(100);
-  ok('while it mines, the menu can stop it, and shows how long is left', await js(`[...document.querySelectorAll('.actions .btn')].some((b) => /^Stop mining \\(4:\\d\\d\\)$/.test(b.textContent))`), await js(`[...document.querySelectorAll('.actions .btn')].map((b) => b.textContent).join(' | ')`));
+  ok('while it mines, the menu can stop it, and shows how long is left', await js(`[...document.querySelectorAll('.actions .btn')].some((b) => /^Stop \\(4:\\d\\d\\)$/.test(b.textContent))`), await js(`[...document.querySelectorAll('.actions .btn')].map((b) => b.textContent).join(' | ')`));
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); })()`);
   await js(`(() => { window.__game.G.pet.stopRequested = true; })()`);
   await fastForward(10);
@@ -475,7 +475,7 @@ async function run() {
     await js(`(async () => { const { saveCreature } = await import('./state.js'); await saveCreature(); })()`);
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   };
-  const powersNote = `[...document.querySelectorAll('.note')].find((n) => n.textContent.includes('powers'))`;
+  const powersNote = `[...document.querySelectorAll('.note')].find((n) => n.querySelector('.note-title')?.textContent.endsWith("'s powers"))`;
   // Start from no Legendary mutation, whatever happened before.
   await js(`(() => { window.__game.G.creature.souls = []; return true; })()`);
   const button = (label) => `[...${powersNote}.querySelectorAll('button')].find((b) => b.textContent === ${JSON.stringify(label)})`;
@@ -535,7 +535,7 @@ async function run() {
   await sleep(300);
   ok('a creature with a Stand is still a still picture', restA === await petPicture());
 
-  // It can only be one of the three, until a Legendary mutation makes room for a second.
+  // Its one basic slot holds one power, until a Legendary mutation adds a slot.
   const walkBefore = await js(`window.__game.G.pet.walkSpeed()`);
   await js(`(async () => { const { openPowers } = await import('./ui/powers.js'); openPowers(); })()`);
   await sleep(150);
@@ -546,7 +546,7 @@ async function run() {
     const t = ${powersNote}.textContent;
     return t.includes('You don\\'t pick this') && t.includes(lastName(window.__game.G.creature));
   })()`));
-  ok('the note says how to get a second', await js(`${powersNote}.textContent.includes('Legendary mutation makes room')`));
+  ok('the note says how to get a second', await js(`${powersNote}.textContent.includes('Each Legendary mutation adds a slot')`));
   await js(`${button('Become a speedster')}.click()`);
   ok('a locked one stays locked', await js(`window.__game.G.creature.powers.speedster === false`));
   await js(`(async () => {
@@ -629,8 +629,8 @@ async function run() {
   await sleep(150);
   ok('the menu sums up its powers', await js(`[...document.querySelectorAll('.note .small')].some((e) => e.textContent.includes('Speedster') && e.textContent.includes('One For All') && /\\d of 8 mutations/.test(e.textContent))`));
   ok('the menu is compact', await js(`document.querySelector('.note').offsetHeight < 620`), await js(`String(document.querySelector('.note').offsetHeight)`));
-  ok('the menu is two things to do now and four places for the rest', await js(`document.querySelectorAll('.actions.quick .btn').length === 2 && [...document.querySelectorAll('.hubs .btn')].map((b) => b.dataset.label).join() === 'Care,Powers,Fight,Home'`));
-  ok('every label fits its button', await js(`[...document.querySelectorAll('.actions .btn')].length === 2 && [...document.querySelectorAll('.actions .btn, .hubs .btn')].every((b) => {
+  ok('the menu is four things it does all the time and four places for the rest', await js(`[...document.querySelectorAll('.actions.quick .btn')].map((b) => b.textContent).join() === 'Farm,Mine colors,Duel,Hungry' && [...document.querySelectorAll('.hubs .btn')].map((b) => b.dataset.label).join() === 'Care,Powers,Fight,Home'`), await js(`[...document.querySelectorAll('.actions.quick .btn')].map((b) => b.textContent).join()`));
+  ok('every label fits its button', await js(`[...document.querySelectorAll('.actions .btn')].length === 4 && [...document.querySelectorAll('.actions .btn, .hubs .btn')].every((b) => {
     const glowing = b.classList.contains('glow');
     b.classList.remove('glow');
     const fits = b.scrollWidth <= b.clientWidth;
@@ -638,6 +638,10 @@ async function run() {
     return fits;
   })`));
   ok('every menu button says what it does when the mouse rests on it', await js(`[...document.querySelectorAll('.actions .btn, .hubs .btn')].every((b) => b.title.length > 10)`));
+  const fullBefore = await js(`window.__game.G.creature.fullness`);
+  await js(`[...document.querySelectorAll('.actions.quick .btn')].find((b) => b.textContent === 'Hungry').click()`);
+  ok('Hungry empties its stomach', await js(`window.__game.G.creature.fullness === 0`), String(fullBefore));
+  await js(`(() => { window.__game.G.creature.fullness = ${fullBefore}; return true; })()`);
   await js(`(async () => { const { closeAllNotes } = await import('./ui/notes.js'); closeAllNotes(); window.__game.G.pet.still = false; return true; })()`);
 
   // --- what it has: every mutation and power, and what each does ---
@@ -1074,14 +1078,14 @@ async function run() {
   await sleep(150);
   await js(`[...document.querySelectorAll('.hubs .btn')].find((b) => b.dataset.label === 'Care').click()`);
   await sleep(150);
-  await js(`[...document.querySelectorAll('.note:not(.buried) .hubtab')].find((b) => b.textContent === 'Farm').click()`);
+  await js(`[...document.querySelectorAll('.note:not(.buried) .hubtab')].find((b) => b.textContent === 'Gear').click()`);
   await sleep(150);
-  ok('a hub keeps one place on the screen: Farm took Feed\'s place, behind its tab', await js(`(async () => { const { getNote } = await import('./ui/notes.js'); const feed = getNote('feed'); const farm = getNote('farm'); return feed.buried && !farm.buried && farm.el.style.left === feed.el.style.left; })()`));
+  ok('a hub keeps one place on the screen: Gear took Feed\'s place, behind its tab', await js(`(async () => { const { getNote } = await import('./ui/notes.js'); const feed = getNote('feed'); const gear = getNote('workshop'); return feed.buried && !gear.buried && gear.el.style.left === feed.el.style.left; })()`));
   await js(`[...document.querySelectorAll('.note:not(.buried) .hubtab')].find((b) => b.textContent === 'Feed').click()`);
   await sleep(150);
   await js(`[...document.querySelectorAll('.hubs .btn')].find((b) => b.dataset.label === 'Fight').click()`);
   await sleep(200);
-  ok('opening things from the menu keeps the menu open', await hasNote('menu') && await hasNote('feed') && await hasNote('farm') && await hasNote('adventure'));
+  ok('opening things from the menu keeps the menu open', await hasNote('menu') && await hasNote('feed') && await hasNote('workshop') && await hasNote('adventure'));
   const overlapOf = (a, b) => js(`(async () => {
     const { getNote } = await import('./ui/notes.js');
     const r1 = getNote('${a}').el.getBoundingClientRect();
