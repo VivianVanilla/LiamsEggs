@@ -122,19 +122,19 @@ Every race has stats, a fight move, a passive in every fight, and a specialty at
 
 The last four are the strongest born in the light world, and only come from Bizarre expeditions. Like every race, they mix: a baby can be half or a quarter of one. The Codex lists every race's stats and every move it brings, and What it has shows them for each creature.
 
-**The races of the Negative Dimension** are stronger still, and only exist after a universe reset (below). Each one is also the only blood that wounds what lives in Chapter ???.
+**The races of the Negative Dimension** are stronger still, and only exist after a universe reset (below). Every one of them beats a Pillar Man far more often than not (`node tools/balance.js` measures it): each is at least as hard to put down, brings two moves, has something a Pillar Man has no answer to, and finds about a gem an hour at home on top of its trade. Each one is also the only blood that wounds what lives in Chapter ???.
 
-| Race | In a fight | Its move | At home |
+| Race | In a fight, besides being as tough as a Pillar Man | Its moves | At home, besides a gem an hour |
 | --- | --- | --- | --- |
-| Voidling | 18% more dodging, even sure hits; 30% faster; drawn smaller | Void Step | expeditions 35% sooner, twice as likely to find someone |
-| Antiseraph | heals 25% of the damage it deals, 10% more crits, poison-proof | Black Halo | 2.5x gems |
-| Abyssal Titan | 25% less damage, 40% more max HP, below half health 60% harder hits; drawn much bigger | Abyss Crush | 2.5x colors |
-| Hexborn | every hit curses for 3 seconds, 8% more crits | Grand Hex | a gem an hour |
-| Mirrorkin | throws 35% of every hit back, 6% more dodging | Shatter | works 50% harder |
-| Entropy Wraith | everything near it rots every second, poison-proof | Heat Death | farms twice as much |
-| Chimera | each hit 4% stronger for the fight, heals 25% when a foe falls | Devour | 6 food an hour |
-| Homunculus | two extra lives, heals 1.5% a second | Ouroboros | twice the gems |
-| Dreadwyrm | 15% less damage, 15% more crits at 3x, more reach | Null Breath | 3x gems |
+| Voidling | 30% more dodging, even sure hits; 40% faster; moves back 25% sooner; one extra life; drawn smaller | Void Step, Void Rend | expeditions twice as fast, three times as likely to find someone |
+| Antiseraph | heals 40% of the damage it deals, 20% more crits, poison-proof, one extra life | Black Halo, Fallen Choir | 3.5x gems |
+| Abyssal Titan | 40% less damage, 70% more max HP, can't be stopped, below half health 80% harder hits; drawn much bigger | Abyss Crush, Trench Quake | 3x colors |
+| Hexborn | every hit curses for 3 seconds, 40% harder hits and 50% more on the wounded, one extra life | Grand Hex, Hex Storm | 2.5 gems an hour in all |
+| Mirrorkin | throws 60% of every hit back, dodges even sure hits, one extra life | Shatter, Mirror Prison | works twice as hard |
+| Entropy Wraith | everything near it rots 60% of its hit every second, its hits keep rotting, poison-proof, one extra life | Heat Death, Entropy Bloom | farms 3x as much |
+| Chimera | each hit 7% stronger for the fight, 25% harder hits, heals 40% when a foe falls, one extra life | Devour, Chimera Form | 12 food an hour |
+| Homunculus | three extra lives, heals 3% a second | Ouroboros, Red Stone | 3x gems |
+| Dreadwyrm | 25% more crits at 4.5x, more reach, one extra life | Null Breath, Dread Wing | 4x gems |
 
 ## The Nursery
 
@@ -144,7 +144,7 @@ Home, Nursery is where new creatures come from.
 - **The Mega Breeder** costs 150 gems, once, and lets every egg after it carry 3 more things.
 - **The Bloodline Altar**, in the Altar tab, is bought once with gems. Sacrifice a creature on it (gone forever) and every race it is at least half of joins the altar: a half-and-half creature adds both, a quarter isn't enough. You don't pick an egg's race: each egg has a 30% chance of being one of the altar's races, whole, half or a quarter, and the Eggs tab shows it before you keep it.
 - **Eggs:** the egg on offer is free; rolling another costs a gem, and Hyper roll keeps rolling until it gets the gifts or family you pick.
-- **Items:** a **Time Chamber Key** grows a creature straight to Grown and fed, ready to breed. A **Limit Expander** makes room for 2 more mutations. Both come from Adventure and expeditions. A **Legendary Expander** makes room for one more Legendary mutation (3 at most), and only comes from Bizarre expeditions.
+- **Items:** a **Time Chamber Key** grows a creature straight to Grown and fed, ready to breed. A **Limit Expander** makes room for 2 more mutations. Both come from Adventure and expeditions. A **Legendary Expander** makes room for one more Legendary mutation (3 at most), and only comes from Bizarre expeditions. The four **Ascension items**, crafted in the Negative, are used here too (see [Ascension](#ascension)).
 
 ## The village
 
@@ -169,15 +169,42 @@ Beating level 60 cracks the universe. The Adventure note can then **reset the un
 - **Creature boosts**, in the Nursery's Boosts tab: sacrifice a creature, and every gem you earn for an hour, from anything, is multiplied by what it was worth (more for power, rebirths, trophies, and most of all Negative blood). Up to 3 run at once, and they multiply each other.
 - **The Deluxe Breeder**, in the Nursery, for 100,000 gems: the only way Negative blood breeds, with another or with anyone from the light world. Every egg from it can carry 3 more things.
 
+Beating Chapter ??? says it out loud: **there is more in the Negative world**. Chapter ??? stays beaten through every reset after that, and it opens the Elite Negative (below), and the God Chapter.
+
 ## The Negative Dimension
 
-A world of its own on its own rules, saved in `world/data/negative.json`. No mutations, no jobs, no Stands, techniques, fruits or Quirks. Its creatures hatch from its own eggs (the first 3 free, then Void Shards), are one of its 9 races, can be born with its 10 gifts (Inverted Heart, Event Horizon, Null Field, Entropy, Abyssal Gaze, Hollow Clock, Black Sun, Mirror Soul, Godslayer, Equivalent Exchange), and have six ability scores in the hundreds. They level up to 60 by fighting, and fight with ten times the health and hits of the light world. Each one is attuned in three ways:
+A world of its own on its own rules, saved in `world/data/negative.json`. No mutations, no jobs, no Stands, techniques, fruits or Quirks. Its creatures hatch from its own eggs (the first 3 free, then Void Shards; rolling another costs 3, and **Auto roll** keeps rolling until it lands the races, gifts and Nen types you pick), are one of its 9 races, can be born with its 10 gifts (Inverted Heart, Event Horizon, Null Field, Entropy, Abyssal Gaze, Hollow Clock, Black Sun, Mirror Soul, Godslayer, Equivalent Exchange), and have six ability scores in the hundreds. They level up to 60 by fighting, and fight with ten times the health and hits of the light world. Each one is attuned in three ways:
 
 - **A class**, Dungeons & Dragons style, picked for good: Fighter, Barbarian, Rogue, Monk, Paladin, Wizard, Cleric or Warlock. It decides how its scores grow, its health, a feature in every fight, and four spells that unlock as it levels, of which it prepares one, plus one more every 20 levels.
 - **Nen**, Hunter x Hunter style. Water divination shows its Nen type, and the hexagon says how well it uses the others. It spreads 100 points of aura over Ten, Ren, Gyo, En and Zetsu, can turn on Ko, designs a Hatsu of its own (a type and a form, and a name), and can swear up to 3 vows that multiply the Hatsu for a price: only when cornered, paid in blood, spoken aloud, only up close, patience, or a death oath that costs a level for every loss.
 - **Alchemy**, Fullmetal Alchemist style. Up to 3 circles, each a move it designs: a shape, an element, and what it pays every use, in health, in time before it comes back, and in toll on its own strength. The more it pays, the stronger it is.
 
-Its own Adventure has 30 levels and pays XP and Void Shards. A creature that wins level 30 can **cross over**: it leaves the Negative for good and arrives in your village as a Hatchling of its race, with its gifts and nothing else. From there it can go on the Bloodline Altar so eggs hatch as its race, be given up for a creature boost, or be bred with the Deluxe Breeder.
+Its own Adventure has 30 levels and pays XP and Void Shards. A creature that wins level 30 can **cross over**: it leaves the Negative for good and arrives in your village as a Hatchling of its race, with its gifts and nothing else, except, if you want, its **Hatsu**: crossing over can turn it into a gift in its blood. It knows the Hatsu as a move in the light world (a quarter stronger than its base, without its vows), keeps a little of its Nen type in every fight, and passes it down to its babies like any gift it was born with. From there it can go on the Bloodline Altar so eggs hatch as its race, be given up for a creature boost, or be bred with the Deluxe Breeder.
+
+**The Elite Negative** is under the bottom of its Adventure, and opens once Chapter ??? is beaten: 10 more levels of creatures at level 60, each born with an extra gift of the Negative, every level harder. Every first win pays an **Ascension Stone**, the two boss levels (The Stone Warden and The Ascended King) 3, and a boss beaten again 1 more.
+
+## Ascension
+
+The Negative's Ascension tab crafts four things from Ascension Stones and Void Shards (3 stones and 300 shards each). They go into the household's bag, and each one, used in Home, Nursery, Bag, awakens a power for good:
+
+| Item | Awakens | What it gives, besides more stats, every stat's limit 12 higher, and its power's moves hitting much harder |
+| --- | --- | --- |
+| Requiem Arrow | a Stand into a **Requiem** | Return to Zero; one extra life, throws 35% of every hit back, dodges even sure hits, moves back sooner and 25% harder |
+| True Speed Stone | a speedster into **True Speed** | Infinite Mass Punch; 60% faster, 18% more dodging even of sure hits, 35% of swings land twice |
+| Devil Fruit Awakening | a Devil Fruit into an **Awakened** one | Awakening; 60% more max HP, 35% harder, heals every second, and everything near it takes 40% of its hit every second |
+| Cursed Technique Amplification | a cursed technique into its **Maximum** | Maximum Technique; 40% harder, more on the wounded, 20% more crits at 3x, heals 15% of what it deals |
+
+## The God Chapter
+
+The true final chapter, in the Adventure note once Chapter ??? is beaten: 10 levels past the end of Chapter ???, The Herald at level 5 and God at level 10. Everything there is void-touched like Chapter ??? and **god-touched** too: a creature with no awakened power lands 10% of its damage, one awakened power about half, two or more in full, and without Negative blood all of that only lands 10% again. The way through is creatures of Negative blood with their powers awakened. The bosses fight with the awakened powers' own moves.
+
+## God Mode
+
+Beat God, and **God Mode** is yours for good, through any reset: a button in the menu and on the Adventure note.
+
+- **The Maker:** make any creature you want. Any race, or two, pure-blooded or not; any gifts at all; any Stand, cursed technique, Devil Fruit, speedster powers and Quirks, with the Legendary mutations they need added for you; every power awakened; any job, age and weapon; trained to the limit; every trophy. It is a real creature, in your village.
+- **The God Ring:** put anyone in the ring against anyone. Two sides or everyone for themselves, your creatures, any monster from the Challenges, and the bosses of Chapter ??? and the God Chapter, as much as 100 times as strong. They fight as copies: nobody gets hurt and nothing is won or lost.
+- **Tools:** a million gems, a full forge, 10 of every item, 100,000 Void Shards and 12 Ascension Stones, every expedition home at once, and everyone fed, grown up, trained to the limit, or awakened.
 
 ## The forge
 
@@ -213,7 +240,8 @@ Each person's creatures can live on a git branch of their own, so pulling game u
 
 - `npm test` runs the game logic tests.
 - `node_modules\electron\dist\electron.exe test\e2e.cjs <folder>` plays the whole game in a hidden window and saves screenshots there. Run it with `ELECTRON_RUN_AS_NODE` unset.
-- `node tools/balance.js` reports fight fairness, what every power, gift and weapon is worth, and how hard each Adventure level is.
+- `node_modules\electron\dist\electron.exe test\e2e-endgame.cjs <folder>` does the same for everything past Chapter ???: auto roll, crossing over with a Hatsu, Ascension, the Elite Negative, the God Chapter and God Mode.
+- `node tools/balance.js` reports fight fairness, what every power, gift and weapon is worth, how hard each Adventure level is, and how the races of the Negative do against a Pillar Man.
 - `npm run exe` rebuilds Creature.exe from `tools/launcher/Creature.cs` with the C# compiler that comes with Windows.
 - `npm run package` builds a standalone `dist/Creature-win32-x64` folder you can zip and give to a friend.
 - Set `CREATURE_SPEED=20` to speed up crops and hunger while testing.

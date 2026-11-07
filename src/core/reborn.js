@@ -51,6 +51,7 @@ export function startOver(c, house, now = Date.now()) {
   c.training = Object.fromEntries(STAT_KEYS.map((k) => [k, 0]));
   c.path = { line: [], xp: 0 };
   c.powers = { stand: null, speedster: false, technique: null, technique2: null, fruit: null, quirks: [] };
+  c.awakened = [];
   c.ofa = null;
   c.souls = [];
   c.soulExpanders = 0;

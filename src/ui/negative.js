@@ -3,36 +3,48 @@
 // world. It opens after a universe reset. The rules are in core/negative.js and core/negadventure.js.
 
 import { toast } from './flair.js';
-import { G, api, saveNeg } from '../state.js';
+import { G, api, saveNeg, saveHouse } from '../state.js';
 import { h, fill, button, sureButton, openNote, getNote } from './notes.js';
 import { describeMove } from '../core/sheet.js';
-import { afterReset } from '../core/universe.js';
+import { afterReset, abyssBeaten } from '../core/universe.js';
 import {
   negScores, negPower, negMaxHp, negMoveList, negShell, chooseClass, unlockedSpells, toggleSpell, affinity, auraOf, nenPassive, setAlloc,
   hatsuProblem, setHatsu, toggleVow, vowMul, hatsuStrength, hatsuDef, freshCircle, circleDef, circleWorth, circleProblem, setCircle, eraseCircle,
-  negEggOnOffer, keepCost, keepProblem, keepNegEgg, rollNegEggFor, releaseNeg, crossProblem, crossOver,
+  negEggOnOffer, keepCost, keepProblem, keepNegEgg, rollNegEggFor, releaseNeg, crossProblem, crossOver, hatsuGiftOf,
+  emptyNegWant, negWantsAnything, negMatchChance, autoRollNeg, craftProblem, craftAscension,
 } from '../core/negative.js';
 import { startNegLevel, negLevelWon, negLevelInfo, negBossOf, negBossMonster, negLevelEnemies, negToughness, negPartyProblem, negLevelProblem, negReward, settleNegLevel } from '../core/negadventure.js';
+import { eliteInfo, eliteBossOf, eliteBossMonster, eliteEnemies, eliteToughness, eliteProblem, startElite, eliteReward, settleElite } from '../core/negadventure.js';
+import { itemCount } from '../core/items.js';
 import { finishBout } from '../sim/arena.js';
 import { RACES, NEGATIVE_RACE_IDS } from '../data/races.js';
-import { TRAITS } from '../data/powers.js';
+import { TRAITS, NEG_TRAIT_IDS, POWER_KIND_NAMES } from '../data/powers.js';
+import { ASCENSION_RECIPES, AWAKENINGS } from '../data/ascension.js';
+import { ITEMS } from '../data/items.js';
 import { STANCES, STANCE_IDS } from '../data/battle.js';
 import {
   ABILITY_KEYS, ABILITY_LABELS, ABILITY_SHORT, ABILITY_TEXT, NEG_MAX_LEVEL, negXpToNext, NEG_ROSTER_MAX, NEG_PARTY, NEG_EGG, NEG_LEVEL_COUNT, enemyLevel,
   CLASSES, CLASS_IDS, SPELL_LEVELS, spellSlots, NEN_TYPES, NEN_HEXAGON, NEN_POINTS, NEN_TECHNIQUES, NEN_TECHNIQUE_IDS, KO, HATSU_FORMS, MAX_VOWS, VOWS, VOW_IDS,
-  MAX_CIRCLES, ALCHEMY_SHAPES, ALCHEMY_ELEMENTS, ALCHEMY_COSTS,
+  MAX_CIRCLES, ALCHEMY_SHAPES, ALCHEMY_ELEMENTS, ALCHEMY_COSTS, ELITE_COUNT, ELITE,
 } from '../data/negative.js';
 import { ABILITIES } from '../data/paths.js';
 import { drawPortrait } from '../draw/art.js';
 import { createCreature } from './panels.js';
 import { loadVillage } from './village.js';
 
-const TABS = [['roster', 'Creatures'], ['eggs', 'Eggs'], ['attune', 'Attune'], ['adventure', 'Adventure'], ['cross', 'Cross over']];
+const TABS = [['roster', 'Creatures'], ['eggs', 'Eggs'], ['attune', 'Attune'], ['adventure', 'Adventure'], ['cross', 'Cross over'], ['ascension', 'Ascension']];
+// How many Void Shards an auto roll can spend at most, as rolls.
+const AUTO_BUDGETS = [10, 50, 200, 1000];
+// The Elite Negative, and Ascension, open once Chapter ??? is beaten in the light world.
+const eliteOpen = () => abyssBeaten(G.house);
 const pct = (v) => `${Math.round(v * 100)}%`;
 const big = (n) => Math.floor(n).toLocaleString('en-US');
 const W = () => G.neg;
 
 export function openNegative(tab = null) {
+  // 'elite' opens the Adventure tab on the Elite Negative.
+  const toElite = tab === 'elite' && eliteOpen();
+  if (tab === 'elite') tab = 'adventure';
   if (!afterReset(G.house)) {
     toast('THE NEGATIVE DIMENSION ONLY OPENS AFTER A UNIVERSE RESET.', 'info');
     return;
@@ -48,7 +60,13 @@ export function openNegative(tab = null) {
     attune: old?.attune ?? 'class',
     circle: old?.circle ?? null,
     picked: old?.picked ?? Math.min(NEG_LEVEL_COUNT, W().adventure.best + 1),
+    elite: toElite || (old?.elite ?? false),
+    pickedElite: old?.pickedElite ?? Math.min(ELITE_COUNT, (W().elite?.best ?? 0) + 1),
     eggName: old?.eggName ?? '',
+    want: old?.want ?? emptyNegWant(),
+    budget: old?.budget ?? AUTO_BUDGETS[1],
+    rolled: old?.rolled ?? '',
+    keepHatsu: old?.keepHatsu ?? {},
     message: '',
     build(body, note) {
       note.refs.portraits = [];
@@ -57,8 +75,9 @@ export function openNegative(tab = null) {
         h('div', { class: 'purse' },
           h('span', null, h('b', null, big(W().shards)), ' Void Shards'),
           h('span', null, h('b', null, W().creatures.length), ` of ${NEG_ROSTER_MAX} creatures`),
-          h('span', null, 'Best: ', h('b', null, W().adventure.best ? `level ${W().adventure.best}` : 'none yet'))),
-        h('div', { class: 'tabs' }, TABS.map(([id, label]) => button(label, () => {
+          h('span', null, 'Best: ', h('b', null, W().adventure.best ? `level ${W().adventure.best}` : 'none yet')),
+          eliteOpen() && h('span', null, h('b', null, big(W().stones ?? 0)), ' Ascension Stones')),
+        h('div', { class: 'tabs' }, TABS.filter(([id]) => id !== 'ascension' || eliteOpen()).map(([id, label]) => button(label, () => {
           spec.tab = id;
           spec.message = '';
           note.rebuild();
@@ -66,7 +85,7 @@ export function openNegative(tab = null) {
       const page = h('div', { class: 'scrollnote', style: 'margin-top:6px' });
       fill(body, page);
       if (spec.message) fill(page, h('div', { class: 'warning' }, spec.message));
-      ({ roster, eggs, attune, adventure, cross }[spec.tab] ?? roster)(page, note);
+      ({ roster, eggs, attune, adventure, cross, ascension }[spec.tab] ?? roster)(page, note);
     },
     tick(note) {
       note.refs.portraits?.forEach(({ canvas, nc }) => drawPortrait(canvas, negShell(nc)));
@@ -167,16 +186,72 @@ function eggs(page, note) {
             : h('div', { class: 'small' }, 'Born with no gift of the Negative.'))),
       egg.traits.map((id) => h('div', { class: 'small', style: 'margin-top:2px' }, h('b', { style: `color:${TRAITS[id].color}` }, `${TRAITS[id].name}: `), TRAITS[id].blurb)),
       h('div', { class: 'small' }, h('b', null, 'In a fight: '), race.passive.text),
-      h('div', { class: 'small' }, h('b', null, 'Its move: '), describeMove(ABILITIES[race.move])),
+      h('div', { class: 'small' }, h('b', null, race.moves?.length > 1 ? 'Its moves: ' : 'Its move: '), (race.moves ?? [race.move]).map((id) => `${ABILITIES[id].name}: ${describeMove(ABILITIES[id])}`).join(' ')),
       h('div', { class: 'hatchbar' }, input, button('Keep it', keep, 'big hot', !!problem)),
       problem && h('div', { class: 'small warning' }, problem),
       h('div', { class: 'row gap', style: 'margin-top:5px' },
         button(`Roll a different one: ${NEG_EGG.roll} Void Shards`, () => {
+          note.spec.rolled = '';
           if (rollNegEggFor(world)) done(note);
         }, 'big', world.shards < NEG_EGG.roll),
         h('span', { class: 'small grow' }, 'Void Shards come from the Negative\'s Adventure.'))),
+    autoRollCard(note),
+    note.spec.rolled && h('div', { class: 'callout small', style: 'font-weight:600' }, note.spec.rolled),
     h('div', { class: 'sect' }, `The ${NEGATIVE_RACE_IDS.length} races of the Negative`),
     NEGATIVE_RACE_IDS.map((id) => h('div', { class: 'small', style: 'margin-top:3px' }, h('b', { style: `color:${RACES[id].color}` }, `${RACES[id].name}: `), RACES[id].passive.text)),
+  );
+}
+
+// Auto roll: pick the races, gifts and Nen types you want, and it keeps rolling until it lands one.
+function autoRollCard(note) {
+  const { spec } = note;
+  const world = W();
+  const want = spec.want;
+  const asked = negWantsAnything(want);
+  const chance = negMatchChance(want);
+  const toggle = (list, id) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+  const chip = (label, on, onclick, color, title = '') => h('button', { class: `chip${on ? ' on' : ''}`, style: color ? `--c:${color}` : '', title, onclick }, label);
+  const rolls = Math.min(spec.budget, Math.floor(world.shards / NEG_EGG.roll));
+  return h('div', { class: 'ncard' },
+    h('div', { class: 'ncard-head' },
+      h('span', { class: 'ncard-title' }, 'Auto roll'),
+      h('span', { class: 'ncard-tag' }, !asked ? 'pick something' : chance > 0 ? `about 1 in ${big(Math.max(1, Math.round(1 / chance)))}` : 'impossible')),
+    h('div', { class: 'small' }, `Keeps rolling by itself, ${NEG_EGG.roll} Void Shards a roll, until it lands an egg with everything you pick. Pick several races or Nen types and any of them will do; every gift you pick has to be there.`),
+    h('div', { class: 'sublabel' }, 'Race'),
+    h('div', { class: 'chips' }, NEGATIVE_RACE_IDS.map((id) => chip(RACES[id].name, want.races.includes(id), () => {
+      want.races = toggle(want.races, id);
+      note.rebuild();
+    }, RACES[id].color, RACES[id].passive.text))),
+    h('div', { class: 'sublabel' }, 'Born with'),
+    h('div', { class: 'chips' }, NEG_TRAIT_IDS.map((id) => chip(TRAITS[id].name, want.traits.includes(id), () => {
+      want.traits = toggle(want.traits, id);
+      note.rebuild();
+    }, TRAITS[id].color, TRAITS[id].blurb))),
+    h('div', { class: 'sublabel' }, 'Nen type'),
+    h('div', { class: 'chips' }, NEN_HEXAGON.map((t) => chip(NEN_TYPES[t].name, want.nen.includes(t), () => {
+      want.nen = toggle(want.nen, t);
+      note.rebuild();
+    }, NEN_TYPES[t].color, NEN_TYPES[t].text))),
+    asked && h('div', { class: 'row', style: 'margin-top:4px' }, button('Clear', () => {
+      spec.want = emptyNegWant();
+      note.rebuild();
+    }, 'mini')),
+    h('div', { class: 'row', style: 'margin-top:4px' },
+      h('span', { class: 'small' }, 'Spend up to'),
+      AUTO_BUDGETS.map((b) => chip(`${big(b * NEG_EGG.roll)} shards`, spec.budget === b, () => {
+        spec.budget = b;
+        note.rebuild();
+      }))),
+    h('div', { class: 'row gap' },
+      button('Auto roll', () => {
+        if (!asked || !chance || rolls < 1) return;
+        const res = autoRollNeg(world, want, spec.budget);
+        const spent = `${res.rolls} roll${res.rolls === 1 ? '' : 's'}, ${big(res.rolls * NEG_EGG.roll)} Void Shards`;
+        spec.rolled = res.found ? `Got it in ${spent}. It is the egg on offer now.` : `No luck in ${spent}. The last egg it rolled is on offer.`;
+        if (res.found) toast(`AUTO ROLL! A ${RACES[res.egg.race].name.toUpperCase()}${res.egg.traits.length ? ` BORN WITH ${res.egg.traits.map((id) => TRAITS[id].name.toUpperCase()).join(' AND ')}` : ''}, ${NEN_TYPES[res.egg.nenType].name.toUpperCase()}!!!`, 'rare');
+        done(note);
+      }, 'big hot', !asked || !chance || rolls < 1),
+      h('span', { class: 'small grow' }, rolls < 1 ? `It takes at least ${NEG_EGG.roll} Void Shards.` : `Up to ${big(rolls)} roll${rolls === 1 ? '' : 's'} with what you have.`)),
   );
 }
 
@@ -512,11 +587,30 @@ function ring() {
 function adventure(page, note) {
   const world = W();
   const { spec } = note;
+  const elite = spec.elite && eliteOpen();
+  // Once Chapter ??? is beaten, there is more under the Negative: the Elite Negative.
+  if (eliteOpen()) {
+    fill(page, h('div', { class: 'tabs subtabs' },
+      button(`The Negative (${world.adventure.best} of ${NEG_LEVEL_COUNT})`, () => {
+        spec.elite = false;
+        note.rebuild();
+      }, elite ? '' : 'hot'),
+      button(`The Elite Negative (${world.elite?.best ?? 0} of ${ELITE_COUNT})`, () => {
+        spec.elite = true;
+        note.rebuild();
+      }, elite ? 'hot' : '')));
+  }
+  if (elite) eliteLevels(page, note);
+  else negLevels(page, note);
+  partyAndGo(page, note, elite);
+}
+
+function negLevels(page, note) {
+  const world = W();
+  const { spec } = note;
   const n = spec.picked;
   const info = negLevelInfo(n);
   const { fighters, boss } = negLevelEnemies(n, 1);
-  const party = partyOf();
-  const fighting = !!G.bout?.negative;
   const beaten = n <= world.adventure.best;
   const pay = negReward(n, world.adventure.best, true);
   fill(page,
@@ -539,6 +633,54 @@ function adventure(page, note) {
       h('div', { class: 'small' }, `${fighters.length} of the Negative at level ${enemyLevel(n)}${boss ? `, led by ${negBossMonster(n).name}` : ''}${n > 1 ? `, ${Math.round((negToughness(n) - 1) * 100)}% tougher than usual` : ''}.`),
       boss && h('div', { class: 'small warning' }, negBossMonster(n).passive?.text),
       h('div', { class: 'small', style: 'font-weight:600' }, `A win pays ${pay.shards} Void Shards${beaten ? '' : ' the first time'} and ${pay.xp} XP each.`)),
+    // Chapter ??? is beaten, but nobody has looked under the Negative yet.
+    eliteOpen() && !(world.elite?.best > 0) && h('div', { class: 'callout small' }, 'There is more under the Negative. The Elite Negative is open, at the top of this tab, and every win there pays Ascension Stones.'),
+  );
+}
+
+function eliteLevels(page, note) {
+  const world = W();
+  const { spec } = note;
+  const best = world.elite?.best ?? 0;
+  const k = spec.pickedElite;
+  const info = eliteInfo(k);
+  const { fighters, boss } = eliteEnemies(k, 1);
+  const pay = eliteReward(k, best, true);
+  fill(page,
+    h('div', { class: 'small' }, `Under the bottom of the Negative. ${ELITE_COUNT} levels of creatures at level ${ELITE.level}, every one born with ${ELITE.gifts} more gift${ELITE.gifts === 1 ? '' : 's'} of the Negative than an egg gives, and every level ${ELITE.grow} times harder than the last. Every first win pays Ascension Stones, which craft what awakens the light world's powers (the Ascension tab). A boss beaten again still pays one.`),
+    h('div', { class: 'levels' }, Array.from({ length: ELITE_COUNT }, (_, i) => {
+      const j = i + 1;
+      return h('button', {
+        class: ['lvl', 'abyss', 'act5', j <= best && 'beaten', j === best + 1 && 'next', eliteBossOf(j) && 'boss', j === k && 'picked'].filter(Boolean).join(' '),
+        disabled: !!eliteProblem(world, j, eliteOpen()),
+        title: `E${j}. ${eliteInfo(j).name}`,
+        onclick: () => {
+          spec.pickedElite = j;
+          note.rebuild();
+        },
+      }, `E${j}`, eliteBossOf(j) && h('small', null, 'BOSS'));
+    })),
+    h('div', { class: 'levelcard abyss act5' },
+      h('div', { class: 'nameline', style: 'font-size:16px' }, `E${k}. ${info.name}`),
+      h('div', { class: 'small' }, info.text),
+      h('div', { class: 'small' }, `${fighters.length} of the Elite at level ${ELITE.level}${boss ? `, led by ${eliteBossMonster(k).name}` : ''}, ${eliteToughness(k).toFixed(2)} times as strong as usual.`),
+      boss && h('div', { class: 'small warning' }, eliteBossMonster(k).passive?.text),
+      h('div', { class: 'small', style: 'font-weight:600' }, pay.first
+        ? `The first win pays ${pay.stones} Ascension Stone${pay.stones === 1 ? '' : 's'}, ${pay.shards} Void Shards and ${pay.xp} XP each.`
+        : `Beaten already. Again, it pays ${pay.stones ? `${pay.stones} Ascension Stone, ` : ''}${pay.shards} Void Shards and ${pay.xp} XP each.`)),
+  );
+}
+
+// Who goes, and the button to go, for either Adventure of the Negative.
+function partyAndGo(page, note, elite) {
+  const world = W();
+  const { spec } = note;
+  const party = partyOf();
+  const fighting = !!G.bout?.negative;
+  const n = elite ? spec.pickedElite : spec.picked;
+  const beaten = elite ? n <= (world.elite?.best ?? 0) : n <= world.adventure.best;
+  const where = elite ? `Elite ${n}` : `level ${n}`;
+  fill(page,
     h('div', { class: 'sect' }, `The party (${party.length} of ${NEG_PARTY})`),
     h('div', { class: 'party' }, world.creatures.map((nc) => {
       const on = world.adventure.party.includes(nc.id);
@@ -553,21 +695,21 @@ function adventure(page, note) {
     })),
   );
   if (fighting) {
-    fill(page, h('div', { class: 'callout' }, h('div', { class: 'hand' }, `Level ${G.negRun?.n}: fight!`)),
+    fill(page, h('div', { class: 'callout' }, h('div', { class: 'hand' }, `${G.negRun?.elite ? `Elite ${G.negRun.n}` : `Level ${G.negRun?.n}`}: fight!`)),
       h('div', { class: 'row gap' }, button('Give up', () => {
         G.bout = null;
         G.boutHide = new Set();
-        if (G.negRun) G.negRun.result = `You called off level ${G.negRun.n}.`;
+        if (G.negRun) G.negRun.result = `You called off ${G.negRun.elite ? `Elite ${G.negRun.n}` : `level ${G.negRun.n}`}.`;
         note.rebuild();
       }, 'big')));
     return;
   }
   if (G.negRun?.result) fill(page, h('div', { class: 'callout' }, h('div', { class: 'hand' }, G.negRun.result)));
-  const problem = negPartyProblem(party) ?? negLevelProblem(world, n);
+  const problem = negPartyProblem(party) ?? (elite ? eliteProblem(world, n, eliteOpen()) : negLevelProblem(world, n));
   fill(page,
     problem && h('div', { class: 'warning' }, problem),
     h('div', { class: 'row gap' },
-      button(beaten ? `Play level ${n} again` : `Fight level ${n}`, () => begin(note, false), 'big hot', !!problem || !!G.bout),
+      button(beaten ? `Play ${where} again` : `Fight ${where}`, () => begin(note, false), 'big hot', !!problem || !!G.bout),
       beaten && button('Quick fight', () => begin(note, true), 'big', !!problem || !!G.bout)),
     beaten && h('div', { class: 'small' }, 'A quick fight plays it out at once, with no ring, and pays the same.'),
     G.bout && !G.bout.negative && h('div', { class: 'small' }, 'Finish the fight that is already on first.'),
@@ -576,36 +718,42 @@ function adventure(page, note) {
 
 function begin(note, quick) {
   if (G.bout) return;
-  const n = note.spec.picked;
+  const elite = note.spec.elite && eliteOpen();
+  const n = elite ? note.spec.pickedElite : note.spec.picked;
   const party = partyOf();
-  if (negPartyProblem(party) ?? negLevelProblem(W(), n)) return;
+  if (negPartyProblem(party) ?? (elite ? eliteProblem(W(), n, true) : negLevelProblem(W(), n))) return;
   const seed = Math.floor(Math.random() * 2 ** 31);
-  G.negRun = { n, seed, party: party.map((c) => c.id), result: '' };
+  G.negRun = { n, seed, party: party.map((c) => c.id), result: '', elite };
+  const start = elite ? startElite : startNegLevel;
   if (quick) {
-    settle(finishBout(startNegLevel(n, party, { seed, r: 260 })));
+    settle(finishBout(start(n, party, { seed, r: 260 })));
     return;
   }
-  G.bout = startNegLevel(n, party, { seed, ...ring(), sizeMul: G.settings.scale ?? 1 });
+  G.bout = start(n, party, { seed, ...ring(), sizeMul: G.settings.scale ?? 1 });
   G.boutHide = new Set(G.team.map((m) => m.c.id));
   G.team.forEach((m) => m.pet.interrupt());
-  toast(`THE NEGATIVE, LEVEL ${n}: ${negLevelInfo(n).name.toUpperCase()}!`, negBossOf(n) ? 'rare' : 'info');
+  toast(elite ? `THE ELITE NEGATIVE, E${n}: ${eliteInfo(n).name.toUpperCase()}!` : `THE NEGATIVE, LEVEL ${n}: ${negLevelInfo(n).name.toUpperCase()}!`, (elite ? eliteBossOf(n) : negBossOf(n)) ? 'rare' : 'info');
   note.rebuild();
 }
 
-// The level is over: XP, shards, and the campaign moves on.
+// The level is over: XP, shards, stones, and the campaign moves on.
 function settle(bout) {
   const run = G.negRun;
   if (!run) return null;
   const won = negLevelWon(bout);
   const party = run.party.map((id) => W().creatures.find((c) => c.id === id)).filter(Boolean);
-  const reward = settleNegLevel(W(), party, run.n, won);
+  const reward = run.elite ? settleElite(W(), party, run.n, won) : settleNegLevel(W(), party, run.n, won);
   saveNeg();
+  const where = run.elite ? `Elite ${run.n}` : `Level ${run.n}`;
   const ups = reward.up.map((u) => `${u.name} is level ${u.level}`);
   const downs = reward.down.map((name) => `${name} kept its Death oath and lost a level`);
-  run.result = `${won ? `Level ${run.n} won!` : `Level ${run.n} lost.`} ${reward.shards ? `+${reward.shards} Void Shards, ` : ''}+${reward.xp} XP each.${ups.length ? ` ${ups.join(', ')}.` : ''}${downs.length ? ` ${downs.join(', ')}.` : ''}${won && run.n === NEG_LEVEL_COUNT ? ' Everyone in the party can cross over now.' : ''}`;
-  toast(won ? `THE NEGATIVE, LEVEL ${run.n} WON!${ups.length ? ` ${ups.join(', ').toUpperCase()}!` : ''}` : `THE PARTY FELL IN THE NEGATIVE, LEVEL ${run.n}.`, won ? (reward.first ? 'rare' : 'good') : 'bad');
+  const stones = reward.stones ? `+${reward.stones} Ascension Stone${reward.stones === 1 ? '' : 's'}, ` : '';
+  const lastElite = run.elite && won && run.n === ELITE_COUNT && reward.first;
+  run.result = `${won ? `${where} won!` : `${where} lost.`} ${stones}${reward.shards ? `+${reward.shards} Void Shards, ` : ''}+${reward.xp} XP each.${ups.length ? ` ${ups.join(', ')}.` : ''}${downs.length ? ` ${downs.join(', ')}.` : ''}${!run.elite && won && run.n === NEG_LEVEL_COUNT ? ' Everyone in the party can cross over now.' : ''}${lastElite ? ' The Ascended King is down. Craft in the Ascension tab, awaken your powers, and the God Chapter is waiting in the light world\'s Adventure.' : ''}`;
+  toast(won ? `${run.elite ? 'THE ELITE NEGATIVE' : 'THE NEGATIVE'}, ${where.toUpperCase()} WON!${stones ? ` ${stones.replace(/, $/, '').toUpperCase()}!` : ''}${ups.length ? ` ${ups.join(', ').toUpperCase()}!` : ''}` : `THE PARTY FELL IN THE ${run.elite ? 'ELITE ' : ''}NEGATIVE, ${where.toUpperCase()}.`, won ? (reward.first || reward.stones ? 'rare' : 'good') : 'bad');
   const note = getNote('negative');
-  if (note && won && run.n < NEG_LEVEL_COUNT && run.n >= W().adventure.best) note.spec.picked = run.n + 1;
+  if (note && won && run.elite && run.n < ELITE_COUNT && run.n >= (W().elite?.best ?? 0)) note.spec.pickedElite = run.n + 1;
+  if (note && won && !run.elite && run.n < NEG_LEVEL_COUNT && run.n >= W().adventure.best) note.spec.picked = run.n + 1;
   note?.rebuild();
   return reward;
 }
@@ -613,8 +761,9 @@ function settle(bout) {
 // Called by the game loop when a level of the Negative is over in the ring.
 export function onNegLevelEnded(bout) {
   const won = negLevelWon(bout);
+  const label = G.negRun?.elite ? `ELITE ${G.negRun.n}` : `LEVEL ${G.negRun?.n}`;
   settle(bout);
-  G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, won ? `LEVEL ${G.negRun?.n} WON` : 'THE PARTY FELL', won ? '#b89cff' : '#ff6b5e', 26, 3);
+  G.fx.shout(bout.cx, bout.cy - bout.r * 0.6, won ? `${label} WON` : 'THE PARTY FELL', won ? '#b89cff' : '#ff6b5e', 26, 3);
   setTimeout(() => {
     if (G.bout === bout) {
       G.bout = null;
@@ -626,18 +775,36 @@ export function onNegLevelEnded(bout) {
 
 // ---------- crossing over ----------
 
+// Whether it brings its Hatsu over as a gift. Yes, unless you said otherwise.
+const keepsHatsu = (note, nc) => note.spec.keepHatsu[nc.id] !== false;
+
 function cross(page, note) {
   const world = W();
   fill(page,
-    h('div', { class: 'small' }, `A creature that has won level ${NEG_LEVEL_COUNT} of the Negative's Adventure can cross over to the light world. It leaves the Negative for good, and arrives in your village as a Hatchling of its race, with its gifts of the Negative and nothing else: no class, no Nen, no Alchemy, none of its levels. In the light world its race is stronger than any born there, its gifts work in every fight, and it is the only kind of creature that can wound what lives in Chapter ???.`),
+    h('div', { class: 'small' }, `A creature that has won level ${NEG_LEVEL_COUNT} of the Negative's Adventure can cross over to the light world. It leaves the Negative for good, and arrives in your village as a Hatchling of its race, with its gifts of the Negative and nothing else: no class, no Alchemy, none of its levels. In the light world its race is stronger than any born there, its gifts work in every fight, and it is the only kind of creature that can wound what lives in Chapter ???.`),
+    h('div', { class: 'small' }, 'One thing of its Nen can come with it: its Hatsu, turned into a gift in its blood. It knows the Hatsu as a move in the light world, keeps a little of its Nen type in every fight, and passes it down to its babies like any gift it was born with.'),
     h('div', { class: 'small' }, 'Once it is there, it can be sacrificed on the Bloodline Altar so eggs hatch as its race, given up for a creature boost, or bred with anyone using the Deluxe Breeder.'),
     h('div', { class: 'roster', style: 'max-height:none;margin-top:5px' }, world.creatures.map((nc) => {
       const problem = crossProblem(nc);
+      const gift = hatsuGiftOf(nc);
+      const keep = gift && keepsHatsu(note, nc);
+      const gifts = [...nc.traits, ...(keep ? [gift] : [])].map((id) => TRAITS[id].name);
       return h('div', { class: 'rosterrow' },
         portrait(note, nc),
         h('div', { class: 'grow', style: 'min-width:0' },
           h('div', { class: 'name' }, nc.name),
-          h('div', { class: 'small' }, problem ?? `Ready to cross over as a ${RACES[nc.race].name}${nc.traits.length ? `, with ${nc.traits.map((id) => TRAITS[id].name).join(', ')}` : ''}.`)),
+          h('div', { class: 'small' }, problem ?? `Ready to cross over as a ${RACES[nc.race].name}${gifts.length ? `, with ${gifts.join(', ')}` : ''}.`),
+          gift && h('label', { class: 'toggle' },
+            h('input', {
+              type: 'checkbox',
+              checked: keep,
+              onchange: (e) => {
+                note.spec.keepHatsu[nc.id] = e.target.checked;
+                note.rebuild();
+              },
+            }),
+            h('span', null, `Turn its Hatsu, ${nc.nen.hatsu.name || HATSU_FORMS[nc.nen.hatsu.type][nc.nen.hatsu.form].name}, into a gift it can pass down: `, h('b', { style: `color:${TRAITS[gift].color}` }, TRAITS[gift].name), '.')),
+          !gift && h('div', { class: 'small' }, 'It never made a Hatsu, so none can come with it. Make one in Attune, Nen, first if you want it to.')),
         sureButton('Cross over', () => crossNow(note, nc), 'mini hot', !!problem || !!G.bout));
     })),
     world.crossed.length > 0 && h('div', { class: 'sect' }, 'Crossed over'),
@@ -646,12 +813,48 @@ function cross(page, note) {
 }
 
 async function crossNow(note, nc) {
-  const c = crossOver(W(), nc);
+  const keepHatsu = keepsHatsu(note, nc);
+  const gift = keepHatsu ? hatsuGiftOf(nc) : null;
+  const c = crossOver(W(), nc, Date.now(), { keepHatsu });
   if (!c) return;
   await saveNeg();
   await createCreature(c.name, c);
   await loadVillage();
   if (note.spec.pick === nc.id) note.spec.pick = W().creatures[0]?.id ?? null;
-  toast(`${c.name.toUpperCase()} CROSSED OVER FROM THE NEGATIVE! A ${RACES[c.race].name.toUpperCase()} IS LIVING IN YOUR VILLAGE NOW!!!`, 'rare');
+  delete note.spec.keepHatsu[nc.id];
+  toast(`${c.name.toUpperCase()} CROSSED OVER FROM THE NEGATIVE! A ${RACES[c.race].name.toUpperCase()} IS LIVING IN YOUR VILLAGE NOW!!!${gift && c.traits.includes(gift) ? ` ITS HATSU RUNS IN ITS BLOOD: ${TRAITS[gift].name.toUpperCase()}!` : ''}`, 'rare');
   note.rebuild();
+}
+
+// ---------- Ascension ----------
+
+// Ascension Stones from the Elite Negative craft what awakens the light world's powers. What is
+// crafted goes into the bag, and is used in the Nursery's Bag tab.
+function ascension(page, note) {
+  const world = W();
+  fill(page,
+    h('div', { class: 'small' }, 'Ascension Stones come from the Elite Negative, in the Adventure tab. With Void Shards, they craft four things, and each one awakens a power in the light world into something far stronger: more stats, higher limits on every stat, its moves hitting much harder, a new move, and something in every fight. Whatever you craft goes into the bag your light-world creatures share: use it in Home, Nursery, Bag.'),
+    h('div', { class: 'small warning' }, 'What lives in the God Chapter barely feels anything that isn\'t awakened: a creature needs two awakened powers to hit it in full, and Negative blood too.'),
+    h('div', { class: 'purse' },
+      h('span', null, h('b', null, big(world.stones ?? 0)), ' Ascension Stones'),
+      h('span', null, h('b', null, big(world.shards)), ' Void Shards')),
+    Object.entries(ASCENSION_RECIPES).map(([id, recipe]) => {
+      const item = ITEMS[id];
+      const a = AWAKENINGS[item.awakens];
+      const problem = craftProblem(world, G.house, id);
+      return h('div', { class: 'ncard', style: `border-left:5px solid ${item.color}` },
+        h('div', { class: 'ncard-head' }, h('span', { class: 'ncard-title' }, item.name), h('span', { class: 'ncard-tag' }, `${recipe.stones} stones, ${recipe.shards} shards`)),
+        h('div', { class: 'small' }, `For ${POWER_KIND_NAMES[item.awakens]}. ${a.blurb}`),
+        h('div', { class: 'small' }, h('b', null, `${a.name}: `), a.passive.text),
+        h('div', { class: 'small' }, h('b', null, 'And: '), `every move its power already had hits ${a.movePower} times as hard, every stat's limit goes up ${a.limits}, and it learns ${ABILITIES[a.move].name}: ${describeMove(ABILITIES[a.move])}`),
+        h('div', { class: 'row gap' },
+          button(`Craft a ${item.name}`, () => {
+            if (!craftAscension(world, G.house, id)) return;
+            saveHouse();
+            toast(`CRAFTED A ${item.name.toUpperCase()}! IT IS IN THE BAG.`, 'rare');
+            done(note);
+          }, 'hot', !!problem),
+          h('span', { class: 'small grow' }, problem ?? `In the bag: ${itemCount(G.house, id)}.`)));
+    }),
+  );
 }

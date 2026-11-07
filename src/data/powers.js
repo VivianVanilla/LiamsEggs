@@ -11,6 +11,8 @@
 //   One For All is a Quirk that grows: a holder can pass it on, which ends the holder for good.
 // Pictures: stands/<id>.png, techniques/<id>.png, quirks/<id>.png, powers/speedster.png, legendary/<id>.png.
 
+import { HATSU_TRAITS } from './negative.js';
+
 export const STAND_WITS = 20;
 export const SPEEDSTER_SPEED = 20;
 export const TECHNIQUE_MIGHT = 20;
@@ -504,11 +506,16 @@ export const TRAITS = {
     name: 'Equivalent Exchange', color: '#c9302c', negative: true, passive: { absorb: 0.2 },
     blurb: 'Nothing is taken without something given back: it heals 20% of all the damage it deals.',
   },
+
+  // A Hatsu brought over from the Negative when its creature crossed over (data/negative.js): a move
+  // of its own, and a little of its Nen type. No egg hatches with one; it passes on by breeding.
+  ...HATSU_TRAITS,
 };
 export const TRAIT_IDS = Object.keys(TRAITS);
 // What an egg can hatch with. The bred ones never come from an egg, the earned ones never pass on,
-// and the ones from the Negative only hatch there.
-export const BORN_TRAIT_IDS = TRAIT_IDS.filter((id) => !TRAITS[id].earned && !TRAITS[id].bred && !TRAITS[id].negative);
+// and the ones from the Negative only hatch there. A carried-over Hatsu never hatches at all.
+export const BORN_TRAIT_IDS = TRAIT_IDS.filter((id) => !TRAITS[id].earned && !TRAITS[id].bred && !TRAITS[id].negative && !TRAITS[id].hatsu);
+export const HATSU_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].hatsu);
 // The gifts of the Negative, and one egg in this many hatched there is born with each.
 export const NEG_TRAIT_IDS = TRAIT_IDS.filter((id) => TRAITS[id].negative);
 export const NEG_TRAIT_ODDS = { invertedheart: 10, eventhorizon: 8, nullfield: 12, entropy: 7, abyssalgaze: 12, hollowclock: 10, blacksun: 9, mirrorsoul: 9, godslayer: 14, equivalence: 9 };
@@ -579,11 +586,22 @@ export const ofaHurt = (level) => 1 + 0.2 * (level - 1);
 // The moves it holds, and the level each one comes with.
 export const OFA_MOVES = [['smash', 1], ['blackwhip', 3], ['dangersense', 5], ['usasmash', 7]];
 
-// A move as this fighter really uses it: Six Eyes keeps Infinity coming, and One For All's level
-// scales its smashes.
-export function tuneMove(id, def, { sixEyes = false, ofaLevel = 0 } = {}) {
+// A move as this fighter really uses it: Six Eyes keeps Infinity coming, One For All's level scales
+// its smashes, and an awakened power (data/ascension.js) makes its moves hit `boost[id]` times as hard.
+export function tuneMove(id, def, { sixEyes = false, ofaLevel = 0, boost = null } = {}) {
   let d = def;
   if (sixEyes && id === 'infinity') d = { ...d, cd: SIX_EYES_EVERY, auto: true };
   if (d.ofa && ofaLevel > 1) d = { ...d, power: d.power * ofaHit(ofaLevel), ...(d.recoil ? { recoil: d.recoil * ofaHurt(ofaLevel) } : {}) };
+  const k = boost?.[id];
+  if (k > 1) {
+    d = { ...d };
+    if (d.power) d.power = d.kind === 'heal' ? Math.min(0.7, d.power * k) : d.power * k;
+    if (d.atk) d.atk = Math.min(2, d.atk * k);
+    if (d.guard) d.guard = Math.min(0.8, d.guard * Math.sqrt(k));
+    if (d.dodge) d.dodge = Math.min(0.9, d.dodge * Math.sqrt(k));
+    if (d.speed && d.kind === 'buff') d.speed *= Math.sqrt(k);
+    if (d.kind === 'summon') d.count = Math.min(6, Math.round(d.count * Math.sqrt(k)));
+    if (d.kind === 'timestop') d.dur = Math.min(4, d.dur * Math.sqrt(k));
+  }
   return d;
 }

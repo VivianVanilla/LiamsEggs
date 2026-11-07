@@ -14,8 +14,27 @@ export const ITEMS = {
     name: 'Legendary Expander', color: '#ffd24a',
     text: 'Makes room for one more Legendary mutation. A creature holds 1, and can take 2 of these, for 3.',
   },
+  // Crafted from Ascension Stones in the Negative (data/ascension.js). Each awakens one power for good.
+  requiemarrow: {
+    name: 'Requiem Arrow', color: '#ffd84a', awakens: 'stand',
+    text: 'Pierces a Stand a second time, and it becomes a Requiem. Only for a creature with a Stand.',
+  },
+  speedstone: {
+    name: 'True Speed Stone', color: '#ffe14a', awakens: 'speedster',
+    text: 'Takes a speedster past the speed of light: True Speed. Only for a speedster.',
+  },
+  fruitawakening: {
+    name: 'Devil Fruit Awakening', color: '#ff7a2a', awakens: 'fruit',
+    text: 'Wakes its Devil Fruit up, so it changes the world around it. Only for a creature that has eaten one.',
+  },
+  amplification: {
+    name: 'Cursed Technique Amplification', color: '#a24fd6', awakens: 'technique',
+    text: 'Pushes its cursed technique to its Maximum. Only for a creature with a cursed technique.',
+  },
 };
 export const ITEM_IDS = Object.keys(ITEMS);
+// The items that awaken a power, by the kind of power each one awakens.
+export const AWAKEN_ITEM_IDS = ITEM_IDS.filter((id) => ITEMS[id].awakens);
 // The bag holds at most this many of each.
 export const MAX_ITEMS = 99;
 

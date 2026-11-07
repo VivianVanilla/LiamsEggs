@@ -14,7 +14,7 @@ import { RACES, DEFAULT_RACE } from '../data/races.js';
 import { EXPEDITIONS, PARTY_MAX, EXPEDITIONS_AT_ONCE, LEGENDARY_MINE } from '../data/village.js';
 import { WEAPON_IDS, MAX_ARMORY, MAX_ORE } from '../data/forge.js';
 import { ITEM_IDS, MAX_ITEMS } from '../data/items.js';
-import { ADVENTURE_LEVELS, ADVENTURE_PARTY, ABYSS_LEVELS } from '../data/adventure.js';
+import { ADVENTURE_LEVELS, ADVENTURE_PARTY, ABYSS_LEVELS, GOD_LEVELS } from '../data/adventure.js';
 import { BOOSTS } from '../data/universe.js';
 import { emptyBank } from './craft.js';
 
@@ -55,8 +55,9 @@ export const emptyHouse = () => ({
   // running, each { name, mult, until }.
   deluxeBreeder: false,
   boosts: [],
-  // How many times the universe was reset, and how far Chapter ??? got. A reset keeps these.
-  universe: { resets: 0, abyssBest: 0, lastReset: 0 },
+  // How many times the universe was reset, and how far Chapter ??? and the God Chapter got. A reset
+  // keeps these, so God Mode, once won, stays open for good.
+  universe: { resets: 0, abyssBest: 0, godBest: 0, lastReset: 0 },
 });
 
 const HOUR = 3600 * 1000;
@@ -64,6 +65,7 @@ const HOUR = 3600 * 1000;
 export const sanitizeUniverse = (raw) => ({
   resets: Math.floor(clamp(num(raw?.resets), 0, 1e6)),
   abyssBest: Math.floor(clamp(num(raw?.abyssBest), 0, ABYSS_LEVELS.length)),
+  godBest: Math.floor(clamp(num(raw?.godBest), 0, GOD_LEVELS.length)),
   lastReset: Math.max(0, num(raw?.lastReset)),
 });
 

@@ -2,7 +2,9 @@
 
 import { clamp } from '../lib/util.js';
 import { ITEMS, MAX_ITEMS, CHAMBER_STAGE, CHAMBER_FULLNESS, MAX_EXPANDERS, MAX_SOUL_EXPANDERS } from '../data/items.js';
-import { STAGES, stageIndex } from './creature.js';
+import { STAGES, stageIndex, isAwakened } from './creature.js';
+import { AWAKENINGS } from '../data/ascension.js';
+import { POWER_KIND_NAMES } from '../data/powers.js';
 
 export const itemCount = (house, id) => house.items?.[id] ?? 0;
 
@@ -22,6 +24,9 @@ export function itemProblem(house, id, c) {
   if (id === 'chamber' && stageIndex(c) >= CHAMBER_STAGE) return `${c.name} is already ${STAGES[CHAMBER_STAGE].name}`;
   if (id === 'expander' && (c.expanders ?? 0) >= MAX_EXPANDERS) return `${c.name} has already taken ${MAX_EXPANDERS}`;
   if (id === 'soulexpander' && (c.soulExpanders ?? 0) >= MAX_SOUL_EXPANDERS) return `${c.name} has already taken ${MAX_SOUL_EXPANDERS}`;
+  const kind = ITEMS[id].awakens;
+  if (kind && !c.powers?.[kind]) return `${c.name} doesn't have ${POWER_KIND_NAMES[kind]} to awaken`;
+  if (kind && isAwakened(c, kind)) return `${c.name}'s is already ${AWAKENINGS[kind].name}`;
   return null;
 }
 
@@ -34,5 +39,8 @@ export function useItem(house, id, c) {
   }
   if (id === 'expander') c.expanders = (c.expanders ?? 0) + 1;
   if (id === 'soulexpander') c.soulExpanders = (c.soulExpanders ?? 0) + 1;
+  // An Ascension item awakens the power it is for, for good (data/ascension.js).
+  const kind = ITEMS[id].awakens;
+  if (kind) c.awakened = [...new Set([...(c.awakened ?? []).filter((k) => c.powers[k]), kind])];
   return true;
 }

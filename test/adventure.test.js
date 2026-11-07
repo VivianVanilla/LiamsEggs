@@ -133,8 +133,9 @@ test('a first win pays gems and any prize, a replay only has its chance of loot'
   const again = levelReward(5, 9, never);
   assert.deepEqual([again.first, again.gems, again.ore, again.items], [false, 0, ADVENTURE_REPLAY_ORE, []]);
   const lucky = levelReward(2, 9, () => 0);
-  // Every kind of loot but the Legendary Expander, which only Bizarre expeditions and the ends of Acts 3 and 4 bring.
-  assert.deepEqual(lucky.items.sort(), Object.keys(ITEMS).filter((id) => id !== 'soulexpander').sort(), 'every win can drop loot');
+  // Every kind of loot but the Legendary Expander, which only Bizarre expeditions and the ends of Acts 3 and 4 bring,
+  // and the Ascension items, which are only ever crafted.
+  assert.deepEqual(lucky.items.sort(), Object.keys(ITEMS).filter((id) => id !== 'soulexpander' && !ITEMS[id].awakens).sort(), 'every win can drop loot');
   assert.equal(levelReward(20, 19, never).gems, 20 * ADVENTURE_GEMS_PER_LEVEL + ADVENTURE_PRIZES[20].gems);
   assert.equal(levelReward(30, 29, never).gems, 30 * ADVENTURE_GEMS_PER_LEVEL + ADVENTURE_PRIZES[30].gems, 'the end of Act 2 still pays its bonus');
   assert.equal(levelReward(50, 49, never).gems, 50 * ADVENTURE_GEMS_PER_LEVEL);

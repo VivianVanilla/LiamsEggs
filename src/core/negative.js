@@ -16,8 +16,11 @@ import {
   NEG_SCALE, ABILITY_KEYS, NEG_MAX_LEVEL, NEG_MAX_SCORE, negXpToNext, NEG_ROSTER_MAX, NEG_PARTY, NEG_EGG, NEG_LEVEL_COUNT,
   CLASSES, CLASS_IDS, SPELL_LEVELS, spellSlots, CAST_POWER,
   NEN_TYPES, NEN_HEXAGON, NEN_AFFINITY, SPECIALIST_ODDS, NEN_POINTS, NEN_TECHNIQUES, NEN_TECHNIQUE_IDS, KO, HATSU_FORMS, MAX_VOWS, VOWS,
-  MAX_CIRCLES, ALCHEMY_SHAPES, ALCHEMY_ELEMENTS, ALCHEMY_COSTS, ALCHEMY_INT,
+  MAX_CIRCLES, ALCHEMY_SHAPES, ALCHEMY_ELEMENTS, ALCHEMY_COSTS, ALCHEMY_INT, hatsuGiftId, ELITE_COUNT,
 } from '../data/negative.js';
+import { ASCENSION_RECIPES, MAX_STONES } from '../data/ascension.js';
+import { ITEMS, MAX_ITEMS } from '../data/items.js';
+import { addItem, itemCount } from './items.js';
 
 const MAX_NAME = 24;
 
@@ -431,6 +434,10 @@ export const emptyNegWorld = () => ({
   adventure: { best: 0, party: [] },
   // Everyone that crossed over to the light world.
   crossed: [],
+  // The Elite Negative, under the bottom of the Negative's Adventure, and the Ascension Stones it
+  // pays (data/ascension.js). It opens once Chapter ??? is beaten.
+  elite: { best: 0 },
+  stones: 0,
 });
 
 const safeStr = (v, max) => String(v ?? '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').slice(0, max);
@@ -490,6 +497,8 @@ export function sanitizeNegWorld(raw, now = Date.now()) {
   world.kept = Math.floor(clamp(num(raw?.kept), 0, 1e6));
   world.adventure.best = Math.floor(clamp(num(raw?.adventure?.best), 0, NEG_LEVEL_COUNT));
   world.adventure.party = (Array.isArray(raw?.adventure?.party) ? raw.adventure.party : []).map(safeId).filter((id) => seen.has(id)).slice(0, NEG_PARTY);
+  world.elite.best = Math.floor(clamp(num(raw?.elite?.best), 0, ELITE_COUNT));
+  world.stones = Math.floor(clamp(num(raw?.stones), 0, MAX_STONES));
   world.crossed = (Array.isArray(raw?.crossed) ? raw.crossed : []).slice(-50)
     .filter((x) => x && Object.hasOwn(RACES, x.race))
     .map((x) => ({ name: safeStr(x.name, 60), race: x.race, at: clamp(num(x.at), 0, now) }));
@@ -530,6 +539,43 @@ export function rollNegEggFor(world, rng = Math.random) {
   return true;
 }
 
+// ---------- auto roll ----------
+
+// want: { races, traits, nen }. An egg matches when its race is one of `races` and its Nen type one
+// of `nen` (anything, when either is empty), and it has every gift in `traits`.
+export const emptyNegWant = () => ({ races: [], traits: [], nen: [] });
+export const negWantsAnything = (want) => want.races.length + want.traits.length + want.nen.length > 0;
+export const negMatches = (egg, want) => (!want.races.length || want.races.includes(egg.race))
+  && (!want.nen.length || want.nen.includes(egg.nenType))
+  && want.traits.every((t) => egg.traits.includes(t));
+
+// The chance one roll matches, from the same odds the eggs are rolled with.
+export function negMatchChance(want) {
+  const races = want.races.filter((r) => NEGATIVE_RACE_IDS.includes(r));
+  let p = races.length ? races.length / NEGATIVE_RACE_IDS.length : 1;
+  if (want.nen.length) {
+    const other = (1 - 1 / SPECIALIST_ODDS) / (NEN_HEXAGON.length - 1);
+    p *= want.nen.reduce((s, t) => s + (t === 'specialist' ? 1 / SPECIALIST_ODDS : NEN_HEXAGON.includes(t) ? other : 0), 0);
+  }
+  for (const t of want.traits) p *= NEG_TRAIT_ODDS[t] ? 1 / NEG_TRAIT_ODDS[t] : 0;
+  return p;
+}
+
+// Keeps rolling, NEG_EGG.roll Void Shards a roll, until an egg matches, `budget` rolls are used, or
+// the shards run out. Whatever it ends on is the egg on offer. Returns { egg, rolls, found }.
+export function autoRollNeg(world, want, budget, rng = Math.random) {
+  let rolls = 0;
+  let egg = null;
+  while (rolls < budget && world.shards >= NEG_EGG.roll) {
+    world.shards -= NEG_EGG.roll;
+    rolls += 1;
+    egg = rollNegEgg(rng);
+    world.egg = { id: egg.id };
+    if (negMatches(egg, want)) return { egg, rolls, found: true };
+  }
+  return { egg: egg ?? negEggOnOffer(world), rolls, found: false };
+}
+
 // Lets one go for good.
 export function releaseNeg(world, id) {
   const before = world.creatures.length;
@@ -547,19 +593,50 @@ export function crossProblem(nc) {
   return null;
 }
 
+// The gift its Hatsu would become in the light world, or null if it never made one.
+export const hatsuGiftOf = (nc) => {
+  const id = nc?.nen?.hatsu ? hatsuGiftId(nc.nen.hatsu.form) : null;
+  return id && Object.hasOwn(TRAITS, id) ? id : null;
+};
+
 // It leaves the Negative for good, and arrives in the light world as a Hatchling of its race, with
-// its gifts and nothing else. Returns the new light-world creature, or null.
-export function crossOver(world, nc, now = Date.now()) {
+// its gifts and nothing else. With keepHatsu, its Hatsu comes too, as a gift it can pass down.
+// Returns the new light-world creature, or null.
+export function crossOver(world, nc, now = Date.now(), { keepHatsu = false } = {}) {
   if (crossProblem(nc) || !world.creatures.includes(nc)) return null;
   const c = newCreature(nc.name, now);
   c.race = nc.race;
   c.heritage = null;
   // Only its own gifts: an egg of the light world would have rolled others.
   c.traits = nc.traits.filter((id) => Object.hasOwn(TRAITS, id));
+  const hatsu = keepHatsu ? hatsuGiftOf(nc) : null;
+  if (hatsu && !c.traits.includes(hatsu)) c.traits.push(hatsu);
   c.origin = 'negative';
   c.look.dye = nc.dye ?? null;
   releaseNeg(world, nc.id);
   world.crossed.push({ name: nc.name, race: nc.race, at: now });
   world.crossed = world.crossed.slice(-50);
   return c;
+}
+
+// ---------- Ascension ----------
+
+// Ascension Stones from the Elite Negative, with Void Shards, craft what awakens the light world's
+// powers. What is crafted goes into the household's bag, to be used in the Nursery.
+export function craftProblem(world, house, id) {
+  const recipe = ASCENSION_RECIPES[id];
+  if (!recipe) return 'There is no such thing';
+  if ((world.stones ?? 0) < recipe.stones) return `It takes ${recipe.stones} Ascension Stones`;
+  if (world.shards < recipe.shards) return `It takes ${recipe.shards} Void Shards`;
+  if (itemCount(house, id) >= MAX_ITEMS) return `The bag can't hold more ${ITEMS[id].name}s`;
+  return null;
+}
+
+export function craftAscension(world, house, id) {
+  if (craftProblem(world, house, id)) return false;
+  const recipe = ASCENSION_RECIPES[id];
+  world.stones -= recipe.stones;
+  world.shards -= recipe.shards;
+  addItem(house, id);
+  return true;
 }

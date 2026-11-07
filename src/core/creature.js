@@ -16,6 +16,7 @@ import {
 import { DEADLY_MONSTERS, LEGEND_IDS, TROPHY_POINTS } from '../data/monsters.js';
 import { RACES, DEFAULT_RACE, RACE_PICTURES, RACE_BACKS, SKIN_MIX, WILD_RACES, RACE_FULL_SHARE, raceMovesOf } from '../data/races.js';
 import { FRUITS, FRUIT_VIGOR } from '../data/fruits.js';
+import { AWAKENINGS } from '../data/ascension.js';
 import { STANCES, HURT_PLANS, TARGET_PLANS, defaultBattlePlan } from '../data/battle.js';
 import { CHARMS, CHARM_SLOTS, PAINTS, CROP_IDS, BANK_KEYS, MAX_BANK, bankMax, familyOfBin } from '../data/crafting.js';
 import { emptyBank, bankColor } from './craft.js';
@@ -68,6 +69,9 @@ export function newCreature(name, now = Date.now()) {
     training: Object.fromEntries(STAT_KEYS.map((k) => [k, 0])),
     path: { line: [], xp: 0 },
     powers: { stand: null, speedster: false, technique: null, technique2: null, fruit: null, quirks: [] },
+    // The kinds of its powers it has awakened with Ascension items: 'stand' (Requiem), 'speedster'
+    // (True Speed), 'fruit' (Awakened) and 'technique' (Amplified). See data/ascension.js.
+    awakened: [],
     // Its Legendary mutations, the oldest first. It holds one, and more with Legendary Expanders.
     souls: [],
     soulExpanders: 0,
@@ -294,6 +298,9 @@ export function statLimits(c, raw = rawStats(c)) {
   c.trophies.forEach((id) => { limits[DEADLY_MONSTERS[id].trophy] += TROPHY_POINTS; });
   const level = ofaLevel(c);
   if (level) Object.entries(ofaLimitBonus(level)).forEach(([k, v]) => { limits[k] += v; });
+  // An awakened power lifts every limit.
+  const lift = awakenedKinds(c).reduce((sum, kind) => sum + AWAKENINGS[kind].limits, 0);
+  if (lift) STAT_KEYS.forEach((k) => { limits[k] += lift; });
   return limits;
 }
 
@@ -310,7 +317,31 @@ function powerDefs(c) {
   return [
     stand && STANDS[stand], speedster && SPEEDSTER, technique && TECHNIQUES[technique], technique2 && TECHNIQUES[technique2], fruit && FRUITS[fruit], ...c.souls.map((id) => LEGENDARY[id]),
     ...quirks.map((id) => (id === OFA_ID ? { ...QUIRKS[id], stats: ofaStats(level) } : QUIRKS[id])),
+    ...awakenedKinds(c).map((kind) => AWAKENINGS[kind]),
   ].filter(Boolean);
+}
+
+// ---------- awakened powers ----------
+
+// The kinds of power it has awakened, and still has. A power it no longer holds can't stay awakened.
+export const awakenedKinds = (c) => (c.awakened ?? []).filter((kind) => Object.hasOwn(AWAKENINGS, kind) && !!c.powers?.[kind]);
+export const isAwakened = (c, kind) => awakenedKinds(c).includes(kind);
+
+// The moves each kind of power it holds brings, for an awakening to make stronger.
+function powerMoves(c, kind) {
+  const { stand, technique, technique2, fruit } = c.powers;
+  if (kind === 'stand') return stand ? STANDS[stand].moves : [];
+  if (kind === 'speedster') return c.powers.speedster ? [SPEEDSTER.move] : [];
+  if (kind === 'technique') return [technique && TECHNIQUES[technique].moves, technique2 && TECHNIQUES[technique2].moves].filter(Boolean).flat();
+  if (kind === 'fruit') return fruit ? FRUITS[fruit].moves : [];
+  return [];
+}
+
+// How much harder each of its moves hits because its power is awakened: { moveId: times }.
+export function awakenBoost(c) {
+  const out = {};
+  for (const kind of awakenedKinds(c)) powerMoves(c, kind).forEach((id) => { out[id] = Math.max(out[id] ?? 1, AWAKENINGS[kind].movePower); });
+  return out;
 }
 
 // How much bigger its race is drawn, in the ring too. Only Giants are.
@@ -397,12 +428,13 @@ export function racePassive(c) {
   return out;
 }
 
-// Its races, its Legendary mutations and its gifts of the Negative, together: everything that works
-// in every fight.
+// Its races, its Legendary mutations, its gifts of the Negative and its awakened powers, together:
+// everything that works in every fight.
 export function fightPassive(c) {
   const out = racePassive(c);
   c.souls.forEach((id) => addPassive(out, LEGENDARY[id].passive));
   (c.traits ?? []).forEach((id) => addPassive(out, TRAITS[id]?.passive));
+  awakenedKinds(c).forEach((kind) => addPassive(out, AWAKENINGS[kind].passive));
   return out;
 }
 
@@ -672,6 +704,7 @@ export function movesOf(c) {
   if (c.powers.fruit) FRUITS[c.powers.fruit].moves.forEach((id) => list.push({ id, from: FRUITS[c.powers.fruit].name }));
   c.souls.filter((id) => LEGENDARY[id]?.move).forEach((id) => list.push({ id: LEGENDARY[id].move, from: LEGENDARY[id].name }));
   (c.traits ?? []).filter((id) => TRAITS[id]?.move).forEach((id) => list.push({ id: TRAITS[id].move, from: TRAITS[id].name }));
+  awakenedKinds(c).forEach((kind) => list.push({ id: AWAKENINGS[kind].move, from: AWAKENINGS[kind].name }));
   const level = ofaLevel(c);
   c.powers.quirks.forEach((id) => {
     if (id !== OFA_ID) {
@@ -812,6 +845,8 @@ export function sanitizeCreature(raw, now = Date.now()) {
   c.pureBlood = raw.pureBlood === true;
   c.origin = raw.origin === 'negative' ? 'negative' : null;
   c.powers = sanitizePowers(raw.powers, c);
+  // A power can only be awakened while it has that power.
+  c.awakened = Array.isArray(raw.awakened) ? [...new Set(raw.awakened)].filter((kind) => typeof kind === 'string' && Object.hasOwn(AWAKENINGS, kind) && !!c.powers[kind]) : [];
   c.ofa = c.powers.quirks.includes(OFA_ID)
     ? { stockpile: safeNum(raw.ofa?.stockpile, 0, 1e6), holders: Array.isArray(raw.ofa?.holders) ? raw.ofa.holders.slice(-12).map((n) => safeStr(n, 60)) : [] }
     : null;
@@ -961,6 +996,7 @@ export function serializeCreature(c) {
     heritage: c.heritage ?? null,
     pureBlood: c.pureBlood === true,
     origin: c.origin ?? null,
+    awakened: awakenedKinds(c),
     born: c.born,
     lastSeen: c.lastSeen,
     summary: {

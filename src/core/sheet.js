@@ -1,7 +1,8 @@
 // In plain words: what each move does, and what everything a creature has is doing to it.
 // No DOM here, so tests can read it. Used by the battle plan note and the "what it has" note.
 
-import { rawStats, statLimits, pathNodes, movesOf, hpGivenUp, ofaLevel, hasTrait, raceName, raceParts, raceStats, raceMoves, mutationCap, soulCap, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
+import { rawStats, statLimits, pathNodes, movesOf, hpGivenUp, ofaLevel, hasTrait, raceName, raceParts, raceStats, raceMoves, mutationCap, soulCap, awakenBoost, awakenedKinds, STAT_LABELS, TRAINING_LIMIT } from './creature.js';
+import { AWAKENINGS } from '../data/ascension.js';
 import { WEAPONS } from '../data/forge.js';
 import { MUTATIONS, MAX_MUTATIONS, FAMILY_ABILITY } from '../data/mutations.js';
 import { ABILITIES } from '../data/paths.js';
@@ -103,7 +104,7 @@ export function moveRange(d) {
 const RANGE_WORDS = { far: 'Works from mid range', near: 'Needs it close', any: 'Works from anywhere' };
 
 // How its gifts and One For All change its moves, for tuneMove.
-export const tuningOf = (c) => ({ sixEyes: hasTrait(c, 'sixeyes'), ofaLevel: ofaLevel(c) });
+export const tuningOf = (c) => ({ sixEyes: hasTrait(c, 'sixeyes'), ofaLevel: ofaLevel(c), boost: awakenBoost(c) });
 
 // Its moves, ready to list, as it really uses them.
 export function moveList(c) {
@@ -177,6 +178,11 @@ export function buildSheet(c) {
     const t = TECHNIQUES[c.powers.technique2];
     powerRows.push(row(c, `${t.name} (Cursed Body)`, t.stats, `${t.blurb} From the ${t.family} side of its family. Teaches ${t.moves.map((id) => ABILITIES[id].name).join(' and ')}.`));
   }
+  // Its awakened powers (data/ascension.js).
+  awakenedKinds(c).forEach((kind) => {
+    const a = AWAKENINGS[kind];
+    powerRows.push(row(c, `Awakened: ${a.name}`, a.stats, `${a.blurb} ${a.passive.text} Every move its power already had hits ${a.movePower} times as hard, every stat's limit is ${a.limits} higher, and it knows ${ABILITIES[a.move].name}.`));
+  });
   c.powers.quirks.forEach((id) => {
     const q = QUIRKS[id];
     if (id === OFA_ID) {

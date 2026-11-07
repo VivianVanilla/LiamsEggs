@@ -811,13 +811,13 @@ async function run() {
   ok('the challenges note opens', await js(`${chalNote}.textContent.includes('Shell Crab') && ${chalNote}.textContent.includes('The Last Dragon') && ${chalNote}.textContent.includes('dies forever')`));
   await shot('16l-challenges');
   const spawnButton = (name) => `[...${chalNote}.querySelectorAll('.monster')].find((m) => m.querySelector('.name').textContent === ${JSON.stringify(name)}).querySelector('button')`;
-  const fullBefore = await js(`window.__game.G.creature.fullness`);
+  const fullBeforeFight = await js(`window.__game.G.creature.fullness`);
   await js(`${spawnButton('Shell Crab')}.click()`);
   ok('spawning starts a fight', await waitFor('window.__game.G.bout && window.__game.G.challenge'));
   const keepFighting = `(() => { window.__game.G.bout.fighters.forEach((f) => { f.hp = 1e6; f.maxHp = 1e6; }); return true; })()`;
   await js(keepFighting);
   ok('the monster is in the ring', await js(`window.__game.G.bout.fighters[1].monster.id === 'crab'`));
-  ok('it burns fullness', (await js(`window.__game.G.creature.fullness`)) < fullBefore);
+  ok('it burns fullness', (await js(`window.__game.G.creature.fullness`)) < fullBeforeFight);
   ok('its paint goes into the fight and is used up', await js(`(() => { const { G } = window.__game; return G.creature.prep.paint === null && G.bout.fighters[0].atk > 0; })()`));
   await fastForward(1);
   await sleep(40);

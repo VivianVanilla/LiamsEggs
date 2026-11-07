@@ -5,7 +5,8 @@ import { POWER_MOVES } from './powers.js';
 import { MONSTER_MOVES } from './monsters.js';
 import { RACE_MOVES } from './races.js';
 import { FRUIT_MOVES } from './fruits.js';
-import { NEG_MOVES } from './negative.js';
+import { NEG_MOVES, HATSU_MOVES } from './negative.js';
+import { AWAKEN_MOVES } from './ascension.js';
 
 export const ROOT_PATHS = ['miner', 'farmer', 'fighter', 'nurse'];
 
@@ -210,4 +211,8 @@ export const ABILITIES = {
   ...FRUIT_MOVES,
   // The spells of the Negative Dimension
   ...NEG_MOVES,
+  // A Hatsu carried over from the Negative, as a gift
+  ...HATSU_MOVES,
+  // Awakened powers: Requiem, True Speed, an Awakened fruit, an Amplified technique
+  ...AWAKEN_MOVES,
 };

@@ -482,7 +482,7 @@ test('the sheet shows what it was born with, and the gifts read properly', () =>
   born.rows.forEach((r) => assert.ok(clean(`${r.name} ${r.detail}`)));
   c.powers.technique = 'limitless';
   assert.ok(!buildSheet(c).find((s) => s.title === 'Born with').rows[0].detail.includes('does nothing'));
-  assert.deepEqual(tuningOf(c), { sixEyes: true, ofaLevel: 0 });
+  assert.deepEqual(tuningOf(c), { sixEyes: true, ofaLevel: 0, boost: {} });
   assert.equal(lastName(c), TECHNIQUES[c.lineage].family);
   assert.ok(hasTrait(c, 'sharingan') && !hasTrait(c, 'cursedbody'));
 });

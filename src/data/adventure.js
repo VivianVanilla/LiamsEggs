@@ -264,3 +264,48 @@ export const ABYSS_BOSSES = {
     passive: { unstoppable: true, lives: 3, enrage: 1, aura: 0.25, auraRange: 240, nullField: true, reflect: 0.2, regen: 0.008, text: 'Every answer at once, and three more lives to give them with.' },
   },
 };
+
+// ---- The God Chapter: the true final chapter ----
+// Opens once Chapter ??? is beaten. 10 levels past the end of Chapter ???, each GOD.grow times harder
+// than the one before. Whatever lives here is void-touched like Chapter ???, and god-touched too
+// (GOD_GUARD in data/ascension.js): anything without an awakened power barely scratches it, one
+// awakened power lands about half, two or more in full. Awakening takes Ascension Stones from the
+// Elite Negative. Beating the last level opens God Mode (core/god.js).
+export const GOD_LEVELS = [
+  { name: 'The Stair Up', text: 'Past the bottom of everything, a stair goes up. Something is coming down it.' },
+  { name: 'The Antechamber', text: 'Every champion that ever ascended waits here to be tested again.' },
+  { name: 'The Garden of First Things', text: 'The first tree, the first river, and the first fight.' },
+  { name: 'The Hall of Requiems', text: 'Every Stand that was ever pierced twice still stands guard here.' },
+  { name: 'The Herald', text: 'It announces God. It has never had to announce anyone twice.', boss: true },
+  { name: 'The Speed of Thought', text: 'Nothing here moves. Everything here has already arrived.' },
+  { name: 'The Awakened Sea', text: 'An ocean that ate a Devil Fruit, and woke up.' },
+  { name: 'The Domain of Domains', text: 'Every domain ever expanded, folded up inside each other.' },
+  { name: 'The Throne Room', text: 'The floor is made of every universe that was ever reset.' },
+  { name: 'God', text: 'It made the first universe, and every one after it. Beat it, and you make the rest.', boss: true },
+];
+export const GOD = {
+  // Starts at this share of how hard the end of Chapter ??? is, and each level is this many times
+  // harder than the last. What lives here is stronger than anything in Chapter ??? to begin with, and
+  // only awakened powers wound it, so even the first level is past the end of Chapter ???.
+  start: 0.12,
+  grow: 1.25,
+  // How many fight on the other side, how many gifts of the Negative each is born with, and how many
+  // of them come with an awakened power of their own.
+  enemies: 3,
+  moreEvery: 5,
+  negGifts: 2,
+  // The first win of level k pays gems * gemsGrow ** (k - 1), ore, and Ascension items.
+  gems: 60000,
+  gemsGrow: 1.6,
+  ore: 300,
+};
+export const GOD_BOSSES = {
+  5: {
+    monster: 'behemoth', name: 'The Herald', power: 1.4, moves: ['endtime', 'lastlight', 'worldbreak', 'returntozero'],
+    passive: { unstoppable: true, lives: 2, reflect: 0.25, regen: 0.008, horizon: true, text: 'Nothing stops it, even moves that never miss can miss it, it throws a quarter of every hit back, slowly mends, and gets back up twice.' },
+  },
+  10: {
+    monster: 'dragon', name: 'God', power: 2.2, moves: ['endtime', 'lastlight', 'worldbreak', 'returntozero', 'maximumtechnique', 'awakening', 'infinitemass'],
+    passive: { unstoppable: true, lives: 4, enrage: 1, aura: 0.3, auraRange: 260, nullField: true, reflect: 0.25, regen: 0.01, horizon: true, absorb: 0.15, text: 'Every awakened power at once. Nothing stops it, nothing near it can use a move for long, everything near it withers, it throws a quarter of every hit back, heals from what it deals, hits twice as hard below half its health, and gets back up four times.' },
+  },
+};

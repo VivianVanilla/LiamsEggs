@@ -9,11 +9,13 @@ import { RACES, RACE_IDS, PURE_BLOOD_CHANCE, raceMovesOf } from '../data/races.j
 import {
   CLASSES, CLASS_IDS, SPELL_LEVELS, NEN_TYPES, NEN_HEXAGON, NEN_TECHNIQUES, NEN_TECHNIQUE_IDS, NEN_POINTS, KO, HATSU_FORMS, VOWS, VOW_IDS, MAX_VOWS,
   ALCHEMY_SHAPES, ALCHEMY_ELEMENTS, ALCHEMY_COSTS, MAX_CIRCLES, NEG_LEVELS, NEG_BOSSES, NEG_SCALE, ABILITY_KEYS, ABILITY_LABELS, ABILITY_TEXT,
+  ELITE_LEVELS, ELITE_BOSSES, ELITE, ELITE_REWARD, HATSU_LIGHT,
 } from '../data/negative.js';
+import { AWAKENINGS, AWAKEN_KINDS, ASCENSION_RECIPES, GOD_GUARD, GOD_FULL } from '../data/ascension.js';
 import { BOOSTS, DELUXE_BREEDER } from '../data/universe.js';
 import { PATHS, ROOT_PATHS, ABILITIES, TIER_XP } from '../data/paths.js';
 import {
-  TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, EARNED_TRAIT_IDS, TRAIT_ODDS, EARN_RULES, NEG_TRAIT_IDS, NEG_TRAIT_ODDS, STANDS, STAND_IDS, STAND_WITS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT,
+  TRAITS, BORN_TRAIT_IDS, BRED_TRAIT_IDS, BRED_RULES, EARNED_TRAIT_IDS, TRAIT_ODDS, EARN_RULES, NEG_TRAIT_IDS, NEG_TRAIT_ODDS, HATSU_TRAIT_IDS, POWER_KIND_NAMES, STANDS, STAND_IDS, STAND_WITS, TECHNIQUES, TECHNIQUE_IDS, TECHNIQUE_MIGHT,
   QUIRKS, QUIRK_IDS, MAX_HP_GIVEN, SPEEDSTER, SPEEDSTER_SPEED, LEGENDARY, SIX_EYES_FAMILY,
 } from '../data/powers.js';
 import { FRUITS, FRUIT_IDS, FRUIT_VIGOR } from '../data/fruits.js';
@@ -24,7 +26,7 @@ import { WEAPONS, WEAPON_IDS } from '../data/forge.js';
 import { ITEMS, ITEM_IDS, EXPANDER_SLOTS } from '../data/items.js';
 import { DEADLY_MONSTERS, DEADLY_IDS, LEGEND_IDS, ULTIMATE_IDS, TRAINING_MONSTERS, TRAINING_IDS, TROPHY_POINTS, REBORN, LEGEND_WINS_FOR_ULTIMATE } from '../data/monsters.js';
 import { bredRuleText } from '../core/family.js';
-import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED, ADVENTURE_SOULS, ADVENTURE_ACTS, ADVENTURE_ELITE, ABYSS_LEVELS, ABYSS_BOSSES, ABYSS } from '../data/adventure.js';
+import { ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_PRIZES, ADVENTURE_ARMED, ADVENTURE_SOULS, ADVENTURE_ACTS, ADVENTURE_ELITE, ABYSS_LEVELS, ABYSS_BOSSES, ABYSS, GOD_LEVELS, GOD_BOSSES, GOD } from '../data/adventure.js';
 import { EXPEDITIONS, EXPEDITION_IDS, LEGENDARY_MINE } from '../data/village.js';
 
 export const CODEX_PAGES = [
@@ -136,6 +138,11 @@ function gifts(page) {
     intro('Only an egg of the Negative Dimension hatches with these. A creature keeps them when it crosses over, and in the light world they pass on by breeding like any born-with gift. They work in every fight, in both worlds.'),
     NEG_TRAIT_IDS.map((id) => card(TRAITS[id].name, TRAITS[id].color, `1 in ${NEG_TRAIT_ODDS[id]} of the Negative`,
       h('div', { class: 'cx-blurb' }, TRAITS[id].blurb))),
+    head('A Hatsu, carried over'),
+    intro(`When a creature crosses over from the Negative, its Hatsu can come with it as a gift in its blood: the Hatsu as a move, at ${HATSU_LIGHT} times its strength and without its vows, and a little of its Nen type in every fight. No egg hatches with one; it passes on by breeding like any born-with gift.`),
+    HATSU_TRAIT_IDS.map((id) => card(TRAITS[id].name, TRAITS[id].color, NEN_TYPES[TRAITS[id].nenType].name,
+      h('div', { class: 'cx-blurb' }, TRAITS[id].blurb),
+      said('Its move', moveLine(TRAITS[id].move)))),
   );
 }
 
@@ -195,8 +202,20 @@ function gear(page) {
     head('Paints, for one fight'),
     h('div', { class: 'cx-grid' }, PAINT_IDS.map((id) => h('div', { class: 'cx-mini' }, h('b', null, PAINTS[id].name), h('span', null, `It ${PAINTS[id].text}. ${costText(PAINTS[id].cost)}`)))),
     head('Loot'),
-    ITEM_IDS.map((id) => card(ITEMS[id].name, ITEMS[id].color, 'loot', h('div', { class: 'cx-blurb' }, ITEMS[id].text),
+    ITEM_IDS.filter((id) => !ITEMS[id].awakens).map((id) => card(ITEMS[id].name, ITEMS[id].color, 'loot', h('div', { class: 'cx-blurb' }, ITEMS[id].text),
       said('From', `Adventure, and expeditions: ${EXPEDITION_IDS.map((w) => `${EXPEDITIONS[w].name.toLowerCase()} ${fine(EXPEDITIONS[w].items[id])}`).join(', ')}.`))),
+    head('Ascension'),
+    intro('Crafted in the Negative from Ascension Stones, which only the Elite Negative pays, and Void Shards. Each one awakens a power for good: more stats, every stat\'s limit higher, the power\'s moves much harder, a new move, and something in every fight.'),
+    AWAKEN_KINDS.map((kind) => {
+      const a = AWAKENINGS[kind];
+      const recipe = ASCENSION_RECIPES[a.item];
+      return card(`${ITEMS[a.item].name}: ${a.name}`, a.color, `${recipe.stones} stones, ${recipe.shards} shards`,
+        h('div', { class: 'cx-blurb' }, `For ${POWER_KIND_NAMES[kind]}. ${a.blurb}`),
+        said('Stats', `${statText(a.stats)}, and every limit +${a.limits}`),
+        said('In a fight', a.passive.text),
+        said('Its moves', `${a.movePower} times as hard`),
+        said('New move', moveLine(a.move)));
+    }),
   );
 }
 
@@ -252,7 +271,16 @@ function adventure(page) {
         boss && h('span', { class: 'badge boss' }, `${boss.twin > 1 ? `${boss.twin} x ` : ''}${boss.name}`),
         boss?.passive && h('div', { class: 'small' }, boss.passive.text));
     }),
-    h('div', { class: 'small', style: 'margin-top:6px' }, `Limits: a stat can reach ${STAT_LIMITS[0]} at best, and work and monsters can add up to +${TRAINING_LIMIT} to one.`),
+    head('The God Chapter'),
+    intro(`The true final chapter, open once Chapter ??? is beaten. ${GOD_LEVELS.length} levels, each ${GOD.grow} times harder than the last. Everything there is void-touched and god-touched: without Negative blood a hit lands ${Math.round((1 - ABYSS.voidGuard) * 100)}%, and without an awakened power ${Math.round((1 - GOD_GUARD) * 100)}%; one awakened power lands about half, ${GOD_FULL} or more in full. The bosses fight with the awakened powers' own moves. Beat God, and God Mode is yours for good: make any creature you want, put anyone in the ring against anyone, and the tools of whoever runs the universe.`),
+    GOD_LEVELS.map((lv, i) => {
+      const boss = GOD_BOSSES[i + 1];
+      return h('div', { class: `cx-level${boss ? ' boss' : ''}` },
+        h('b', null, `G${i + 1}. ${lv.name}`),
+        boss && h('span', { class: 'badge boss' }, boss.name),
+        boss?.passive && h('div', { class: 'small' }, boss.passive.text));
+    }),
+    h('div', { class: 'small', style: 'margin-top:6px' }, `Limits: a stat can reach ${STAT_LIMITS[0]} at best, and work and monsters can add up to +${TRAINING_LIMIT} to one. Each awakened power lifts every limit.`),
   );
 }
 
@@ -294,7 +322,16 @@ function negative(page) {
         boss && h('span', { class: 'badge boss' }, boss.name),
         boss?.passive && h('div', { class: 'small' }, boss.passive.text));
     }),
+    head('The Elite Negative'),
+    intro(`There is more under the Negative. Once Chapter ??? is beaten in the light world, ${ELITE_LEVELS.length} more levels open under its Adventure: creatures at level ${ELITE.level}, each born with ${ELITE.gifts} more gift${ELITE.gifts === 1 ? '' : 's'} of the Negative, every level ${ELITE.grow} times harder. A first win pays ${ELITE_REWARD.stones} Ascension Stone, a boss ${ELITE_REWARD.bossStones}, and a boss beaten again ${ELITE_REWARD.replayBossStones}. The stones craft what awakens the light world's powers (Gear & loot, Ascension).`),
+    ELITE_LEVELS.map((lv, i) => {
+      const boss = ELITE_BOSSES[i + 1];
+      return h('div', { class: `cx-level${boss ? ' boss' : ''}` },
+        h('b', null, `E${i + 1}. ${lv.name}`),
+        boss && h('span', { class: 'badge boss' }, boss.name),
+        boss?.passive && h('div', { class: 'small' }, boss.passive.text));
+    }),
     head('Back in the light world'),
-    intro(`A creature that crossed over can go on the Bloodline Altar, so eggs hatch as its race. It can be given up for a creature boost: every gem you earn is multiplied by what it was worth for ${BOOSTS.hours === 1 ? 'an hour' : `${BOOSTS.hours} hours`}, up to ${BOOSTS.max} boosts at once, multiplying each other. And with the Deluxe Breeder (${DELUXE_BREEDER.cost.toLocaleString('en-US')} gems) it breeds with anyone.`),
+    intro(`A creature that crossed over can bring its Hatsu as a gift it passes down (Gifts). It can go on the Bloodline Altar, so eggs hatch as its race. It can be given up for a creature boost: every gem you earn is multiplied by what it was worth for ${BOOSTS.hours === 1 ? 'an hour' : `${BOOSTS.hours} hours`}, up to ${BOOSTS.max} boosts at once, multiplying each other. And with the Deluxe Breeder (${DELUXE_BREEDER.cost.toLocaleString('en-US')} gems) it breeds with anyone.`),
   );
 }

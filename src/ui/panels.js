@@ -34,7 +34,8 @@ import { openVillage, expeditionClock, tickClocks, clockText } from './village.j
 import { openCreatures, renameCreature } from './creatures.js';
 import { openAdventure } from './adventure.js';
 import { openNegative } from './negative.js';
-import { afterReset, gemMultiplier, activeBoosts } from '../core/universe.js';
+import { openGod } from './god.js';
+import { afterReset, gemMultiplier, activeBoosts, abyssBeaten, godModeOpen } from '../core/universe.js';
 import { nextStep } from '../core/advice.js';
 
 // ---------- naming ----------
@@ -237,7 +238,13 @@ export function openMenu() {
           class: 'btn hubbtn hub-negative',
           title: 'Its own creatures, classes and spells, Nen and Alchemy, its own Adventure, and crossing over',
           onclick: () => openNegative(),
-        }, h('b', null, 'The Negative Dimension'), h('small', null, `${G.neg.creatures.length} creature${G.neg.creatures.length === 1 ? '' : 's'} · ${Math.floor(G.neg.shards)} Void Shards`))),
+        }, h('b', null, 'The Negative Dimension'), h('small', null, `${G.neg.creatures.length} creature${G.neg.creatures.length === 1 ? '' : 's'} · ${Math.floor(G.neg.shards)} Void Shards${abyssBeaten(G.house) ? ` · ${Math.floor(G.neg.stones ?? 0)} Ascension Stones` : ''}`))),
+        // Only once God is beaten: God Mode.
+        godModeOpen(G.house) && h('div', { class: 'hubs one' }, h('button', {
+          class: 'btn hubbtn hub-negative hub-god',
+          title: 'Make any creature you want, put anyone in the ring against anyone, and the tools of whoever runs the universe',
+          onclick: () => openGod(),
+        }, h('b', null, 'God Mode'), h('small', null, 'The Maker · the God Ring · Tools'))),
         h('div', { class: 'menufoot' },
           footButton('Codex', leaveMenu(() => openGuide('codex'))),
           footButton('Rename', leaveMenu(openRename)),
@@ -298,6 +305,7 @@ const OPEN = {
   items: () => openNursery('bag'),
   adventure: () => openAdventure(),
   negative: (tab) => openNegative(tab || null),
+  god: (tab) => openGod(tab || null),
   settings: () => openSettings(),
   arena: () => openArena(),
   search: () => openSearch(),

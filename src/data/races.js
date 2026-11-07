@@ -111,69 +111,71 @@ export const RACES = {
   // ---- From the Negative Dimension (data/negative.js), which only opens after a universe reset ----
   // Nothing in the light world is born one. A creature of these races crossed over from the Negative,
   // or hatched from an egg once one was sacrificed on the Bloodline Altar, or was bred with the Deluxe
-  // Breeder. Each is stronger in the light world than any race born here. `neg` is what it brings in
+  // Breeder. Every one of them is stronger than a Pillar Man, the strongest race born in the light
+  // world: each brings two moves, a body at least as hard to put down, something a Pillar Man has no
+  // answer to, and a better trade at home. tools/balance.js measures it. `neg` is what it brings in
   // the Negative itself: its starting ability scores, at level 1.
   voidling: {
-    name: 'Voidling', negative: true, stats: { speed: 12, wits: 8, might: 7, vigor: 5, guard: 3 }, size: 0.82, move: 'voidstep', color: '#7b5cff', skin: '#2b2440',
+    name: 'Voidling', negative: true, stats: { speed: 16, wits: 12, might: 10, vigor: 8, guard: 6 }, size: 0.82, move: 'voidstep', moves: ['voidstep', 'voidrend'], color: '#7b5cff', skin: '#2b2440',
     blurb: 'A little piece of empty space that learned to want things. It is never quite where it seems to be. Drawn a size smaller.',
-    passive: { dodge: 0.18, speed: 0.3, horizon: true, text: '18% more likely to dodge, moves 30% faster, and even moves that never miss can miss it.' },
-    village: { expedition: 0.35, finds: 1, text: 'An expedition with a Voidling in it is back 35% sooner, and twice as likely to find someone.' },
+    passive: { dodge: 0.3, speed: 0.4, horizon: true, cooldown: 0.25, taken: 0.3, hp: 0.3, absorb: 0.15, lives: 1, text: '30% more likely to dodge, and even moves that never miss can miss it. Moves 40% faster, its moves come back 25% sooner, it takes 30% less damage, has 30% more max HP, and heals 15% of all the damage it deals. The first time it is knocked out, it slips back in from nowhere with half its health.' },
+    village: { expedition: 0.5, finds: 2, gemsFlat: 1, text: 'An expedition with a Voidling in it is back twice as fast and three times as likely to find someone, and it finds about a gem an hour whatever its job.' },
     neg: { str: 30, dex: 85, con: 35, int: 45, wis: 40, cha: 55 },
   },
   antiseraph: {
-    name: 'Antiseraph', negative: true, stats: { wits: 11, vigor: 10, might: 8, guard: 6 }, move: 'blackhalo', color: '#3a2a55', skin: '#d9d2e9',
+    name: 'Antiseraph', negative: true, stats: { wits: 15, vigor: 14, might: 12, guard: 10 }, move: 'blackhalo', moves: ['blackhalo', 'fallenchoir'], color: '#3a2a55', skin: '#d9d2e9',
     blurb: 'What an angel looks like from the other side. A black halo, wings of ash, and it heals by hurting.',
-    passive: { absorb: 0.25, crit: 0.1, poisonproof: true, text: 'Heals 25% of all the damage it deals, 10% more critical hits, and poison can\'t touch it.' },
-    village: { gems: 1.5, text: 'Finds two and a half times as many gems in the village.' },
+    passive: { absorb: 0.4, crit: 0.2, poisonproof: true, taken: 0.3, hp: 0.35, lives: 1, text: 'Heals 40% of all the damage it deals, 20% more critical hits, and poison can\'t touch it. Takes 30% less damage, has 35% more max HP, and the first time it is knocked out it gets back up with half its health.' },
+    village: { gems: 2.5, gemsFlat: 1, text: 'Finds three and a half times as many gems in the village, and about a gem an hour on top, whatever its job.' },
     neg: { str: 40, dex: 45, con: 50, int: 60, wis: 85, cha: 80 },
   },
   abyssaltitan: {
-    name: 'Abyssal Titan', negative: true, stats: { might: 16, guard: 12, vigor: 14, speed: -4 }, size: 1.5, move: 'abysscrush', color: '#31324a', skin: '#4a4d6b',
+    name: 'Abyssal Titan', negative: true, stats: { might: 20, guard: 16, vigor: 18, speed: -2 }, size: 1.5, move: 'abysscrush', moves: ['abysscrush', 'trenchquake'], color: '#31324a', skin: '#4a4d6b',
     blurb: 'A giant from the bottom of the Negative, where the dark has weight. Drawn much bigger.',
-    passive: { taken: 0.25, hp: 0.4, enrage: 0.6, text: 'Takes 25% less damage, has 40% more max HP, and below half its health it hits 60% harder and swings faster.' },
-    village: { colors: 1.5, text: 'Digs two and a half times as many colors in the village.' },
+    passive: { taken: 0.4, hp: 0.7, enrage: 0.8, unstoppable: true, absorb: 0.15, text: 'Takes 40% less damage, has 70% more max HP, and nothing can stun, confuse or silence it. Heals 15% of all the damage it deals, and below half its health it hits 80% harder and swings faster.' },
+    village: { colors: 2, gemsFlat: 1, text: 'Digs three times as many colors in the village, and finds about a gem an hour whatever its job.' },
     neg: { str: 95, dex: 20, con: 95, int: 20, wis: 30, cha: 30 },
   },
   hexborn: {
-    name: 'Hexborn', negative: true, stats: { wits: 14, might: 8, speed: 6, vigor: 5 }, move: 'grandhex', color: '#6b2a7a', skin: '#8f6a9c',
+    name: 'Hexborn', negative: true, stats: { wits: 18, might: 12, speed: 10, vigor: 9, guard: 6 }, move: 'grandhex', moves: ['grandhex', 'hexstorm'], color: '#6b2a7a', skin: '#8f6a9c',
     blurb: 'Born under a curse, and it passed the curse on to everything it ever touched.',
-    passive: { decay: 0.3, crit: 0.08, text: 'Every hit it lands curses: they keep hurting for 3 seconds. 8% more critical hits.' },
-    village: { gemsFlat: 1, text: 'Curses luck into gems: about a gem an hour, whatever its job.' },
+    passive: { decay: 0.6, crit: 0.2, damage: 0.4, execute: 0.5, taken: 0.35, hp: 0.45, absorb: 0.25, lives: 1, text: 'Every hit it lands curses: they keep hurting for 3 seconds. 20% more critical hits, everything it does lands 40% harder, and 50% harder still on anything below half its health. Takes 35% less damage, has 45% more max HP, and heals 25% of all the damage it deals. The first time it is knocked out, the curse turns back on it and it gets up with half its health.' },
+    village: { gemsFlat: 2.5, text: 'Curses luck into gems: about two and a half gems an hour, whatever its job.' },
     neg: { str: 30, dex: 50, con: 40, int: 90, wis: 60, cha: 55 },
   },
   mirrorkin: {
-    name: 'Mirrorkin', negative: true, stats: { guard: 12, wits: 9, speed: 6, vigor: 6, might: 4 }, move: 'shatter', color: '#bcd8e8', skin: '#e4f1f7',
+    name: 'Mirrorkin', negative: true, stats: { guard: 16, wits: 13, speed: 10, vigor: 10, might: 8 }, move: 'shatter', moves: ['shatter', 'mirrorprison'], color: '#bcd8e8', skin: '#e4f1f7',
     blurb: 'Made of the glass between the two worlds. Hit it, and you hit yourself.',
-    passive: { reflect: 0.35, dodge: 0.06, text: 'Throws 35% of every hit it takes back at whoever landed it, and 6% more likely to dodge.' },
-    village: { work: 0.5, text: 'Works 50% harder in the village, at any job.' },
+    passive: { reflect: 0.6, dodge: 0.12, horizon: true, taken: 0.35, hp: 0.4, absorb: 0.15, lives: 1, text: 'Throws 60% of every hit it takes back at whoever landed it. 12% more likely to dodge, and even moves that never miss can miss it. Takes 35% less damage, has 40% more max HP, and heals 15% of all the damage it deals. The first time it is knocked out, it steps out of a mirror with half its health.' },
+    village: { work: 1, gemsFlat: 1, text: 'Works twice as hard in the village at any job, and finds about a gem an hour on top.' },
     neg: { str: 45, dex: 60, con: 55, int: 55, wis: 55, cha: 50 },
   },
   entropywraith: {
-    name: 'Entropy Wraith', negative: true, stats: { wits: 9, vigor: 9, might: 9, speed: 5 }, move: 'heatdeath', color: '#5c6b4a', skin: '#7d8a6a',
+    name: 'Entropy Wraith', negative: true, stats: { wits: 13, vigor: 13, might: 13, speed: 9, guard: 6 }, move: 'heatdeath', moves: ['heatdeath', 'entropybloom'], color: '#5c6b4a', skin: '#7d8a6a',
     blurb: 'Everything near it is a little older than it was a moment ago.',
-    passive: { aura: 0.3, auraRange: 170, poisonproof: true, text: 'Everything on the other side within 170 of it rots: 30% of its hit, every second. Poison can\'t touch it.' },
-    village: { farm: 1, text: 'Rot feeds the soil: farms twice as much food and plants in the village.' },
+    passive: { aura: 0.6, auraRange: 210, poisonproof: true, decay: 0.3, taken: 0.35, hp: 0.45, regen: 0.015, absorb: 0.1, lives: 1, text: 'Everything on the other side within 210 of it rots: 60% of its hit, every second, and every hit it lands keeps rotting for 3 seconds. Poison can\'t touch it. Takes 35% less damage, has 45% more max HP, heals 1.5% of it every second and 10% of all the damage it deals. The first time it is knocked out, time runs backwards for it and it gets up with half its health.' },
+    village: { farm: 2, gemsFlat: 1, text: 'Rot feeds the soil: farms three times as much food and plants in the village, and finds about a gem an hour whatever its job.' },
     neg: { str: 50, dex: 45, con: 60, int: 75, wis: 50, cha: 40 },
   },
   chimera: {
-    name: 'Chimera', negative: true, stats: { might: 12, vigor: 9, speed: 8, guard: 5 }, move: 'devour', color: '#a8643a', skin: '#c48a5a',
+    name: 'Chimera', negative: true, stats: { might: 16, vigor: 13, speed: 12, guard: 9, wits: 4 }, move: 'devour', moves: ['devour', 'chimeraform'], color: '#a8643a', skin: '#c48a5a',
     blurb: 'It eats what it beats, and becomes a little of it. No two are alike for long.',
-    passive: { frenzy: 0.04, feast: 0.25, text: 'Every hit it lands makes it 4% stronger for the rest of the fight, up to 60%, and it heals 25% of its max HP whenever something on the other side goes down.' },
-    village: { food: 6, text: 'Hunts: about 6 food an hour in the village, whatever its job.' },
+    passive: { frenzy: 0.07, feast: 0.4, absorb: 0.25, damage: 0.25, taken: 0.35, hp: 0.45, lives: 1, text: 'Every hit it lands makes it 7% stronger for the rest of the fight, up to 60%, and everything it does lands 25% harder. Heals 25% of all the damage it deals, and 40% of its max HP whenever something on the other side goes down. Takes 35% less damage and has 45% more max HP. The first time it is knocked out, another of its heads takes over with half its health.' },
+    village: { food: 12, gemsFlat: 1, text: 'Hunts: about 12 food an hour in the village, and about a gem an hour, whatever its job.' },
     neg: { str: 80, dex: 55, con: 65, int: 30, wis: 35, cha: 45 },
   },
   homunculus: {
-    name: 'Homunculus', negative: true, stats: { vigor: 13, might: 10, guard: 8, wits: 5 }, move: 'ouroboros', color: '#8a1f3a', skin: '#d8b8b0',
+    name: 'Homunculus', negative: true, stats: { vigor: 17, might: 14, guard: 12, wits: 8, speed: 4 }, move: 'ouroboros', moves: ['ouroboros', 'redstone'], color: '#8a1f3a', skin: '#d8b8b0',
     blurb: 'Made by alchemy around a red stone full of souls. Every soul in the stone is one more life.',
-    passive: { lives: 2, regen: 0.015, text: 'Two extra lives: the first two times it is knocked out, it gets back up with half its health. Heals 1.5% of its max HP every second.' },
-    village: { gems: 1, text: 'Its stone glitters: finds twice as many gems in the village.' },
+    passive: { lives: 3, regen: 0.03, taken: 0.3, hp: 0.35, absorb: 0.1, text: 'Three extra lives: the first three times it is knocked out, it gets back up with half its health. Heals 3% of its max HP every second and 10% of all the damage it deals. Takes 30% less damage and has 35% more max HP.' },
+    village: { gems: 2, gemsFlat: 1, text: 'Its stone glitters: finds three times as many gems in the village, and about a gem an hour on top.' },
     neg: { str: 65, dex: 45, con: 90, int: 50, wis: 40, cha: 45 },
   },
   dreadwyrm: {
-    name: 'Dreadwyrm', negative: true, stats: { might: 13, guard: 8, speed: 7, wits: 7, vigor: 8 }, size: 1.25, move: 'nullbreath', color: '#1f1a33', skin: '#3d3466',
+    name: 'Dreadwyrm', negative: true, stats: { might: 17, guard: 12, speed: 11, wits: 11, vigor: 12 }, size: 1.25, move: 'nullbreath', moves: ['nullbreath', 'dreadwing'], color: '#1f1a33', skin: '#3d3466',
     blurb: 'The dragon the other dragons are afraid of. Its scales drink light. Drawn bigger.',
-    passive: { taken: 0.15, crit: 0.15, critMul: 2, reach: 30, text: 'Takes 15% less damage, 15% more critical hits, its critical hits land four times as hard instead of twice, and it swings from further away.' },
-    village: { gems: 2, text: 'Hoards the dark: finds three times as many gems in the village.' },
+    passive: { taken: 0.35, hp: 0.4, crit: 0.25, critMul: 2.5, reach: 40, absorb: 0.15, lives: 1, text: 'Takes 35% less damage and has 40% more max HP. 25% more critical hits, its critical hits land four and a half times as hard instead of twice, it swings from further away, and it heals 15% of all the damage it deals. The first time it is knocked out it sheds its skin and gets back up with half its health.' },
+    village: { gems: 3, gemsFlat: 1, text: 'Hoards the dark: finds four times as many gems in the village, and about a gem an hour on top.' },
     neg: { str: 85, dex: 55, con: 70, int: 55, wis: 45, cha: 60 },
   },
   halfdevil: {
@@ -254,6 +256,16 @@ export const RACE_MOVES = {
   devour: { name: 'Devour', cry: 'DEVOUR', loud: true, kind: 'pull', cd: 9, power: 2.2, range: 520, color: '#c48a5a' },
   ouroboros: { name: 'Ouroboros', cry: 'OUROBOROS', loud: true, kind: 'heal', cd: 14, power: 0.35, atk: 0.4, dur: 4, color: '#c9304a' },
   nullbreath: { name: 'Null Breath', cry: 'NULL BREATH', loud: true, kind: 'cone', cd: 9, power: 2.6, range: 260, silence: 2, poison: 0.3, poisonFor: 4, color: '#5a4a9a' },
+  // Each race of the Negative's second move.
+  voidrend: { name: 'Void Rend', cry: 'VOID REND', loud: true, kind: 'bolt', cd: 7, volley: 3, power: 0.9, confuse: 0.8, range: 560, speed: 1100, color: '#b9a4ff' },
+  fallenchoir: { name: 'Fallen Choir', cry: 'FALLEN CHOIR', loud: true, kind: 'heal', cd: 13, power: 0.3, atk: 0.5, dur: 5, color: '#8a6ac8' },
+  trenchquake: { name: 'Trench Quake', cry: 'TRENCH QUAKE', loud: true, kind: 'nova', cd: 13, power: 3, range: 260, stun: 1.6, color: '#5a5d7b' },
+  hexstorm: { name: 'Hex Storm', cry: 'HEX STORM', loud: true, kind: 'bolt', cd: 9, volley: 5, power: 0.6, poison: 0.5, poisonFor: 5, range: 540, speed: 760, color: '#d07ae8' },
+  mirrorprison: { name: 'Mirror Prison', cry: 'MIRROR PRISON', loud: true, kind: 'pull', cd: 11, power: 2.2, stun: 1.8, silence: 2, range: 560, color: '#e8f6ff' },
+  entropybloom: { name: 'Entropy Bloom', cry: 'ENTROPY BLOOM', loud: true, kind: 'cone', cd: 10, power: 2.4, range: 240, poison: 0.7, poisonFor: 6, color: '#a6b48a' },
+  chimeraform: { name: 'Chimera Form', cry: 'CHIMERA FORM', loud: true, kind: 'buff', cd: 13, dur: 5, atk: 0.7, speed: 0.5, guard: 0.3, color: '#d8925a' },
+  redstone: { name: 'Red Stone', cry: 'RED STONE', loud: true, kind: 'bomb', boom: 'TRANSMUTED', cd: 12, power: 3.4, fuse: 1.2, splash: 180, range: 600, color: '#e0304a' },
+  dreadwing: { name: 'Dread Wing', cry: 'DREAD WING', loud: true, kind: 'dash', cd: 9, power: 3.2, stun: 0.8, range: 720, color: '#6a5ac8' },
 };
 
 // Seasoned wild rivals are sometimes another race: the chance of each, by how seasoned they are.

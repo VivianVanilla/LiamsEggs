@@ -19,6 +19,7 @@ import { onChallengeEnded } from './ui/challenges.js';
 import { loadVillage } from './ui/village.js';
 import { onLevelEnded } from './ui/adventure.js';
 import { onNegLevelEnded } from './ui/negative.js';
+import { onGodRingEnded } from './ui/god.js';
 import { initDock, refreshDock, dockRects, overDock, tickDock, setDockDrop } from './ui/dock.js';
 import { takeEgg } from './ui/roll.js';
 import { hoursDue, runVillage, finishExpeditions, tidyMine } from './core/village.js';
@@ -396,7 +397,7 @@ function update(dt) {
     const wasDone = bout.done;
     bout.tick(dt);
     handleBoutEvents(bout);
-    if (bout.done && !wasDone) (G.challenge ? onChallengeEnded : bout.negative ? onNegLevelEnded : bout.adventure ? onLevelEnded : onBoutEnded)(bout);
+    if (bout.done && !wasDone) (G.challenge ? onChallengeEnded : bout.negative ? onNegLevelEnded : bout.adventure ? onLevelEnded : bout.godRing ? onGodRingEnded : onBoutEnded)(bout);
   }
 
   G.fx.update(dt);

@@ -2,7 +2,8 @@
 // (hits, KOs, fx) for the renderer. Also runs headless so balance can be tested.
 
 import { clamp, makeRng } from '../lib/util.js';
-import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, fightPassive, addPassive, emptyPassive, negativeShare } from '../core/creature.js';
+import { computeStats, abilitiesOf, stageOf, maxHpOf, hpFromStats, hasTrait, raceSize, fightPassive, addPassive, emptyPassive, negativeShare, awakenedKinds } from '../core/creature.js';
+import { GOD_GUARD, GOD_FULL } from '../data/ascension.js';
 import { negFightSpec, negShell } from '../core/negative.js';
 import { NEG_SCALE, KO } from '../data/negative.js';
 import { tuningOf } from '../core/sheet.js';
@@ -69,6 +70,11 @@ export function passiveFields(p) {
 // Negative or more lands in full, and a quarter halfway.
 export const voidFactor = (from, guard) => 1 - guard * (1 - Math.min(1, (from?.voidShare ?? 0) * 2));
 
+// What lives in the God Chapter is god-touched the same way: only an awakened power wounds it. godShare
+// is how many it has awakened, over GOD_FULL, so two or more land in full and one about half.
+export const godFactor = (from, guard = GOD_GUARD) => 1 - guard * (1 - Math.min(1, from?.godShare ?? 0));
+export const godShareOf = (c) => Math.min(1, awakenedKinds(c).length / GOD_FULL);
+
 // What a set of stats means in a fight, for creatures and monsters alike.
 export function combatNumbers(s) {
   return {
@@ -124,6 +130,7 @@ export class Bout {
     f.neg = nc;
     f.name = nc.name;
     f.voidShare = 1;
+    f.godShare = 0;
     f.ringMul = NEG_SCALE;
     return f;
   }
@@ -194,6 +201,7 @@ export class Bout {
       twice: (hasTrait(c, 'ackerman') ? ACKERMAN.twice : 0) + passive.twice,
       ...passiveFields(passive),
       voidShare: negativeShare(c),
+      godShare: godShareOf(c),
       ringMul: 1,
       ko: neg?.ko ? { ...neg.ko, n: 0 } : null,
       koOpen: 0,
@@ -350,6 +358,8 @@ export class Bout {
       // What it was summoned by decides how hard it hits in Chapter ???.
       voidShare: owner.voidShare ?? 0,
       voidGuard: owner.voidGuard ?? 0,
+      godShare: owner.godShare ?? 0,
+      godGuard: owner.godGuard ?? 0,
       ringMul: owner.ringMul ?? 1,
       def: 0,
       moveSpeed: m.speed,
@@ -1037,6 +1047,7 @@ export class Bout {
     // Just after a Ko, it is wide open.
     if (target.koOpen > this.t) dmg *= KO.openTaken;
     if (target.voidGuard && from) dmg *= voidFactor(from, target.voidGuard);
+    if (target.godGuard && from) dmg *= godFactor(from, target.godGuard);
     target.hp -= dmg;
     if (from) from.damageDone += dmg;
     if (from && !still) {

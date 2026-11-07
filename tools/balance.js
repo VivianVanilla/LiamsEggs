@@ -219,3 +219,30 @@ const challengeRate = (make, id, rounds = 40) => {
 };
 TRAINING_IDS.forEach((id) => console.log(`  ${TRAINING_MONSTERS[id].name.padEnd(18)} ${LADDER.map(([, make]) => challengeRate(make, id)).join('')}`));
 [...DEADLY_IDS, ...ULTIMATE_IDS].forEach((id) => console.log(`  ${DEADLY_MONSTERS[id].name.padEnd(18)} ${LADDER.map(([, make]) => challengeRate(make, id)).join('')}`));
+
+// The races of the Negative against a Pillar Man, the strongest race born in the light world: the
+// same Elder twice, trained to the limit, with nothing but its race told apart. Every one of them
+// should win far more often than not.
+{
+  const { RACES, NEGATIVE_RACE_IDS } = await import('../src/data/races.js');
+  const elderOf = (race, seed) => {
+    const c = wildCreature(seed, 3);
+    Object.assign(c, { growth: 200, race, heritage: null, pureBlood: false, traits: [], souls: [], weapon: null, powers: NO_POWERS() });
+    c.powers.fruit = null;
+    Object.keys(c.training).forEach((k) => { c.training[k] = 10; });
+    c.battle.stance = 'close';
+    return c;
+  };
+  const ROUNDS_VS = 60;
+  console.log('\nThe races of the Negative against a Pillar Man:');
+  for (const id of NEGATIVE_RACE_IDS) {
+    let won = 0;
+    for (let i = 0; i < ROUNDS_VS; i++) {
+      const a = elderOf(id, 900 + i);
+      const b = elderOf('pillarman', 900 + i);
+      Object.assign(b, { mutations: a.mutations.map((m) => ({ ...m })), essence: { ...a.essence }, palette: JSON.parse(JSON.stringify(a.palette)), path: JSON.parse(JSON.stringify(a.path)) });
+      if (runBout(i % 2 ? [a, b] : [b, a], i + 1).winner?.c === a) won++;
+    }
+    console.log(`  ${RACES[id].name.padEnd(16)} wins ${String(Math.round((100 * won) / ROUNDS_VS)).padStart(3)}%`);
+  }
+}

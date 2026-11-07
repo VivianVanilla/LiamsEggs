@@ -6,7 +6,7 @@ import { clamp, num } from '../lib/util.js';
 import { emptyHouse } from './house.js';
 import { powerOf, negativeShare } from './creature.js';
 import { MAX_GEMS } from '../data/crafting.js';
-import { ADVENTURE_LEVELS } from '../data/adventure.js';
+import { ADVENTURE_LEVELS, ABYSS_LEVELS, GOD_LEVELS } from '../data/adventure.js';
 import { BOOSTS, DELUXE_BREEDER } from '../data/universe.js';
 
 const HOUR = 3600 * 1000;
@@ -16,6 +16,11 @@ const HOUR = 3600 * 1000;
 // How many times the universe has been reset. Once is enough to open the Negative and Chapter ???.
 export const resetsOf = (house) => house.universe?.resets ?? 0;
 export const afterReset = (house) => resetsOf(house) > 0;
+
+// Past Chapter ???: the Elite Negative and the God Chapter open once it is beaten, and God Mode once
+// the God Chapter is. A reset keeps all three.
+export const abyssBeaten = (house) => (house.universe?.abyssBest ?? 0) >= ABYSS_LEVELS.length;
+export const godModeOpen = (house) => (house.universe?.godBest ?? 0) >= GOD_LEVELS.length;
 
 // It cracks once the last level of Adventure is beaten.
 export const universeCracked = (house) => house.adventure.best >= ADVENTURE_LEVELS.length;
@@ -34,6 +39,7 @@ export function resetUniverse(house, now = Date.now()) {
   fresh.universe = {
     resets: resetsOf(house) + 1,
     abyssBest: house.universe?.abyssBest ?? 0,
+    godBest: house.universe?.godBest ?? 0,
     lastReset: now,
   };
   return fresh;

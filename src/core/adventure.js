@@ -12,6 +12,7 @@ import { Bout } from '../sim/arena.js';
 import { deadlyMonsterStats } from '../sim/challenges.js';
 import { DEADLY_MONSTERS } from '../data/monsters.js';
 import { LEGENDARY, BORN_TRAIT_IDS, NEG_TRAIT_IDS } from '../data/powers.js';
+import { GOD_GUARD } from '../data/ascension.js';
 import { NEGATIVE_RACE_IDS } from '../data/races.js';
 import { STAT_KEYS, TRAINING_LIMIT } from './creature.js';
 import { clamp } from '../lib/util.js';
@@ -19,7 +20,7 @@ import { MAX_ORE, WEAPON_IDS } from '../data/forge.js';
 import {
   ADVENTURE_PARTY, ADVENTURE_LEVELS, ADVENTURE_BOSSES, ADVENTURE_MAX_ENEMIES, ADVENTURE_MORE_EVERY, ADVENTURE_SEASONED, ADVENTURE_ARMED,
   ADVENTURE_TOUGHER, ADVENTURE_SOULS, ADVENTURE_STEEPER, ADVENTURE_ACTS, ADVENTURE_GEMS_PER_LEVEL, ADVENTURE_FINISH_GEMS, ADVENTURE_PRIZES, ADVENTURE_REPLAY_ORE, ADVENTURE_DROPS, ADVENTURE_DROPS_PER_LEVEL,
-  ADVENTURE_ELITE, ADVENTURE_ELITE_GIFTS, ABYSS_LEVELS, ABYSS, ABYSS_BOSSES,
+  ADVENTURE_ELITE, ADVENTURE_ELITE_GIFTS, ABYSS_LEVELS, ABYSS, ABYSS_BOSSES, GOD_LEVELS, GOD, GOD_BOSSES,
 } from '../data/adventure.js';
 
 export const LEVEL_COUNT = ADVENTURE_LEVELS.length;
@@ -234,5 +235,76 @@ export function abyssReward(k, best, rng = Math.random) {
 export function winAbyss(house, k, rng = Math.random, now = Date.now()) {
   const reward = payReward(house, abyssReward(k, house.universe.abyssBest ?? 0, rng), now);
   house.universe.abyssBest = Math.max(house.universe.abyssBest ?? 0, k);
+  return reward;
+}
+
+// ---------- the God Chapter ----------
+
+export const GOD_COUNT = GOD_LEVELS.length;
+export const godInfo = (k) => GOD_LEVELS[k - 1] ?? null;
+export const godBossOf = (k) => GOD_BOSSES[k] ?? null;
+export const godBossMonster = (k) => asMonster(godBossOf(k));
+
+// Each level is GOD.grow times harder than the last, starting past the end of Chapter ???.
+export const godToughness = (k) => abyssToughness(ABYSS_COUNT) * GOD.start * GOD.grow ** (k - 1);
+
+// It opens once Chapter ??? is beaten, and goes one level at a time.
+export function godProblem(house, k) {
+  if ((house.universe?.abyssBest ?? 0) < ABYSS_COUNT) return 'The God Chapter only opens once Chapter ??? is beaten';
+  if (!Number.isInteger(k) || k < 1 || k > GOD_COUNT) return 'There is no such level';
+  const best = house.universe.godBest ?? 0;
+  if (k > best + 1) return `Beat God ${best + 1} first`;
+  return null;
+}
+
+// Who lives there: everything Chapter ??? sends, with more gifts of the Negative. Its bosses carry the
+// awakened powers' own moves.
+export function godEnemies(k, seed) {
+  const rng = makeRng(seed);
+  const boss = godBossOf(k);
+  const full = Math.min(ADVENTURE_MAX_ENEMIES, GOD.enemies + Math.floor(k / GOD.moreEvery));
+  const count = boss ? Math.floor(full / 2) : full;
+  const fighters = Array.from({ length: count }, () => {
+    const c = levelFighter(rng, LEVEL_COUNT, 3);
+    c.race = NEGATIVE_RACE_IDS[Math.floor(rng() * NEGATIVE_RACE_IDS.length) % NEGATIVE_RACE_IDS.length];
+    c.heritage = null;
+    const gifts = NEG_TRAIT_IDS.slice();
+    for (let i = 0; i < GOD.negGifts; i++) c.traits.push(gifts.splice(Math.floor(rng() * gifts.length) % gifts.length, 1)[0]);
+    return c;
+  });
+  return { fighters, boss };
+}
+
+// Everything on the other side is void-touched and god-touched: only Negative blood with awakened
+// powers wounds it properly.
+export function startGod(k, party, opts = {}) {
+  const { fighters, boss } = godEnemies(k, opts.seed ?? 1);
+  const bout = setUpRing(party, fighters, boss, godToughness(k), opts);
+  bout.fighters.filter((f) => f.team !== 0).forEach((f) => {
+    f.voidGuard = ABYSS.voidGuard;
+    f.godGuard = GOD_GUARD;
+  });
+  bout.adventure = 'god';
+  bout.god = k;
+  return bout;
+}
+
+// The first win of each level pays far more than the last, with Ascension items; every win after
+// that a little.
+export function godReward(k, best, rng = Math.random) {
+  const first = k > best;
+  const gems = Math.round(GOD.gems * GOD.gemsGrow ** (k - 1));
+  const reward = { first, gems: first ? gems : Math.round(gems * 0.05), ore: first ? GOD.ore + k * 20 : 5, items: [], found: null, godMode: first && k === GOD_COUNT };
+  if (first) {
+    reward.items.push('chamber', 'expander', 'soulexpander');
+    if (godBossOf(k)) reward.items.push('requiemarrow', 'speedstone', 'fruitawakening', 'amplification');
+  }
+  reward.items.push(...rollDrops({ chamber: 0.4, expander: 0.25, soulexpander: 0.1 }, rng));
+  return reward;
+}
+
+export function winGod(house, k, rng = Math.random, now = Date.now()) {
+  const reward = payReward(house, godReward(k, house.universe.godBest ?? 0, rng), now);
+  house.universe.godBest = Math.max(house.universe.godBest ?? 0, k);
   return reward;
 }

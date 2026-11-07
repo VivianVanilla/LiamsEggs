@@ -13,6 +13,9 @@ import { megaBreederProblem, buyMegaBreeder } from '../core/family.js';
 import { itemCount, itemProblem, useItem } from '../core/items.js';
 import { MEGA_BREEDER } from '../data/family.js';
 import { ITEMS, ITEM_IDS } from '../data/items.js';
+import { AWAKENINGS } from '../data/ascension.js';
+import { STANDS, TECHNIQUES } from '../data/powers.js';
+import { FRUITS } from '../data/fruits.js';
 import { ADVENTURE_PRIZES } from '../data/adventure.js';
 import { drawPortrait, dropRig } from '../draw/art.js';
 import { buildBreed, freshBreed, loadRows, saveAnywhere } from './breed.js';
@@ -153,13 +156,21 @@ async function boostWith(note, row) {
 
 // ---------- the bag ----------
 
+// The power an Ascension item would awaken in this creature, by name.
+const powerName = (c, kind) => ({
+  stand: () => STANDS[c.powers.stand]?.name,
+  speedster: () => 'speedster',
+  technique: () => TECHNIQUES[c.powers.technique]?.name,
+  fruit: () => FRUITS[c.powers.fruit]?.name,
+}[kind]?.() ?? kind);
+
 // Where an item turns up for sure: the Adventure levels that hand one over the first time.
 const prizeLevels = (id) => Object.entries(ADVENTURE_PRIZES).filter(([, p]) => p.items?.[id]).map(([n]) => n);
 
 function buildBag(page, note) {
   const st = note.spec.bag;
   const { rows } = note.spec.breed;
-  fill(page, h('div', { class: 'small' }, 'Loot from Adventure and expeditions. Use it on any of your creatures, out on your screen or living in the village.'));
+  fill(page, h('div', { class: 'small' }, 'Loot from Adventure and expeditions, and anything crafted from Ascension Stones in the Negative. Use it on any of your creatures, out on your screen or living in the village.'));
   for (const id of ITEM_IDS) {
     const item = ITEMS[id];
     const n = itemCount(G.house, id);
@@ -167,7 +178,7 @@ function buildBag(page, note) {
     const fits = rows.filter((r) => !itemProblem({ items: { [id]: 1 } }, id, r.c));
     if (!fits.some((r) => r.base === st.pick[id])) st.pick[id] = fits[0]?.base ?? '';
     const select = h('select', { onchange: (e) => { st.pick[id] = e.target.value; } },
-      fits.map((r) => h('option', { value: r.base, selected: r.base === st.pick[id] }, `${r.c.name}, ${id === 'chamber' ? stageOf(r.c).name : `${r.c.mutations.length} of ${mutationCap(r.c)} mutations`}`)));
+      fits.map((r) => h('option', { value: r.base, selected: r.base === st.pick[id] }, `${r.c.name}, ${item.awakens ? powerName(r.c, item.awakens) : id === 'chamber' ? stageOf(r.c).name : `${r.c.mutations.length} of ${mutationCap(r.c)} mutations`}`)));
     const levels = prizeLevels(id);
     fill(page, h('div', { class: 'itemrow', style: `--c:${item.color}` },
       h('div', { class: 'grow' },
@@ -176,7 +187,9 @@ function buildBag(page, note) {
         n > 0 && fits.length > 0 && h('div', { class: 'row', style: 'margin-top:4px' },
           h('span', { class: 'small' }, 'Use on'), select, button('Use it', () => use(note, id), 'mini hot')),
         n > 0 && !fits.length && h('div', { class: 'small', style: 'margin-top:3px' }, 'None of your creatures can use one right now.'),
-        n === 0 && h('div', { class: 'small', style: 'margin-top:3px' }, `None yet. Adventure level${levels.length === 1 ? '' : 's'} ${levels.join(', ')} hand${levels.length === 1 ? 's' : ''} one over the first time, and any Adventure win or expedition can turn one up.`))));
+        n === 0 && h('div', { class: 'small', style: 'margin-top:3px' }, item.awakens
+          ? 'None yet. Craft one from Ascension Stones in the Negative\'s Ascension tab: the stones come from the Elite Negative, once Chapter ??? is beaten.'
+          : `None yet. Adventure level${levels.length === 1 ? '' : 's'} ${levels.join(', ')} hand${levels.length === 1 ? 's' : ''} one over the first time, and any Adventure win or expedition can turn one up.`))));
   }
 }
 
@@ -186,7 +199,10 @@ async function use(note, id) {
   dropRig(row.c);
   await saveHouse();
   await saveAnywhere(row.c, row.base);
-  toast(id === 'chamber'
+  const kind = ITEMS[id].awakens;
+  toast(kind
+    ? `${row.c.name.toUpperCase()}'S ${powerName(row.c, kind).toUpperCase()} AWAKENED: ${AWAKENINGS[kind].name.toUpperCase()}!!!`
+    : id === 'chamber'
     ? `${row.c.name.toUpperCase()} CAME OUT OF THE TIME CHAMBER ALL GROWN UP!`
     : `${row.c.name.toUpperCase()} CAN HOLD ${mutationCap(row.c)} MUTATIONS NOW!`, 'rare');
   G.onCreatureChanged?.();

@@ -857,3 +857,9 @@ html.dark .tip.loud { animation: none; }
 .lvl.abyss.next, .lvl.act5.next { animation: glowpulse 0.9s ease-in-out infinite alternate; }
 .levelcard.act5 { border-left: 5px solid #c2412b; }
 .levelcard.abyss { border-left: 5px solid #6a4bd8; }
+
+/* God Mode, and the God Chapter, past the end of Chapter ??? */
+.hubbtn.hub-god { color: #fff6d0; background: linear-gradient(135deg, #5a4210, #1a1206 75%); border-color: #ffd84a; }
+.mega.void.god { border-color: #ffd84a; background: linear-gradient(120deg, rgb(90 66 16 / 0.35), rgb(20 14 6 / 0.25)); }
+.lvl.god:not(.beaten) { background: linear-gradient(160deg, #1a1206, #5a4210); color: #fff0b0; border-color: #ffd84a; }
+.levelcard.god { border-left-color: #ffd84a; }

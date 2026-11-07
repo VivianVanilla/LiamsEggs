@@ -222,6 +222,41 @@ export const VOWS = {
 };
 export const VOW_IDS = Object.keys(VOWS);
 
+// A Hatsu carried over. When a creature crosses over to the light world it can bring its Hatsu with
+// it as a gift in its blood: one gift for each form, `hatsu<form>`, that teaches the form as a move
+// at HATSU_LIGHT times its base strength (no vows: those stay in the Negative), and leaves a little
+// of its Nen type in every fight (HATSU_BLOOD). It passes on by breeding like any born-with gift, and
+// no egg ever hatches with one. data/powers.js adds these to TRAITS, data/paths.js the moves.
+export const HATSU_LIGHT = 1.25;
+export const HATSU_BLOOD = {
+  enhancer: { taken: 0.1, text: 'takes 10% less damage' },
+  transmuter: { speed: 0.12, text: 'moves 12% faster' },
+  conjurer: { hp: 0.12, text: 'has 12% more max HP' },
+  specialist: { cooldown: 0.15, text: 'its moves come back 15% sooner' },
+  manipulator: { crit: 0.1, text: 'lands 10% more critical hits' },
+  emitter: { reach: 30, text: 'swings from a little further away' },
+};
+export const hatsuGiftId = (form) => `hatsu${form}`;
+const lighter = (def) => {
+  const d = { ...def };
+  if (d.power) d.power = d.kind === 'heal' ? Math.min(0.7, d.power * HATSU_LIGHT) : Math.round(d.power * HATSU_LIGHT * 100) / 100;
+  if (d.kind === 'summon') d.count = Math.min(5, d.count + 1);
+  return d;
+};
+export const HATSU_MOVES = {};
+export const HATSU_TRAITS = {};
+for (const [type, forms] of Object.entries(HATSU_FORMS)) {
+  for (const [form, f] of Object.entries(forms)) {
+    const id = hatsuGiftId(form);
+    HATSU_MOVES[id] = { ...lighter(f.def), name: f.name, cry: f.name.toUpperCase(), loud: true, color: NEN_TYPES[type].color };
+    const { text, ...passive } = HATSU_BLOOD[type];
+    HATSU_TRAITS[id] = {
+      name: `Hatsu: ${f.name}`, color: NEN_TYPES[type].color, hatsu: true, nenType: type, move: id, passive,
+      blurb: `A Hatsu of ${NEN_TYPES[type].name} that crossed over from the Negative, and runs in the family now. ${f.text} Its ${NEN_TYPES[type].name} stays in the blood too: it ${text}.`,
+    };
+  }
+}
+
 // ---------- Alchemy ----------
 
 // Up to MAX_CIRCLES transmutation circles, each one a move it designs. Pick a shape and an element,
@@ -310,3 +345,33 @@ export const NEG_BOSS_STATS = 1.4;
 // What winning pays: Void Shards, the money of the Negative, and XP for everyone in the party.
 // Losing still pays a share of the XP.
 export const NEG_REWARD = { shards: 10, shardsPerLevel: 3, replayShards: 2, xp: 25, xpPerLevel: 14, lossXp: 0.4 };
+
+// ---------- the Elite Negative ----------
+
+// There is more under the Negative. Once Chapter ??? is beaten in the light world, the Negative's
+// Adventure opens ELITE_LEVELS more: wild creatures at the top of everything (ELITE.level), each
+// born with ELITE.gifts more gifts of the Negative, starting ELITE.tough times as strong as usual and
+// ELITE.grow times stronger every level, more of them from level ELITE.moreEvery. Every first win pays Ascension Stones, the boss levels
+// more, and a boss beaten again still pays one. Stones craft what awakens the light world's powers
+// (data/ascension.js).
+export const ELITE_LEVELS = [
+  { name: 'Under the Floor', text: 'Under the bottom of the Negative there is another floor, and something is standing on it.' },
+  { name: 'The Elite Barracks', text: 'Everything the Negative King kept back for a war that never came.' },
+  { name: 'The Unmade Road', text: 'Every step undoes the one before it. The guards have had a long time to practise.' },
+  { name: 'Hall of the Returned', text: 'The ones who crossed over and came back, stronger and angrier.' },
+  { name: 'The Stone Warden', text: 'It guards the first Ascension Stone, and it has never once let go of it.', boss: true },
+  { name: 'The Forge of Stones', text: 'Where Ascension Stones are made, out of whatever loses here.' },
+  { name: 'The Lightless Choir', text: 'They sing the note that comes after the last one.' },
+  { name: 'The Mirror of Both Worlds', text: 'It shows the light world, and the light world looks back.' },
+  { name: 'The Last Wall', text: 'Past it, nothing in either world has rules.' },
+  { name: 'The Ascended King', text: 'The Negative King, after it found the stones. Beat it, and they are yours.', boss: true },
+];
+export const ELITE_COUNT = ELITE_LEVELS.length;
+export const ELITE = { level: 60, tough: 1, grow: 1.08, enemies: 2, moreEvery: 8, gifts: 1, bossStats: 1.6 };
+export const ELITE_BOSSES = {
+  5: { monster: 'leviathan', name: 'The Stone Warden', power: 1.5, moves: ['quake', 'bonewall', 'worldbreak', 'tendrils'], passive: { taken: 0.3, reflect: 0.25, unstoppable: true, regen: 0.006, text: 'Made of the stones it guards: it takes 30% less damage, throws a quarter of every hit back, nothing stops it, and it slowly mends.' } },
+  10: { monster: 'dragon', name: 'The Ascended King', power: 1.6, moves: ['prominence', 'devourstar', 'lastlight', 'endtime', 'worldbreak'], passive: { lives: 2, unstoppable: true, nullField: true, reflect: 0.2, absorb: 0.15, text: 'Nothing stops it, every 6 seconds it silences everything near it, it throws a fifth of every hit back and heals from what it deals, and it gets back up twice.' } },
+};
+// What an Elite win pays. Ascension Stones: `stones` for a first win, `bossStones` for the first win
+// of a boss level, and `replayBossStones` every time a boss level is beaten again.
+export const ELITE_REWARD = { stones: 1, bossStones: 3, replayBossStones: 1, shards: 150, shardsPerLevel: 30, replayShards: 25, xp: 600, xpPerLevel: 40, lossXp: 0.4 };
