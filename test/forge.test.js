@@ -27,6 +27,8 @@ test('every weapon reads properly, and the dearer ones cost more of both', () =>
     assert.ok(w.ore > 0 && w.gems > 0, id);
   });
   for (let i = 1; i < WEAPON_IDS.length; i++) assert.ok(WEAPONS[WEAPON_IDS[i]].ore >= WEAPONS[WEAPON_IDS[i - 1]].ore);
+  assert.equal(WEAPONS.soulsplitkatana.name, 'Soul Split Katana');
+  assert.equal(WEAPONS.soulsplitkatana.gems, 500000);
 });
 
 test('forging takes ore and gems into the armory, and carrying one takes it out', () => {
@@ -56,6 +58,17 @@ test('forging takes ore and gems into the armory, and carrying one takes it out'
   // A full armory makes no more.
   house.armory.starblade = MAX_ARMORY;
   assert.match(forgeProblem(house, 'starblade'), /full/);
+});
+
+test('the Soul Split Katana costs 500,000 gems to forge', () => {
+  const house = emptyHouse();
+  house.ore = WEAPONS.soulsplitkatana.ore;
+  house.bank.gems = WEAPONS.soulsplitkatana.gems - 1;
+  assert.match(forgeProblem(house, 'soulsplitkatana'), /500000 gems/);
+  house.bank.gems += 1;
+  assert.equal(forgeProblem(house, 'soulsplitkatana'), null);
+  assert.equal(forgeWeapon(house, 'soulsplitkatana'), true);
+  assert.equal(house.bank.gems, 0);
 });
 
 test('a weapon is saved with its creature, and a file can only claim one that exists', () => {
@@ -126,6 +139,25 @@ test('in a fight, each weapon does what it says', () => {
   const dealt = before - dragon.hp;
   const plainHit = mine.atk * 1 * (0.85 + 0.5 * 0.3) * (30 / (30 + dragon.def));
   assert.ok(Math.abs(dealt - plainHit * (1 + WEAPONS.dragonslayer.monster)) < 1e-6, `${dealt} against ${plainHit}`);
+});
+
+test('the Soul Split Katana bypasses dodge on exactly one quarter of eligible strikes', () => {
+  const c = wildCreature(21, 2);
+  c.weapon = 'soulsplitkatana';
+  c.traits = [];
+  const bout = new Bout([c, wildCreature(22, 2)], { seed: 8 });
+  const [me, them] = bout.fighters;
+  me.crit = 0;
+  them.dodge = 1;
+  const hit = (rolls) => {
+    let i = 0;
+    const before = them.hp;
+    bout.rand = () => rolls[i++] ?? 0.5;
+    bout.strike(me, them, 1);
+    return them.hp < before;
+  };
+  assert.equal(hit([0.24, 0.5, 0.5]), true, 'a 24% bypass roll ignores dodge');
+  assert.equal(hit([0.25, 0.5]), false, 'the 25% boundary does not bypass dodge');
 });
 
 test('a weapon helps win fights, and the best ones help most', () => {

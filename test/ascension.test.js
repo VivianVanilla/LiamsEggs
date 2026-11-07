@@ -15,7 +15,7 @@ import { itemProblem, useItem, addItem, itemCount } from '../src/core/items.js';
 import { tuningOf } from '../src/core/sheet.js';
 import { runBout, finishBout, godFactor, voidFactor } from '../src/sim/arena.js';
 import {
-  ABYSS_COUNT, GOD_COUNT, godProblem, godToughness, abyssToughness, startGod, godReward, winGod, godEnemies,
+  ABYSS_COUNT, GOD_COUNT, godProblem, godToughness, abyssToughness, startGod, godReward, winGod, godEnemies, winAbyss,
 } from '../src/core/adventure.js';
 import { resetUniverse, abyssBeaten, godModeOpen } from '../src/core/universe.js';
 import {
@@ -32,7 +32,7 @@ import { ABILITIES } from '../src/data/paths.js';
 import { ITEMS, AWAKEN_ITEM_IDS } from '../src/data/items.js';
 import { AWAKENINGS, AWAKEN_KINDS, ASCENSION_RECIPES, GOD_GUARD, GOD_FULL } from '../src/data/ascension.js';
 import { HATSU_FORMS, NEG_EGG, NEG_LEVEL_COUNT, ELITE_COUNT, ELITE_REWARD, HATSU_LIGHT } from '../src/data/negative.js';
-import { ABYSS, GOD_LEVELS } from '../src/data/adventure.js';
+import { ABYSS, GOD_LEVELS, ADVENTURE_LEVELS } from '../src/data/adventure.js';
 import { STAGES } from '../src/core/creature.js';
 
 const clean = (s) => typeof s === 'string' && s.length > 0 && !/undefined|NaN|null|\[object/.test(s);
@@ -187,6 +187,24 @@ test('the Elite Negative opens once Chapter ??? is beaten, goes one level at a t
     assert.ok(bout.done && bout.elite === k, `elite ${k}`);
     assert.ok(eliteEnemies(k, 1).fighters.every((nc) => nc.level === 60));
   }
+});
+
+test('winning the last level of Chapter ??? is what opens the Elite Negative, through a save and a reset', () => {
+  const house = emptyHouse();
+  house.universe = { resets: 1, abyssBest: ABYSS_COUNT - 1, godBest: 0, lastReset: 1 };
+  const world = emptyNegWorld();
+  assert.equal(abyssBeaten(house), false);
+  assert.ok(eliteProblem(world, 1, abyssBeaten(house)), 'still shut one level short');
+  winAbyss(house, ABYSS_COUNT, () => 0.99, 5);
+  assert.equal(abyssBeaten(house), true);
+  assert.equal(eliteProblem(world, 1, abyssBeaten(house)), null, 'the last win opens it');
+  // The household file keeps it, and so does a reset.
+  assert.equal(abyssBeaten(sanitizeHouse(JSON.parse(JSON.stringify(house)))), true);
+  house.adventure.best = ADVENTURE_LEVELS.length;
+  assert.equal(abyssBeaten(resetUniverse(house, 9)), true);
+  // A first Elite win then pays stones that can go straight into crafting.
+  settleElite(world, [wildNegCreature(1, 60)], 1, true);
+  assert.equal(world.stones, ELITE_REWARD.stones);
 });
 
 test('Ascension Stones and Void Shards craft the four awakening items into the bag', () => {

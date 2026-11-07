@@ -43,6 +43,11 @@ export const WEAPONS = {
     damage: 0.35, monster: 0.5,
     text: 'hits 35% harder, and half as hard again against monsters',
   },
+  soulsplitkatana: {
+    name: 'Soul Split Katana', ore: 50, gems: 500000, color: '#e6d7ff',
+    ignoreDodge: 0.25,
+    text: 'ignores the target\'s dodge chance 25% of the time',
+  },
 };
 export const WEAPON_IDS = Object.keys(WEAPONS);
 

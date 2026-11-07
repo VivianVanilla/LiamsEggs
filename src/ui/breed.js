@@ -161,7 +161,9 @@ function buildPicker(page, note) {
   const [rowA, rowB] = picked.map((base) => rows.find((r) => r.base === base));
   const problem = parentProblem(rowA) ?? parentProblem(rowB) ?? pairProblem(a, b, help);
   const heritage = mixHeritage(a, b);
-  const babyRace = raceName({ heritage, race: mainRace(heritage), pureBlood: false });
+  // Passing Pure-blood on makes it one for sure, so the preview says so.
+  const passingPure = choice.gifts.includes('pureBlood:pureBlood');
+  const babyRace = raceName({ heritage, race: mainRace(heritage), pureBlood: passingPure });
   const gifts = giftsOf(a, b);
   const limit = giftLimit(help);
   const nameOf = (who) => (who === 'a' ? a : b).name;
@@ -183,16 +185,18 @@ function buildPicker(page, note) {
       sublabel('Fights like'),
       either(note, 'style', (p) => `${p.name}: ${STANCES[p.battle.stance].name}`),
       sublabel('Race'),
-      h('div', { class: 'small' }, rich(`${babyRace}: half of each parent's races, down to quarters.${Object.keys(heritage).length > 1 ? ` 1 in ${Math.round(1 / PURE_BLOOD_CHANCE)} is born a Pure-blood, with every race at full power.` : ''}`))),
+      h('div', { class: 'small' }, rich(`${babyRace}: half of each parent's races, down to quarters.${Object.keys(heritage).length < 2 ? ''
+        : passingPure ? ' Pure-blood is passing on, so every race in it will be at full power.'
+        : ` 1 in ${Math.round(1 / PURE_BLOOD_CHANCE)} is born a Pure-blood, with every race at full power. If either parent is Pure-blooded, you can also choose to pass it on below.`}`))),
     stepCard(3, 'Passes on', h('span', null, pips(choice.gifts.length, limit), ` ${choice.gifts.length} of ${limit}${help.deluxe ? ', Deluxe' : help.mega ? ', Mega' : ''}`),
       gifts.length === 0
-        ? h('div', { class: 'small' }, 'Neither has a gift, a mutation or a Quirk to pass on yet.')
+        ? h('div', { class: 'small' }, 'Neither has a gift, a mutation, a Quirk or Pure-bloodedness to pass on yet.')
         : h('div', { class: 'chips' }, gifts.map((g) => {
           const on = choice.gifts.includes(g.key);
           const blocked = !on && (choice.gifts.length >= limit || (g.kind === 'quirk' && quirkTaken));
           return h('button', {
             class: `chip${on ? ' on' : ''}`,
-            style: g.kind === 'trait' ? `--c:${TRAITS[g.id].color}` : '',
+            style: g.kind === 'trait' ? `--c:${TRAITS[g.id].color}` : g.kind === 'pureBlood' ? '--c:#ffd84a' : '',
             title: g.what,
             disabled: blocked,
             onclick: () => {

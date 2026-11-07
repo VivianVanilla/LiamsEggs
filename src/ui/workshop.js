@@ -138,7 +138,7 @@ function forgeSection(body, note) {
       return h('div', { class: 'way', style: `border-left:5px solid ${w.color}` },
         h('div', { class: 'top' },
           h('span', { class: 'plain' }, w.name, have ? ` (${have} in the armory)` : ''),
-          button(`Forge: ${w.ore} ore, ${w.gems} gems`, async () => {
+          button(`Forge: ${w.ore} ore, ${w.gems.toLocaleString()} gems`, async () => {
             if (!forgeWeapon(house, id)) return;
             await saveHouse();
             toast(`FORGED: ${w.name.toUpperCase()}!`, 'rare');

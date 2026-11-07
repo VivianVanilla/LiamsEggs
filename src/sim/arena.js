@@ -1010,7 +1010,9 @@ export class Bout {
     if (!target.alive) return 0;
     // Nothing can dodge in stopped time, or inside a domain. An Event Horizon can dodge even a sure thing.
     const domain = f.domainUntil > this.t;
-    if ((!sure || target.horizon) && !domain && !this.frozen(target) && this.rand() < target.dodge + this.buffValue(target, 'dodge')) {
+    const canDodge = (!sure || target.horizon) && !domain && !this.frozen(target);
+    const bypassDodge = canDodge && f.weapon?.ignoreDodge && this.rand() < f.weapon.ignoreDodge;
+    if (canDodge && !bypassDodge && this.rand() < target.dodge + this.buffValue(target, 'dodge')) {
       this.events.push({ type: 'dodge', x: target.x, y: target.y - 60 * target.scale });
       return 0;
     }

@@ -54,7 +54,7 @@ export function breedingGuide() {
       rows: [
         { name: 'Half of each parent', detail: 'A baby is half of each parent\'s races, so a Giant and a Devil make a Half-Giant Half-Devil. Their babies are quarters, and nothing goes smaller than a quarter.' },
         { name: 'Its share of each', detail: 'Each race gives its share of its bonuses: a Half-Giant gets half a Giant\'s. A race only brings its move at half or more.' },
-        { name: 'Pure-blood', detail: '1 in 100 babies of mixed race are born Pure-blood instead: every race in it at full power.' },
+        { name: 'Pure-blood', detail: '1 in 100 babies of mixed race are born Pure-blood instead: every race in it at full power. If a parent is Pure-blood, it can also be chosen as a gift to pass on.' },
       ],
     },
     {

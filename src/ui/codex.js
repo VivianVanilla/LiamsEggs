@@ -195,7 +195,7 @@ function gear(page) {
   fill(page,
     head('Weapons, from the forge'),
     intro('Forged from Legendary ore and gems in each creature\'s Workshop. A creature carries one at a time.'),
-    WEAPON_IDS.map((id) => card(WEAPONS[id].name, WEAPONS[id].color, `${WEAPONS[id].ore} ore, ${WEAPONS[id].gems} gems`, `It ${WEAPONS[id].text}.`)),
+    WEAPON_IDS.map((id) => card(WEAPONS[id].name, WEAPONS[id].color, `${WEAPONS[id].ore} ore, ${WEAPONS[id].gems.toLocaleString()} gems`, `It ${WEAPONS[id].text}.`)),
     head('Charms'),
     intro('Crafted once and kept. It can wear two, and they count toward its stat limits.'),
     h('div', { class: 'cx-grid' }, CHARM_IDS.map((id) => h('div', { class: 'cx-mini' }, h('b', null, CHARMS[id].name), h('span', null, `${statText(CHARMS[id].stats)}. ${costText(CHARMS[id].cost)}`)))),

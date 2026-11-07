@@ -390,6 +390,23 @@ test('breeding passes on exactly what you choose, and costs both parents', () =>
   assert.match(breed(a, b, { family: 'a', look: 'a', style: 'a', gifts: [] }, 'Third', NOW).problem, /too hungry/);
 });
 
+test('Pure-bloodedness can be selected as a breeding gift from a pure-blood parent', () => {
+  const a = adult('Pure');
+  const b = adult('Other');
+  a.pureBlood = true;
+  a.race = 'giant';
+  a.heritage = { giant: 1 };
+  b.race = 'mink';
+  b.heritage = { mink: 1 };
+  const gift = giftsOf(a, b).find((g) => g.kind === 'pureBlood');
+  assert.ok(gift);
+  assert.equal(gift.key, 'pureBlood:pureBlood');
+  assert.equal(choiceProblem(a, b, { gifts: [gift.key] }), null);
+  const { baby } = breed(a, b, { gifts: [gift.key] }, 'Pure Mix', NOW, null, () => 0.99);
+  assert.equal(baby.pureBlood, true, 'the passed gift overrides the ordinary 1-in-100 roll');
+  assert.ok(Object.keys(baby.heritage).length > 1);
+});
+
 test('two parents from one family still give a different other side', () => {
   const a = adult('Same A');
   const b = adult('Same B', { lineage: undefined });

@@ -149,6 +149,10 @@ export function giftsOf(a, b) {
     if (!list.some((g) => g.kind === kind && g.id === id)) list.push({ key: `${kind}:${id}`, kind, id, from, name, what });
   };
   const both = [['a', a], ['b', b]];
+  if ((a.pureBlood || b.pureBlood) && Object.keys(mixHeritage(a, b)).length > 1) {
+    const from = a.pureBlood ? 'a' : 'b';
+    add('pureBlood', 'pureBlood', from, 'Pure-blood', 'Every race in the baby has full power.');
+  }
   // Earned gifts were learned, not born, so they stay with the parent.
   both.forEach(([who, p]) => p.traits.filter((id) => !TRAITS[id].earned).forEach((id) => add('trait', id, who, TRAITS[id].name, TRAITS[id].blurb)));
   both.forEach(([who, p]) => p.mutations.forEach((m) => add('mutation', m.id, who, MUTATIONS[m.id].name, `Mutation: ${statText(MUTATIONS[m.id].stats)}.`)));
@@ -217,7 +221,8 @@ export function breed(a, b, choice, name, now = Date.now(), help = null, rng = M
   baby.battle = { ...baby.battle, stance: style.stance, hurt: style.hurt, target: style.target };
   baby.heritage = mixHeritage(a, b);
   baby.race = mainRace(baby.heritage);
-  baby.pureBlood = Object.keys(baby.heritage).length > 1 && rng() < PURE_BLOOD_CHANCE;
+  baby.pureBlood = Object.keys(baby.heritage).length > 1
+    && (keys.has('pureBlood:pureBlood') || rng() < PURE_BLOOD_CHANCE);
   // Something new can wake up in it, if its parents have what that takes.
   const awakened = awakenChances(a, b, baby.traits).filter(({ oneIn }) => rng() < 1 / oneIn).map(({ id }) => id);
   baby.traits.push(...awakened);
