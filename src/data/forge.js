@@ -50,6 +50,11 @@ export const WEAPONS = {
     ignoreDodge: 0.5, pierce: 0.25,
     text: 'ignores the target\'s dodge chance half the time, and cuts through a quarter of its Guard',
   },
+  longinus: {
+    name: 'Lance of Longinus', ore: 75, gems: 1000000, color: '#c9302c',
+    pierce: 0.9,
+    text: 'cuts through 90% of the target\'s Guard, so armor barely slows it down',
+  },
 };
 export const WEAPON_IDS = Object.keys(WEAPONS);
 

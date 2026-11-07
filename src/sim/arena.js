@@ -59,6 +59,7 @@ export function passiveFields(p) {
     auraRange: p.auraRange || DEFAULT_AURA_RANGE,
     nullField: p.nullField,
     nullClock: NULL_FIELD.every,
+    nullSilence: NULL_FIELD.silence + (p.nullSilence ?? 0),
     decay: p.decay,
     enrage: p.enrage,
     enraged: false,
@@ -850,7 +851,7 @@ export class Bout {
     f.nullClock = NULL_FIELD.every;
     this.events.push({ type: 'nova', x: f.x, y: f.y, range: NULL_FIELD.range, color: '#9a9ab0' });
     for (const o of this.enemies(f)) {
-      if (Math.hypot(o.x - f.x, o.y - f.y) <= NULL_FIELD.range + o.size) this.silenceFor(o, NULL_FIELD.silence, '#9a9ab0');
+      if (Math.hypot(o.x - f.x, o.y - f.y) <= NULL_FIELD.range + o.size) this.silenceFor(o, f.nullSilence ?? NULL_FIELD.silence, '#9a9ab0');
     }
   }
 

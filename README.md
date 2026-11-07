@@ -208,7 +208,7 @@ Beat God, and **God Mode** is yours for good, through any reset: a button in the
 
 ## The forge
 
-Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blade, Crimson Katana, Thunder Hammer, Venom Fang, Soul Reaper Scythe, Dragonslayer and **Soul Split Katana** (50 Legendary ore and 500,000 gems; ignores dodge half the time and cuts through a quarter of Guard). A weapon goes into the armory everyone shares, and each creature carries one.
+Care, Gear, Forge turns Legendary ore and gems into weapons: the Starforged Blade, Crimson Katana, Thunder Hammer, Venom Fang, Soul Reaper Scythe, Dragonslayer, **Soul Split Katana** (50 Legendary ore and 500,000 gems; ignores dodge half the time and cuts through a quarter of Guard) and **Lance of Longinus** (75 Legendary ore and 1,000,000 gems; cuts through 90% of Guard). A weapon goes into the armory everyone shares, and each creature carries one.
 
 ## Fighting
 

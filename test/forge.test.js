@@ -170,6 +170,11 @@ test('the Soul Split Katana gets past dodge half the time, and cuts through a qu
   me.weapon = null;
   const plain = hit([0.99, 0.5, 0.5]);
   assert.ok(Math.abs(plain - swing * (30 / (30 + 60))) < 1e-6, `${plain}`);
+  // The Lance of Longinus leaves a tenth of it.
+  me.weapon = WEAPONS.longinus;
+  const lance = hit([0.99, 0.5, 0.5]);
+  assert.ok(Math.abs(lance - swing * (30 / (30 + 60 * 0.1))) < 1e-6, `${lance}`);
+  assert.ok(lance > dealt && dealt > plain);
 });
 
 test('a weapon helps win fights, and the best ones help most', () => {

@@ -200,7 +200,8 @@ test('Negative blood only breeds with the Deluxe Breeder, and its babies are hal
   house.bank.gems = DELUXE_BREEDER.cost;
   assert.equal(buyDeluxe(house), true);
   assert.equal(house.bank.gems, 0);
-  const { baby } = breed(a, b, choice, 'Baby', 1, { deluxe: true });
+  // A roll that misses the 1-in-100 Pure-blood, which would make it all Negative.
+  const { baby } = breed(a, b, choice, 'Baby', 1, { deluxe: true }, () => 0.99);
   assert.equal(negativeShare(baby), 0.5);
   assert.equal(baby.heritage.antiseraph, 0.5);
 });
@@ -296,6 +297,21 @@ test('Alchemy: what a circle pays decides how strong it is', () => {
   assert.ok(setCircle(nc, -1, dear) && setCircle(nc, -1, cheap) && setCircle(nc, -1, cheap));
   assert.equal(setCircle(nc, -1, cheap), false, 'three at most');
   assert.equal(setCircle(nc, 0, { ...cheap, hp: 2 }), false, 'nobody pays more than it has');
+});
+
+test('a Null Field in the blood silences for 4 seconds, twice a boss\'s', () => {
+  const c = wildCreature(31, 2);
+  c.traits = ['nullfield'];
+  const rival = wildCreature(32, 2);
+  rival.traits = [];
+  const bout = new Bout([c, rival], { seed: 1 });
+  const [me, them] = bout.fighters;
+  Object.assign(them, { x: me.x + 40, y: me.y, unstoppable: false, silence: 0 });
+  me.nullClock = 0;
+  bout.tickNullField(me, 0.01);
+  assert.equal(them.silence, 4);
+  const end = startLevel(60, [grown('A', 1), grown('B', 2), grown('C', 3)], { seed: 2 }).fighters.find((f) => f.monster);
+  assert.equal(end.nullSilence, 2, 'a boss\'s Null Field is as it always was');
 });
 
 test('a fight in the Negative runs on numbers ten times as big', () => {

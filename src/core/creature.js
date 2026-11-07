@@ -404,11 +404,12 @@ const fullRaces = (c) => raceParts(c).filter(([, share]) => c.pureBlood || share
 //   twice       this share of its swings land twice
 //   poisonproof, unstoppable (no stun, confusion or silence), horizon (even sure hits can miss it),
 //   nullField (every 6 seconds, silences what is near it)   yes or no
+//   nullSilence a Null Field silences for this many seconds longer
 const PASSIVE_FLAGS = new Set(['poisonproof', 'unstoppable', 'horizon', 'nullField']);
 export const emptyPassive = () => ({
   taken: 0, hp: 0, dodge: 0, crit: 0, speed: 0, reach: 0, poisonproof: false, feast: 0, absorb: 0, reflect: 0, regen: 0, unstoppable: false,
   echo: 0, execute: 0, frenzy: 0, evolve: 0, lives: 0, critMul: 0, cooldown: 0, damage: 0, monsterDmg: 0, aura: 0, auraRange: 0, nullField: false,
-  decay: 0, enrage: 0, horizon: false, twice: 0,
+  decay: 0, enrage: 0, horizon: false, twice: 0, nullSilence: 0,
 });
 
 export function addPassive(out, passive) {

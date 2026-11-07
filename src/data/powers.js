@@ -467,44 +467,44 @@ export const TRAITS = {
   // any born-with gift. No egg of the light world ever hatches with one. `passive` works in every
   // fight, in both worlds, the same way a race's does.
   invertedheart: {
-    name: 'Inverted Heart', color: '#e0e0ff', negative: true, passive: { lives: 1 },
-    blurb: 'Its heart beats backwards. The first time it is knocked out in a fight, the heart turns over and it gets back up with half its health.',
+    name: 'Inverted Heart', color: '#e0e0ff', negative: true, passive: { lives: 2 },
+    blurb: 'Its heart beats backwards. The first two times it is knocked out in a fight, the heart turns over and it gets back up with half its health.',
   },
   eventhorizon: {
-    name: 'Event Horizon', color: '#3b2f6e', negative: true, passive: { horizon: true, dodge: 0.12 },
-    blurb: 'Light bends around it. 12% more likely to dodge, and it can dodge even the moves that never miss.',
+    name: 'Event Horizon', color: '#3b2f6e', negative: true, passive: { horizon: true, dodge: 0.24 },
+    blurb: 'Light bends around it. 24% more likely to dodge, and it can dodge even the moves that never miss.',
   },
   nullfield: {
-    name: 'Null Field', color: '#9a9ab0', negative: true, passive: { nullField: true },
-    blurb: 'Every 6 seconds the Negative leaks out of it: everything on the other side within 220 loses its moves for 2 seconds.',
+    name: 'Null Field', color: '#9a9ab0', negative: true, passive: { nullField: true, nullSilence: 2 },
+    blurb: 'Every 6 seconds the Negative leaks out of it: everything on the other side within 220 loses its moves for 4 seconds.',
   },
   entropy: {
-    name: 'Entropy', color: '#7d8a6a', negative: true, passive: { decay: 0.25 },
-    blurb: 'Every hit it lands starts something rotting: they keep hurting for 3 seconds after.',
+    name: 'Entropy', color: '#7d8a6a', negative: true, passive: { decay: 0.5 },
+    blurb: 'Every hit it lands starts something rotting: they keep taking half its hit every second, for 3 seconds after.',
   },
   abyssalgaze: {
-    name: 'Abyssal Gaze', color: '#5f2a9e', negative: true, passive: { crit: 0.1, critMul: 1.5 },
-    blurb: '10% more critical hits, and its critical hits land three and a half times as hard instead of twice.',
+    name: 'Abyssal Gaze', color: '#5f2a9e', negative: true, passive: { crit: 0.2, critMul: 3 },
+    blurb: '20% more critical hits, and its critical hits land five times as hard instead of twice.',
   },
   hollowclock: {
-    name: 'Hollow Clock', color: '#c9b46a', negative: true, passive: { cooldown: 0.4 },
-    blurb: 'Time in it runs hollow: every move it has comes back 40% sooner.',
+    name: 'Hollow Clock', color: '#c9b46a', negative: true, passive: { cooldown: 0.6 },
+    blurb: 'Time in it runs hollow: every move it has comes back 60% sooner, the most anything can.',
   },
   blacksun: {
-    name: 'Black Sun', color: '#2a1f12', negative: true, passive: { damage: 0.35 },
-    blurb: 'A sun that gives off darkness hangs over it: everything it does lands 35% harder.',
+    name: 'Black Sun', color: '#2a1f12', negative: true, passive: { damage: 0.7 },
+    blurb: 'A sun that gives off darkness hangs over it: everything it does lands 70% harder.',
   },
   mirrorsoul: {
-    name: 'Mirror Soul', color: '#cfe8f5', negative: true, passive: { reflect: 0.3 },
-    blurb: 'Whatever is done to it is done back: 30% of every hit it takes goes straight back to whoever landed it.',
+    name: 'Mirror Soul', color: '#cfe8f5', negative: true, passive: { reflect: 0.6 },
+    blurb: 'Whatever is done to it is done back: 60% of every hit it takes goes straight back to whoever landed it.',
   },
   godslayer: {
-    name: 'Godslayer', color: '#ffcc66', negative: true, passive: { monsterDmg: 1 },
-    blurb: 'Made to kill things bigger than the world: twice the damage against monsters and every boss.',
+    name: 'Godslayer', color: '#ffcc66', negative: true, passive: { monsterDmg: 2 },
+    blurb: 'Made to kill things bigger than the world: three times the damage against monsters and every boss.',
   },
   equivalence: {
-    name: 'Equivalent Exchange', color: '#c9302c', negative: true, passive: { absorb: 0.2 },
-    blurb: 'Nothing is taken without something given back: it heals 20% of all the damage it deals.',
+    name: 'Equivalent Exchange', color: '#c9302c', negative: true, passive: { absorb: 0.4 },
+    blurb: 'Nothing is taken without something given back: it heals 40% of all the damage it deals.',
   },
 
   // A Hatsu brought over from the Negative when its creature crossed over (data/negative.js): a move
